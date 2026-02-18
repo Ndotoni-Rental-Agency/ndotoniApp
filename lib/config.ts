@@ -26,6 +26,8 @@ export const amplifyConfig = {
 };
 
 // CloudFront cache URLs
+export const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d2bstvyam1bm1f.cloudfront.net';
+
 export const CACHE_URLS = {
   shortTermHomepage: process.env.EXPO_PUBLIC_SHORT_TERM_CACHE_URL || 'https://d2rvqxqxqxqxqx.cloudfront.net/short-term-homepage.json',
   longTermHomepage: process.env.EXPO_PUBLIC_LONG_TERM_CACHE_URL || 'https://d2rvqxqxqxqxqx.cloudfront.net/long-term-homepage.json',

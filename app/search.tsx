@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { RentalType } from '@/hooks/useRentalType';
 import PropertyCard from '@/components/property/PropertyCard';
-import { api } from '@/lib/api-client';
+import GraphQLClient from '@/lib/graphql-client';
+import { searchShortTermProperties, getPropertiesByLocation } from '@/lib/graphql/queries';
 import { toTitleCase, formatDateShort } from '@/lib/utils/common';
 
 export default function SearchScreen() {
@@ -48,20 +50,28 @@ export default function SearchScreen() {
       setError(null);
       
       if (isShortTerm) {
-        const result = await api.searchShortTermProperties({
-          region: region || 'Dar es Salaam',
-          district,
-          checkInDate,
-          checkOutDate,
-        });
-        setProperties(result);
+        const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
+          searchShortTermProperties,
+          {
+            input: {
+              region: region || 'Dar es Salaam',
+              district,
+              checkInDate,
+              checkOutDate,
+            }
+          }
+        );
+        setProperties(data.searchShortTermProperties?.properties || []);
       } else {
-        const result = await api.searchLongTermProperties({
-          region: region || 'Dar es Salaam',
-          district,
-          moveInDate,
-        });
-        setProperties(result);
+        const data = await GraphQLClient.executePublic<{ getPropertiesByLocation: any }>(
+          getPropertiesByLocation,
+          {
+            region: region || 'Dar es Salaam',
+            district,
+            moveInDate,
+          }
+        );
+        setProperties(data.getPropertiesByLocation?.properties || []);
       }
     } catch (err) {
       console.error('Error fetching search results:', err);
@@ -169,28 +179,94 @@ export default function SearchScreen() {
               </Text>
             </View>
 
-            {/* Property Grid */}
-            <View style={styles.propertyGrid}>
+            {/* Property List - Vertical cards like web */}
+            <View style={styles.propertyList}>
               {properties.map((property) => (
-                <PropertyCard
+                <TouchableOpacity
                   key={property.propertyId}
-                  propertyId={property.propertyId}
-                  title={property.title}
-                  location={property.district || property.region}
-                  price={isShortTerm ? property.nightlyRate : property.monthlyRent}
-                  currency={property.currency}
-                  rating={property.averageRating}
-                  thumbnail={property.thumbnail}
-                  bedrooms={property.bedrooms || property.maxGuests}
-                  priceUnit={isShortTerm ? 'night' : 'month'}
+                  style={[styles.searchCard, { backgroundColor: headerBg, borderColor }]}
                   onPress={() => {
-                    const route = isShortTerm
-                      ? `/short-property/${property.propertyId}`
-                      : `/property/${property.propertyId}`;
-                    router.push(route);
+                    // Navigate to appropriate property details page
+                    if (isShortTerm) {
+                      router.push(`/short-property/${property.propertyId}` as any);
+                    } else {
+                      router.push(`/property/${property.propertyId}` as any);
+                    }
                   }}
-                  onFavoritePress={() => console.log('Favorite:', property.propertyId)}
-                />
+                  activeOpacity={0.7}
+                >
+                  {/* Horizontal layout: Image on left, content on right */}
+                  <View style={styles.cardContent}>
+                    {/* Property Image */}
+                    <View style={styles.cardImageContainer}>
+                      {property.thumbnail ? (
+                        <Image
+                          source={{ uri: property.thumbnail }}
+                          style={styles.cardImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={[styles.cardImagePlaceholder, { backgroundColor: borderColor }]}>
+                          <Ionicons name="home-outline" size={32} color="#999" />
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Property Details */}
+                    <View style={styles.cardDetails}>
+                      {/* Location */}
+                      <Text style={styles.cardLocation} numberOfLines={1}>
+                        {property.district || property.region}
+                      </Text>
+
+                      {/* Title */}
+                      <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={2}>
+                        {property.title}
+                      </Text>
+
+                      {/* Property Type & Bedrooms */}
+                      <Text style={styles.cardMeta} numberOfLines={1}>
+                        {property.propertyType}
+                        {property.bedrooms && ` • ${property.bedrooms} bed${property.bedrooms > 1 ? 's' : ''}`}
+                        {property.maxGuests && ` • ${property.maxGuests} guest${property.maxGuests > 1 ? 's' : ''}`}
+                      </Text>
+
+                      {/* Price */}
+                      <View style={styles.cardPriceRow}>
+                        <View style={styles.cardPriceContainer}>
+                          <Text style={[styles.cardPrice, { color: textColor }]}>
+                            {property.currency} {(isShortTerm ? property.nightlyRate : property.monthlyRent)?.toLocaleString()}
+                          </Text>
+                          <Text style={styles.cardPriceUnit}>
+                            {isShortTerm ? 'per night' : 'per month'}
+                          </Text>
+                        </View>
+
+                        {/* Action Buttons */}
+                        <View style={styles.cardActions}>
+                          <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: borderColor }]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              console.log('Chat:', property.propertyId);
+                            }}
+                          >
+                            <Ionicons name="chatbubble-outline" size={16} color={textColor} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: borderColor }]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              console.log('Favorite:', property.propertyId);
+                            }}
+                          >
+                            <Ionicons name="heart-outline" size={16} color={textColor} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
               ))}
             </View>
           </>
@@ -269,11 +345,83 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  propertyGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  propertyList: {
     paddingHorizontal: 16,
-    gap: 16,
+    gap: 12,
+  },
+  searchCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  cardContent: {
+    flexDirection: 'row',
+  },
+  cardImageContainer: {
+    width: 120,
+    height: 120,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardDetails: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  cardLocation: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+  },
+  cardPriceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flex: 1,
+  },
+  cardPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cardPriceUnit: {
+    fontSize: 11,
+    color: '#666',
+    marginLeft: 4,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorContainer: {
     flex: 1,

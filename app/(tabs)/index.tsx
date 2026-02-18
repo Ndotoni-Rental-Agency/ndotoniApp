@@ -7,7 +7,7 @@ import { RentalType } from '@/hooks/useRentalType';
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import PropertyCard from '@/components/property/PropertyCard';
-import { api } from '@/lib/api-client';
+import { fetchLongTermHomepageCache, fetchShortTermHomepageCache } from '@/lib/homepage-cache';
 
 export default function HomeScreen() {
   const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
@@ -32,20 +32,37 @@ export default function HomeScreen() {
       
       try {
         if (rentalType === RentalType.LONG_TERM && !longTermProperties) {
-          console.log('[HomeScreen] Fetching long-term properties...');
-          const data = await api.fetchLongTermProperties();
-          console.log('[HomeScreen] Long-term data received:', JSON.stringify(data, null, 2));
-          setLongTermProperties(data);
-        } else if (rentalType === RentalType.SHORT_TERM && !shortTermProperties) {
-          console.log('[HomeScreen] Fetching short-term properties...');
-          const data = await api.fetchShortTermProperties();
-          console.log('[HomeScreen] Short-term data received:', {
-            lowestPrice: data.lowestPrice.length,
-            topRated: data.topRated.length,
-            featured: data.featured.length,
-            sampleProperty: data.lowestPrice[0],
+          console.log('[HomeScreen] Fetching long-term properties from CloudFront...');
+          const cache = await fetchLongTermHomepageCache();
+          console.log('[HomeScreen] Long-term cache received:', {
+            lowestPrice: cache.lowestPrice?.length || 0,
+            nearby: cache.nearby?.length || 0,
+            mostViewed: cache.mostViewed?.length || 0,
+            generatedAt: cache.generatedAt,
           });
-          setShortTermProperties(data);
+          
+          setLongTermProperties({
+            lowestPrice: cache.lowestPrice || [],
+            nearby: cache.nearby || [],
+            mostViewed: cache.mostViewed || [],
+            recentlyViewed: cache.recentlyViewed || [],
+            favorites: cache.favorites || [],
+          });
+        } else if (rentalType === RentalType.SHORT_TERM && !shortTermProperties) {
+          console.log('[HomeScreen] Fetching short-term properties from CloudFront...');
+          const cache = await fetchShortTermHomepageCache();
+          console.log('[HomeScreen] Short-term cache received:', {
+            lowestPrice: cache.lowestPrice?.length || 0,
+            topRated: cache.topRated?.length || 0,
+            featured: cache.featured?.length || 0,
+            generatedAt: cache.generatedAt,
+          });
+          
+          setShortTermProperties({
+            lowestPrice: cache.lowestPrice || [],
+            topRated: cache.topRated || [],
+            featured: cache.featured || [],
+          });
         }
       } catch (err) {
         setError('Failed to load properties');
@@ -223,7 +240,6 @@ export default function HomeScreen() {
                         thumbnail={property.thumbnail}
                         bedrooms={property.bedrooms || property.maxGuests}
                         priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
-                        onPress={() => console.log('Property pressed:', property.propertyId)}
                         onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
                       />
                     ))}

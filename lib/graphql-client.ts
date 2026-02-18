@@ -2,22 +2,18 @@
  * GraphQL Client for Mobile App
  * 
  * Provides a centralized way to execute GraphQL operations with:
- * - Automatic authentication handling
+ * - Automatic authentication handling via AWS Amplify
  * - Public (API Key) access
  * - Consistent error handling
  * - Type safety with generated types
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 // GraphQL Configuration
 const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 
   'https://pkqm7izcm5gm5hall3gc6o5dx4.appsync-api.us-west-2.amazonaws.com/graphql';
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY || 'da2-4kqoqw7d2jbndbilqiqpkypsve';
-
-// Storage keys
-const AUTH_TOKEN_KEY = '@ndotoni:authToken';
-const USER_KEY = '@ndotoni:user';
 
 /**
  * GraphQL Response type
@@ -33,21 +29,15 @@ interface GraphQLResponse<T> {
 }
 
 /**
- * Authentication state
- */
-interface AuthState {
-  token?: string;
-  user?: any;
-}
-
-/**
- * Get current authentication token
+ * Get current auth token from Amplify
  */
 async function getAuthToken(): Promise<string | null> {
   try {
-    return await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    const session = await fetchAuthSession();
+    const token = session.tokens?.idToken?.toString();
+    return token || null;
   } catch (error) {
-    console.error('[GraphQLClient] Error getting auth token:', error);
+    console.log('[GraphQLClient] No auth session:', error);
     return null;
   }
 }
@@ -184,47 +174,6 @@ export class GraphQLClient {
     } catch (error) {
       console.error('[GraphQLClient] Public request error:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Set authentication token (call after login)
-   */
-  static async setAuthToken(token: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
-    } catch (error) {
-      console.error('[GraphQLClient] Error setting auth token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Clear authentication token (call on logout)
-   */
-  static async clearAuthToken(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      await AsyncStorage.removeItem(USER_KEY);
-    } catch (error) {
-      console.error('[GraphQLClient] Error clearing auth token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get current authentication state
-   */
-  static async getAuthState(): Promise<AuthState> {
-    try {
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      const userJson = await AsyncStorage.getItem(USER_KEY);
-      const user = userJson ? JSON.parse(userJson) : null;
-      
-      return { token: token || undefined, user };
-    } catch (error) {
-      console.error('[GraphQLClient] Error getting auth state:', error);
-      return {};
     }
   }
 

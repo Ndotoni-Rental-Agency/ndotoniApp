@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 const { width } = Dimensions.get('window');
@@ -37,12 +38,24 @@ export default function PropertyCard({
   onFavoritePress,
   isFavorited = false,
 }: PropertyCardProps) {
+  const router = useRouter();
   const textColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({}, 'background');
   const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1f2937' }, 'background');
 
   const formatPrice = (amount: number) => {
     return amount.toLocaleString('en-US');
+  };
+
+  // Default navigation handler if none provided
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      // Navigate to property details based on rental type
+      const route = priceUnit === 'night' ? `/short-property/${propertyId}` : `/property/${propertyId}`;
+      router.push(route);
+    }
   };
 
   // Ensure all text values are strings
@@ -56,7 +69,7 @@ export default function PropertyCard({
   return (
     <TouchableOpacity 
       style={styles.card} 
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       {/* Property Image */}
