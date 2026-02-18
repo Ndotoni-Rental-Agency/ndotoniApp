@@ -38,6 +38,8 @@ export default function PropertyCard({
   isFavorited = false,
 }: PropertyCardProps) {
   const textColor = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1f2937' }, 'background');
 
   const formatPrice = (amount: number) => {
     return amount.toLocaleString('en-US');
@@ -66,8 +68,8 @@ export default function PropertyCard({
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Ionicons name="image-outline" size={48} color="#ccc" />
+          <View style={[styles.imagePlaceholder, { backgroundColor: cardBg }]}>
+            <Ionicons name="image-outline" size={48} color="#999" />
           </View>
         )}
         <TouchableOpacity 
@@ -91,8 +93,8 @@ export default function PropertyCard({
           </Text>
           {safeRating > 0 && (
             <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={12} color="#222" />
-              <Text style={styles.ratingText}>{safeRating.toFixed(1)}</Text>
+              <Ionicons name="star" size={12} color="#fbbf24" />
+              <Text style={[styles.ratingText, { color: textColor }]}>{safeRating.toFixed(1)}</Text>
             </View>
           )}
         </View>
@@ -134,7 +136,6 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: CARD_WIDTH * 1.1,
-    backgroundColor: '#f7f7f7',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -172,7 +173,6 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#222',
   },
   title: {
     fontSize: 14,

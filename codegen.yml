@@ -1,0 +1,87 @@
+overwrite: true
+schema: "./schema.graphql"
+documents: "./lib/graphql/**/*.graphql"
+generates:
+  lib/API.ts:
+    plugins:
+      - "typescript"
+    config:
+      scalars:
+        AWSDateTime: string
+        AWSDate: string
+        AWSJSON: string
+        AWSEmail: string
+        AWSPhone: string
+        AWSURL: string
+        AWSTimestamp: number
+        AWSIPAddress: string
+      enumsAsTypes: true
+      skipTypename: false
+      namingConvention:
+        typeNames: pascal-case#pascalCase
+        enumValues: upper-case#upperCase
+      declarationKind: interface
+  
+  lib/graphql/queries.ts:
+    plugins:
+      - "typescript-operations"
+    config:
+      scalars:
+        AWSDateTime: string
+        AWSDate: string
+        AWSJSON: string
+        AWSEmail: string
+        AWSPhone: string
+        AWSURL: string
+        AWSTimestamp: number
+        AWSIPAddress: string
+      enumsAsTypes: true
+      skipTypename: false
+      declarationKind: interface
+      preResolveTypes: true
+      namingConvention:
+        typeNames: pascal-case#pascalCase
+        enumValues: upper-case#upperCase
+  
+  lib/graphql/mutations.ts:
+    plugins:
+      - "typescript-operations"
+    config:
+      scalars:
+        AWSDateTime: string
+        AWSDate: string
+        AWSJSON: string
+        AWSEmail: string
+        AWSPhone: string
+        AWSURL: string
+        AWSTimestamp: number
+        AWSIPAddress: string
+      enumsAsTypes: true
+      skipTypename: false
+      declarationKind: interface
+      preResolveTypes: true
+      namingConvention:
+        typeNames: pascal-case#pascalCase
+        enumValues: upper-case#upperCase
+  
+  lib/graphql/subscriptions.ts:
+    plugins:
+      - "typescript-operations"
+    config:
+      scalars:
+        AWSDateTime: string
+        AWSDate: string
+        AWSJSON: string
+        AWSEmail: string
+        AWSPhone: string
+        AWSURL: string
+        AWSTimestamp: number
+        AWSIPAddress: string
+      enumsAsTypes: true
+      skipTypename: false
+      declarationKind: interface
+      preResolveTypes: true
+      namingConvention:
+        typeNames: pascal-case#pascalCase
+        enumValues: upper-case#upperCase
+

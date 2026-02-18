@@ -3,22 +3,26 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { RentalType } from '@/hooks/useRentalType';
 import SearchBar from '@/components/search/SearchBar';
+import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import PropertyCard from '@/components/property/PropertyCard';
-import { api } from '@/lib/api';
-
-type RentalType = 'LONG_TERM' | 'SHORT_TERM';
+import { api } from '@/lib/api-client';
 
 export default function HomeScreen() {
-  const [rentalType, setRentalType] = useState<RentalType>('LONG_TERM');
+  const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
   const [longTermProperties, setLongTermProperties] = useState<any>(null);
   const [shortTermProperties, setShortTermProperties] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchParams, setSearchParams] = useState<SearchParams>({});
   
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+  const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const borderColor = useThemeColor({ light: '#ebebeb', dark: '#374151' }, 'background');
 
   // Fetch properties on mount and when rental type changes
   useEffect(() => {
@@ -27,12 +31,12 @@ export default function HomeScreen() {
       setError(null);
       
       try {
-        if (rentalType === 'LONG_TERM' && !longTermProperties) {
+        if (rentalType === RentalType.LONG_TERM && !longTermProperties) {
           console.log('[HomeScreen] Fetching long-term properties...');
           const data = await api.fetchLongTermProperties();
           console.log('[HomeScreen] Long-term data received:', JSON.stringify(data, null, 2));
           setLongTermProperties(data);
-        } else if (rentalType === 'SHORT_TERM' && !shortTermProperties) {
+        } else if (rentalType === RentalType.SHORT_TERM && !shortTermProperties) {
           console.log('[HomeScreen] Fetching short-term properties...');
           const data = await api.fetchShortTermProperties();
           console.log('[HomeScreen] Short-term data received:', {
@@ -56,7 +60,7 @@ export default function HomeScreen() {
 
   // Get properties organized by category with headers
   const getPropertiesByCategory = () => {
-    if (rentalType === 'LONG_TERM') {
+    if (rentalType === RentalType.LONG_TERM) {
       return [
         {
           title: 'Best Prices',
@@ -87,10 +91,16 @@ export default function HomeScreen() {
 
   const categorizedProperties = getPropertiesByCategory();
 
+  const handleSearch = (params: SearchParams) => {
+    setSearchParams(params);
+    console.log('Search params:', params);
+    // TODO: Navigate to search results page with params
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       {/* Sticky Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
         <View style={styles.headerTop}>
           <Text style={[styles.logo, { color: tintColor }]}>ndotoni</Text>
           <View style={styles.headerIcons}>
@@ -104,43 +114,60 @@ export default function HomeScreen() {
         <View style={styles.rentalTypeTabs}>
           <TouchableOpacity 
             style={styles.rentalTypeTab}
-            onPress={() => setRentalType('LONG_TERM')}
+            onPress={() => setRentalType(RentalType.LONG_TERM)}
           >
             <Ionicons 
               name="home-outline" 
               size={18} 
-              color={rentalType === 'LONG_TERM' ? '#222' : '#717171'} 
+              color={rentalType === RentalType.LONG_TERM ? textColor : '#717171'} 
             />
             <Text style={[
               styles.rentalTypeText,
-              rentalType === 'LONG_TERM' && styles.rentalTypeTextActive
+              { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
+              rentalType === RentalType.LONG_TERM && styles.rentalTypeTextActive
             ]}>
               Monthly
             </Text>
-            {rentalType === 'LONG_TERM' && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
+            {rentalType === RentalType.LONG_TERM && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.rentalTypeTab}
-            onPress={() => setRentalType('SHORT_TERM')}
+            onPress={() => setRentalType(RentalType.SHORT_TERM)}
           >
             <Ionicons 
               name="moon-outline" 
               size={18} 
-              color={rentalType === 'SHORT_TERM' ? '#222' : '#717171'} 
+              color={rentalType === RentalType.SHORT_TERM ? textColor : '#717171'} 
             />
             <Text style={[
               styles.rentalTypeText,
-              rentalType === 'SHORT_TERM' && styles.rentalTypeTextActive
+              { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
+              rentalType === RentalType.SHORT_TERM && styles.rentalTypeTextActive
             ]}>
               Nightly
             </Text>
-            {rentalType === 'SHORT_TERM' && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
+            {rentalType === RentalType.SHORT_TERM && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
           </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
-        <SearchBar onPress={() => console.log('Search pressed')} />
+        <SearchBar 
+          onPress={() => setShowSearchModal(true)} 
+          rentalType={rentalType}
+          selectedLocation={searchParams.location?.displayName}
+          checkInDate={searchParams.checkInDate}
+          checkOutDate={searchParams.checkOutDate}
+          moveInDate={searchParams.moveInDate}
+        />
       </View>
+
+      {/* Search Modal */}
+      <SearchModal
+        visible={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        rentalType={rentalType}
+        onSearch={handleSearch}
+      />
 
       {/* Property Grid */}
       <ScrollView 
@@ -190,12 +217,12 @@ export default function HomeScreen() {
                         propertyId={property.propertyId}
                         title={property.title}
                         location={property.district || property.region}
-                        price={rentalType === 'LONG_TERM' ? property.monthlyRent : property.nightlyRate}
+                        price={rentalType === RentalType.LONG_TERM ? property.monthlyRent : property.nightlyRate}
                         currency={property.currency}
                         rating={property.averageRating}
                         thumbnail={property.thumbnail}
                         bedrooms={property.bedrooms || property.maxGuests}
-                        priceUnit={rentalType === 'LONG_TERM' ? 'month' : 'night'}
+                        priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
                         onPress={() => console.log('Property pressed:', property.propertyId)}
                         onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
                       />
@@ -221,9 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#ebebeb',
   },
   headerTop: {
     flexDirection: 'row',
@@ -263,10 +288,8 @@ const styles = StyleSheet.create({
   rentalTypeText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#717171',
   },
   rentalTypeTextActive: {
-    color: '#222',
     fontWeight: '600',
   },
   activeIndicator: {

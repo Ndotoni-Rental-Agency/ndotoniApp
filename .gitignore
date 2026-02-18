@@ -36,6 +36,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# GraphQL generated files (keep these in version control)
+# lib/API.ts
+# lib/graphql/
+
 app-example
 
 # generated native folders
