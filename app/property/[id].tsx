@@ -43,10 +43,14 @@ export default function LongTermPropertyDetailsScreen() {
   }, [propertyId]);
 
   useEffect(() => {
-    // Fetch coordinates if not available
-    if (property && !property.address?.coordinates) {
+    // Fetch coordinates if not available or if they're placeholder (0,0)
+    const hasValidCoordinates = property?.address?.coordinates && 
+      property.address.coordinates.latitude !== 0 && 
+      property.address.coordinates.longitude !== 0;
+      
+    if (property && !hasValidCoordinates) {
       fetchCoordinates();
-    } else if (property?.address?.coordinates) {
+    } else if (hasValidCoordinates) {
       setCoordinates(property.address.coordinates);
     }
   }, [property]);
@@ -55,15 +59,25 @@ export default function LongTermPropertyDetailsScreen() {
     if (!property) return;
 
     try {
-      const coords = await getApproximateCoordinates({
-        region: property.region,
-        district: property.district,
-        ward: property.ward,
-        street: property.street,
+      console.log('[LongTermProperty] Fetching coordinates for:', {
+        region: property.address?.region,
+        district: property.address?.district,
+        ward: property.address?.ward,
       });
+      
+      const coords = await getApproximateCoordinates({
+        region: property.address?.region || '',
+        district: property.address?.district || '',
+        ward: property.address?.ward,
+        street: property.address?.street,
+      });
+
+      console.log('[LongTermProperty] Coordinates result:', coords);
 
       if (coords) {
         setCoordinates(coords);
+      } else {
+        console.warn('[LongTermProperty] No coordinates returned');
       }
     } catch (err) {
       console.error('[LongTermProperty] Error fetching coordinates:', err);

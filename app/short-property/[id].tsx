@@ -44,10 +44,14 @@ export default function ShortTermPropertyDetailsScreen() {
   }, [propertyId]);
 
   useEffect(() => {
-    // Fetch coordinates if not available
-    if (property && !property.coordinates) {
+    // Fetch coordinates if not available or if they're placeholder (0,0)
+    const hasValidCoordinates = property?.coordinates && 
+      property.coordinates.latitude !== 0 && 
+      property.coordinates.longitude !== 0;
+      
+    if (property && !hasValidCoordinates) {
       fetchCoordinates();
-    } else if (property?.coordinates) {
+    } else if (hasValidCoordinates) {
       setCoordinates(property.coordinates);
     }
   }, [property]);
@@ -56,15 +60,25 @@ export default function ShortTermPropertyDetailsScreen() {
     if (!property) return;
 
     try {
-      const coords = await getApproximateCoordinates({
+      console.log('[ShortTermProperty] Fetching coordinates for:', {
         region: property.region,
         district: property.district,
-        ward: property.ward,
-        street: property.street,
+        ward: property.address?.ward,
       });
+      
+      const coords = await getApproximateCoordinates({
+        region: property.region || '',
+        district: property.district || '',
+        ward: property.address?.ward,
+        street: property.address?.street,
+      });
+
+      console.log('[ShortTermProperty] Coordinates result:', coords);
 
       if (coords) {
         setCoordinates(coords);
+      } else {
+        console.warn('[ShortTermProperty] No coordinates returned');
       }
     } catch (err) {
       console.error('[ShortTermProperty] Error fetching coordinates:', err);

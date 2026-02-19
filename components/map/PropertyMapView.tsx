@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -22,7 +22,8 @@ export default function PropertyMapView({
 }: PropertyMapViewProps) {
   const backgroundColor = useThemeColor({ light: '#f3f4f6', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#374151' }, 'background');
-  const isDark = useThemeColor({ light: false, dark: true }, 'background') as unknown as boolean;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Generate consistent offset for privacy (like Airbnb)
   const pinPosition = useMemo(() => {
@@ -47,13 +48,13 @@ export default function PropertyMapView({
         initialRegion={{
           latitude,
           longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
         }}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        pitchEnabled={false}
-        rotateEnabled={false}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
       >
         {/* Privacy circle */}
         <Circle

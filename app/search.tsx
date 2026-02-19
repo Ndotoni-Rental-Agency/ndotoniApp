@@ -50,14 +50,24 @@ export default function SearchScreen() {
       setError(null);
       
       if (isShortTerm) {
+        // For short-term, we need checkIn/checkOut dates and number of guests
+        // If not provided, use defaults (today to one month from today, 2 guests)
+        const today = new Date();
+        const oneMonthLater = new Date(today);
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+        
+        const defaultCheckIn = checkInDate || today.toISOString().split('T')[0];
+        const defaultCheckOut = checkOutDate || oneMonthLater.toISOString().split('T')[0];
+        
         const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
           searchShortTermProperties,
           {
             input: {
               region: region || 'Dar es Salaam',
               district,
-              checkInDate,
-              checkOutDate,
+              checkInDate: defaultCheckIn,
+              checkOutDate: defaultCheckOut,
+              numberOfGuests: 2, // Default to 2 guests
             }
           }
         );
