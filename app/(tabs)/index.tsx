@@ -18,10 +18,10 @@ export default function HomeScreen() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchParams, setSearchParams] = useState<SearchParams>({});
   
-  const backgroundColor = useThemeColor({}, 'background');
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const headerBg = backgroundColor; // Use same background as main content
   const borderColor = useThemeColor({ light: '#ebebeb', dark: '#374151' }, 'background');
 
   // Fetch properties on mount and when rental type changes
@@ -116,58 +116,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Sticky Header */}
+      {/* Sticky Header - Airbnb Style */}
       <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
-        <View style={styles.headerTop}>
-          <Text style={[styles.logo, { color: tintColor }]}>ndotoni</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={24} color={textColor} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Airbnb-style Rental Type Tabs */}
-        <View style={styles.rentalTypeTabs}>
-          <TouchableOpacity 
-            style={styles.rentalTypeTab}
-            onPress={() => setRentalType(RentalType.LONG_TERM)}
-          >
-            <Ionicons 
-              name="home-outline" 
-              size={18} 
-              color={rentalType === RentalType.LONG_TERM ? textColor : '#717171'} 
-            />
-            <Text style={[
-              styles.rentalTypeText,
-              { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
-              rentalType === RentalType.LONG_TERM && styles.rentalTypeTextActive
-            ]}>
-              Monthly
-            </Text>
-            {rentalType === RentalType.LONG_TERM && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.rentalTypeTab}
-            onPress={() => setRentalType(RentalType.SHORT_TERM)}
-          >
-            <Ionicons 
-              name="moon-outline" 
-              size={18} 
-              color={rentalType === RentalType.SHORT_TERM ? textColor : '#717171'} 
-            />
-            <Text style={[
-              styles.rentalTypeText,
-              { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
-              rentalType === RentalType.SHORT_TERM && styles.rentalTypeTextActive
-            ]}>
-              Nightly
-            </Text>
-            {rentalType === RentalType.SHORT_TERM && <View style={[styles.activeIndicator, { backgroundColor: tintColor }]} />}
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Bar */}
+        {/* Search Bar at Top */}
         <SearchBar 
           onPress={() => setShowSearchModal(true)} 
           rentalType={rentalType}
@@ -176,6 +127,36 @@ export default function HomeScreen() {
           checkOutDate={searchParams.checkOutDate}
           moveInDate={searchParams.moveInDate}
         />
+
+        {/* Airbnb-style Rental Type Tabs - Below Search */}
+        <View style={styles.rentalTypeTabs}>
+          <TouchableOpacity 
+            style={styles.rentalTypeTab}
+            onPress={() => setRentalType(RentalType.LONG_TERM)}
+          >
+            <Text style={[
+              styles.rentalTypeText,
+              { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
+              rentalType === RentalType.LONG_TERM && styles.rentalTypeTextActive
+            ]}>
+              Monthly
+            </Text>
+            {rentalType === RentalType.LONG_TERM && <View style={[styles.activeIndicator, { backgroundColor: textColor }]} />}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.rentalTypeTab}
+            onPress={() => setRentalType(RentalType.SHORT_TERM)}
+          >
+            <Text style={[
+              styles.rentalTypeText,
+              { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
+              rentalType === RentalType.SHORT_TERM && styles.rentalTypeTextActive
+            ]}>
+              Nightly
+            </Text>
+            {rentalType === RentalType.SHORT_TERM && <View style={[styles.activeIndicator, { backgroundColor: textColor }]} />}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Modal */}
@@ -184,6 +165,7 @@ export default function HomeScreen() {
         onClose={() => setShowSearchModal(false)}
         rentalType={rentalType}
         onSearch={handleSearch}
+        onRentalTypeChange={setRentalType}
       />
 
       {/* Property Grid */}
@@ -221,9 +203,6 @@ export default function HomeScreen() {
                     <Text style={[styles.sectionTitle, { color: textColor }]}>
                       {section.title}
                     </Text>
-                    <TouchableOpacity>
-                      <Text style={[styles.seeAllText, { color: tintColor }]}>See all</Text>
-                    </TouchableOpacity>
                   </View>
 
                   {/* Property Grid */}
@@ -247,11 +226,6 @@ export default function HomeScreen() {
                 </View>
               )
             ))}
-
-            {/* Load More */}
-            <TouchableOpacity style={styles.loadMoreButton}>
-              <Text style={styles.loadMoreText}>Show more</Text>
-            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -265,41 +239,19 @@ const styles = StyleSheet.create({
   },
   header: {
     borderBottomWidth: 1,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  iconButton: {
-    padding: 8,
   },
   rentalTypeTabs: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 20,
-    gap: 32,
-    marginBottom: 12,
+    gap: 24,
+    paddingBottom: 12,
   },
   rentalTypeTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 4,
     position: 'relative',
-    gap: 6,
   },
   rentalTypeText: {
     fontSize: 16,

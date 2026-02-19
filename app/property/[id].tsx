@@ -18,17 +18,18 @@ import GraphQLClient from '@/lib/graphql-client';
 import { getProperty } from '@/lib/graphql/queries';
 import PropertyMapView from '@/components/map/PropertyMapView';
 import { getApproximateCoordinates, CoordinatesInput } from '@/lib/geocoding';
+import { Property } from '@/lib/API';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LongTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const [property, setProperty] = useState<any>(null);
+  const [property, setProperty] = useState<Property>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [coordinates, setCoordinates] = useState<CoordinatesInput | null>(null);
+  const [coordinates, setCoordinates] = useState<CoordinatesInput | null | undefined>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -68,8 +69,8 @@ export default function LongTermPropertyDetailsScreen() {
       const coords = await getApproximateCoordinates({
         region: property.address?.region || '',
         district: property.address?.district || '',
-        ward: property.address?.ward,
-        street: property.address?.street,
+        ward: property.address?.ward ?? '',
+        street: property.address?.street ?? '',
       });
 
       console.log('[LongTermProperty] Coordinates result:', coords);
@@ -91,7 +92,7 @@ export default function LongTermPropertyDetailsScreen() {
 
       console.log('[LongTermProperty] Fetching from GraphQL:', propertyId);
       
-      const data = await GraphQLClient.executePublic<{ getProperty: any }>(
+      const data = await GraphQLClient.executePublic<{ getProperty: Property }>(
         getProperty,
         { propertyId }
       );
@@ -222,57 +223,20 @@ export default function LongTermPropertyDetailsScreen() {
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={16} color="#666" />
               <Text style={styles.locationText}>
-                {property.district}, {property.region}
+                {property.address.district}, {property.address.region}
               </Text>
             </View>
-            {property.averageRating && property.averageRating > 0 && (
+            {property.pricing && property.pricing.monthlyRent > 0 && (
               <View style={styles.ratingRow}>
-                <Ionicons name="star" size={16} color="#fbbf24" />
                 <Text style={[styles.ratingText, { color: textColor }]}>
-                  {property.averageRating.toFixed(1)}
+                  {formatPrice(property.pricing.monthlyRent, property.pricing.currency)}
                 </Text>
-                {property.ratingSummary?.totalReviews && (
-                  <Text style={styles.reviewsText}>
-                    ({property.ratingSummary.totalReviews} reviews)
-                  </Text>
-                )}
               </View>
             )}
           </View>
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
-          {/* Property Features */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Property Details</Text>
-            <View style={styles.featuresGrid}>
-              <View style={styles.featureItem}>
-                <Ionicons name="people-outline" size={20} color={tintColor} />
-                <Text style={[styles.featureText, { color: textColor }]}>
-                  {property.maxGuests} guests
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="calendar-outline" size={20} color={tintColor} />
-                <Text style={[styles.featureText, { color: textColor }]}>
-                  {property.minimumStay} night min
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="time-outline" size={20} color={tintColor} />
-                <Text style={[styles.featureText, { color: textColor }]}>
-                  Check-in: {property.checkInTime}
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="time-outline" size={20} color={tintColor} />
-                <Text style={[styles.featureText, { color: textColor }]}>
-                  Check-out: {property.checkOutTime}
-                </Text>
-              </View>
-            </View>
-          </View>
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -290,23 +254,6 @@ export default function LongTermPropertyDetailsScreen() {
             </>
           )}
 
-          {/* Map View */}
-          {coordinates && (
-            <>
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: textColor }]}>Location</Text>
-                <PropertyMapView
-                  latitude={coordinates.latitude}
-                  longitude={coordinates.longitude}
-                  title={property.title}
-                />
-                <Text style={styles.mapDisclaimer}>
-                  Approximate location shown for privacy
-                </Text>
-              </View>
-              <View style={[styles.divider, { backgroundColor: borderColor }]} />
-            </>
-          )}
 
           {/* Amenities */}
           {property.amenities && property.amenities.length > 0 && (
@@ -314,7 +261,7 @@ export default function LongTermPropertyDetailsScreen() {
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: textColor }]}>Amenities</Text>
                 <View style={styles.amenitiesList}>
-                  {property.amenities.slice(0, 6).map((amenity: string, index: number) => (
+                  {property.amenities.slice(0, 6).map((amenity: string | null, index: number) => (
                     <View key={index} style={styles.amenityItem}>
                       <Ionicons name="checkmark-circle" size={20} color={tintColor} />
                       <Text style={[styles.amenityText, { color: textColor }]}>{amenity}</Text>
@@ -333,40 +280,40 @@ export default function LongTermPropertyDetailsScreen() {
             </>
           )}
 
-          {/* House Rules */}
-          {property.houseRules && property.houseRules.length > 0 && (
+                    {/* Map View */}
+          {coordinates && (
             <>
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: textColor }]}>House Rules</Text>
-                <View style={styles.rulesList}>
-                  {property.houseRules.map((rule: string, index: number) => (
-                    <View key={index} style={styles.ruleItem}>
-                      <Ionicons name="information-circle-outline" size={20} color="#666" />
-                      <Text style={[styles.ruleText, { color: textColor }]}>{rule}</Text>
-                    </View>
-                  ))}
-                </View>
+                <Text style={[styles.sectionTitle, { color: textColor }]}>Location</Text>
+                <PropertyMapView
+                  latitude={coordinates.latitude}
+                  longitude={coordinates.longitude}
+                  title={property.title}
+                />
+                <Text style={styles.mapDisclaimer}>
+                  Approximate location shown for privacy
+                </Text>
               </View>
               <View style={[styles.divider, { backgroundColor: borderColor }]} />
             </>
           )}
 
           {/* Host Info */}
-          {property.host && (
+          {property.landlord && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: textColor }]}>Hosted by</Text>
               <View style={styles.hostInfo}>
                 <View style={[styles.hostAvatar, { backgroundColor: tintColor }]}>
                   <Text style={styles.hostInitials}>
-                    {property.host.firstName?.[0]}{property.host.lastName?.[0]}
+                    {property.landlord.firstName?.[0]}{property.landlord.lastName?.[0]}
                   </Text>
                 </View>
                 <View style={styles.hostDetails}>
                   <Text style={[styles.hostName, { color: textColor }]}>
-                    {property.host.firstName} {property.host.lastName}
+                    {property.landlord.firstName} {property.landlord.lastName}
                   </Text>
-                  {property.host.whatsappNumber && (
-                    <Text style={styles.hostContact}>{property.host.whatsappNumber}</Text>
+                  {property.landlord.whatsappNumber && (
+                    <Text style={styles.hostContact}>{property.landlord.whatsappNumber}</Text>
                   )}
                 </View>
               </View>
@@ -380,17 +327,19 @@ export default function LongTermPropertyDetailsScreen() {
 
       {/* Bottom Booking Bar */}
       <View style={[styles.bottomBar, { backgroundColor: headerBg, borderTopColor: borderColor }]}>
+        {property.pricing && property.pricing.monthlyRent > 0 &&
         <View style={styles.priceContainer}>
           <Text style={[styles.price, { color: textColor }]}>
-            {formatPrice(property.monthlyRent, property.currency)}
+            {formatPrice(property.pricing.monthlyRent, property.pricing.currency)}
           </Text>
           <Text style={styles.priceUnit}>per month</Text>
         </View>
+        }
         <TouchableOpacity
           style={[styles.bookButton, { backgroundColor: tintColor }]}
           onPress={() => console.log('Apply')}
         >
-          <Text style={styles.bookButtonText}>Apply</Text>
+          <Text style={styles.bookButtonText}>Contact Agent</Text>
         </TouchableOpacity>
       </View>
     </View>

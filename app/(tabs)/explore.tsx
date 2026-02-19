@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -7,10 +15,26 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  
+
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+
+  // Added semantic colors
+  const cardColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#1C1C1E' },
+    'background'
+  );
+
+  const inputColor = useThemeColor(
+    { light: '#F2F2F7', dark: '#2C2C2E' },
+    'background'
+  );
+
+  const secondaryText = useThemeColor(
+    { light: '#6B7280', dark: '#9CA3AF' },
+    'text'
+  );
 
   const regions = [
     'Dar es Salaam',
@@ -34,22 +58,34 @@ export default function ExploreScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: textColor }]}>Explore</Text>
+          <Text style={[styles.subtitle, { color: secondaryText }]}>
+            Find your next home in Tanzania
+          </Text>
         </View>
 
-        {/* Search Bar */}
+        {/* Search */}
         <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <View style={[styles.searchBar, { backgroundColor: inputColor }]}>
+            <Ionicons
+              name="search"
+              size={20}
+              color={secondaryText}
+              style={styles.searchIcon}
+            />
             <TextInput
-              style={styles.searchInput}
-              placeholder="Search location, property type..."
-              placeholderTextColor="#999"
+              style={[styles.searchInput, { color: textColor }]}
+              placeholder="Search location or property..."
+              placeholderTextColor={secondaryText}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#666" />
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={secondaryText}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -57,81 +93,85 @@ export default function ExploreScreen() {
 
         {/* Regions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Popular Regions</Text>
-          <View style={styles.regionGrid}>
-            {regions.map((region) => (
+          <Text style={[styles.sectionTitle, { color: textColor }]}>
+            Popular Regions
+          </Text>
+
+          <View style={styles.grid}>
+            {regions.map((region) => {
+              const selected = selectedRegion === region;
+
+              return (
+                <TouchableOpacity
+                  key={region}
+                  style={[
+                    styles.regionCard,
+                    {
+                      backgroundColor: selected ? tintColor : cardColor,
+                    },
+                  ]}
+                  onPress={() =>
+                    setSelectedRegion(selected ? null : region)
+                  }
+                >
+                  <Ionicons
+                    name="location"
+                    size={20}
+                    color={selected ? '#fff' : tintColor}
+                  />
+                  <Text
+                    style={[
+                      styles.regionText,
+                      {
+                        color: selected ? '#fff' : textColor,
+                      },
+                    ]}
+                  >
+                    {region}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Property Types */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>
+            Property Types
+          </Text>
+
+          <View style={styles.grid}>
+            {propertyTypes.map((type) => (
               <TouchableOpacity
-                key={region}
-                style={[
-                  styles.regionCard,
-                  selectedRegion === region && { backgroundColor: tintColor }
-                ]}
-                onPress={() => setSelectedRegion(region === selectedRegion ? null : region)}
+                key={type.id}
+                style={[styles.typeCard, { backgroundColor: cardColor }]}
               >
-                <Ionicons 
-                  name="location" 
-                  size={24} 
-                  color={selectedRegion === region ? '#fff' : tintColor} 
-                />
-                <Text style={[
-                  styles.regionText,
-                  { color: selectedRegion === region ? '#fff' : textColor }
-                ]}>
-                  {region}
+                <View
+                  style={[
+                    styles.typeIcon,
+                    { backgroundColor: tintColor + '20' },
+                  ]}
+                >
+                  <Ionicons
+                    name={type.icon as any}
+                    size={28}
+                    color={tintColor}
+                  />
+                </View>
+                <Text style={[styles.typeText, { color: textColor }]}>
+                  {type.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Property Types */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Property Types</Text>
-          <View style={styles.typeGrid}>
-            {propertyTypes.map((type) => (
-              <TouchableOpacity key={type.id} style={styles.typeCard}>
-                <View style={[styles.typeIcon, { backgroundColor: tintColor }]}>
-                  <Ionicons name={type.icon as any} size={32} color="#fff" />
-                </View>
-                <Text style={[styles.typeText, { color: textColor }]}>{type.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Filters */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Filters</Text>
-          <View style={styles.filterContainer}>
-            <TouchableOpacity style={styles.filterButton}>
-              <Ionicons name="pricetag" size={18} color={tintColor} />
-              <Text style={[styles.filterText, { color: textColor }]}>Price Range</Text>
-              <Ionicons name="chevron-down" size={18} color="#666" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.filterButton}>
-              <Ionicons name="bed" size={18} color={tintColor} />
-              <Text style={[styles.filterText, { color: textColor }]}>Bedrooms</Text>
-              <Ionicons name="chevron-down" size={18} color="#666" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.filterButton}>
-              <Ionicons name="water" size={18} color={tintColor} />
-              <Text style={[styles.filterText, { color: textColor }]}>Bathrooms</Text>
-              <Ionicons name="chevron-down" size={18} color="#666" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.filterButton}>
-              <Ionicons name="options" size={18} color={tintColor} />
-              <Text style={[styles.filterText, { color: textColor }]}>More Filters</Text>
-              <Ionicons name="chevron-down" size={18} color="#666" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Apply Button */}
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.applyButton, { backgroundColor: tintColor }]}>
+          <TouchableOpacity
+            style={[styles.applyButton, { backgroundColor: tintColor }]}
+          >
             <Text style={styles.applyButtonText}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
@@ -141,140 +181,131 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
   },
+
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 34,
+    fontWeight: '700',
   },
+
+  subtitle: {
+    marginTop: 6,
+    fontSize: 15,
+  },
+
   searchSection: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    marginBottom: 8,
   },
+
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 14,
   },
+
   searchIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
+
   searchInput: {
     flex: 1,
     fontSize: 16,
   },
+
   section: {
-    paddingVertical: 16,
+    paddingVertical: 18,
   },
+
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  regionGrid: {
+
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
+
   regionCard: {
     width: '47%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 18,
     padding: 16,
     margin: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
+
   regionText: {
     fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
   },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-  },
+
   typeCard: {
     width: '47%',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 20,
+    padding: 22,
     margin: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
+
   typeIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   typeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
-  filterContainer: {
-    paddingHorizontal: 20,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  filterText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 12,
-  },
+
   applyButton: {
     marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 18,
+    borderRadius: 20,
+    paddingVertical: 18,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
+
   applyButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
   },
 });

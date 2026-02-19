@@ -22,11 +22,11 @@ export default function SearchBar({
   checkOutDate,
   moveInDate,
 }: SearchBarProps) {
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const textColor = useThemeColor({}, 'text');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const cardBg = backgroundColor; // Use same background as main screen
   const borderColor = useThemeColor({ light: '#ddd', dark: '#374151' }, 'background');
   const iconColor = useThemeColor({ light: '#222', dark: '#e5e7eb' }, 'text');
-  const filterBg = useThemeColor({ light: '#f7f7f7', dark: '#374151' }, 'background');
   
   const isShortTerm = rentalType === RentalType.SHORT_TERM;
   
@@ -60,9 +60,6 @@ export default function SearchBar({
         </Text>
         <Text style={styles.searchSubtitle}>{getSubtitle()}</Text>
       </View>
-      <View style={[styles.filterButton, { backgroundColor: filterBg, borderColor }]}>
-        <Ionicons name="options-outline" size={20} color={iconColor} />
-      </View>
     </TouchableOpacity>
   );
 }
@@ -71,17 +68,18 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 30,
+    paddingVertical: 14,
+    borderRadius: 32,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
   searchContent: {
     flex: 1,
@@ -95,13 +93,5 @@ const styles = StyleSheet.create({
   searchSubtitle: {
     fontSize: 12,
     color: '#717171',
-  },
-  filterButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
   },
 });

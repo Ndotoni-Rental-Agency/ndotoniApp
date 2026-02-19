@@ -28,6 +28,7 @@ interface SearchModalProps {
   onClose: () => void;
   rentalType: RentalType;
   onSearch: (params: SearchParams) => void;
+  onRentalTypeChange?: (type: RentalType) => void;
 }
 
 export interface SearchParams {
@@ -42,6 +43,7 @@ export default function SearchModal({
   onClose,
   rentalType,
   onSearch,
+  onRentalTypeChange,
 }: SearchModalProps) {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<'location' | 'dates'>('location');
@@ -211,9 +213,41 @@ export default function SearchModal({
                   <Ionicons name="close" size={20} color={closeIconColor} />
                 </View>
               </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: textColor }]}>
-                {isShortTerm ? 'Find a stay' : 'Find a rental'}
-              </Text>
+              
+              {/* Rental Type Tabs in Modal */}
+              <View style={styles.headerTabs}>
+                <TouchableOpacity 
+                  style={styles.headerTab}
+                  onPress={() => onRentalTypeChange?.(RentalType.LONG_TERM)}
+                >
+                  <Text style={[
+                    styles.headerTabText,
+                    { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
+                    rentalType === RentalType.LONG_TERM && styles.headerTabTextActive
+                  ]}>
+                    Monthly
+                  </Text>
+                  {rentalType === RentalType.LONG_TERM && (
+                    <View style={[styles.headerTabIndicator, { backgroundColor: textColor }]} />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.headerTab}
+                  onPress={() => onRentalTypeChange?.(RentalType.SHORT_TERM)}
+                >
+                  <Text style={[
+                    styles.headerTabText,
+                    { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
+                    rentalType === RentalType.SHORT_TERM && styles.headerTabTextActive
+                  ]}>
+                    Nightly
+                  </Text>
+                  {rentalType === RentalType.SHORT_TERM && (
+                    <View style={[styles.headerTabIndicator, { backgroundColor: textColor }]} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              
               <View style={{ width: 40 }} />
             </View>
 
@@ -427,6 +461,16 @@ export default function SearchModal({
                           <Text style={styles.helperText}>Select check-in date first</Text>
                         )}
                       </View>
+
+                      {/* Search Button - Show after checkout date selected */}
+                        <TouchableOpacity
+                          style={[styles.inlineSearchButton, { backgroundColor: tintColor }]}
+                          onPress={handleSearch}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="search" size={18} color="#fff" />
+                          <Text style={styles.searchButtonText}>Search</Text>
+                        </TouchableOpacity>
                     </>
                   ) : (
                     <>
@@ -458,23 +502,21 @@ export default function SearchModal({
                           When would you like to move in?
                         </Text>
                       </View>
+
+                      {/* Search Button - Show after move-in date selected or allow search without date */}
+                      <TouchableOpacity
+                        style={[styles.inlineSearchButton, { backgroundColor: tintColor }]}
+                        onPress={handleSearch}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="search" size={18} color="#fff" />
+                        <Text style={styles.searchButtonText}>Search</Text>
+                      </TouchableOpacity>
                     </>
                   )}
                 </View>
               )}
             </ScrollView>
-
-            {/* Footer Actions */}
-            <View style={[styles.footer, { borderTopColor: footerBorder, backgroundColor: cardBg }]}>
-              <TouchableOpacity
-                style={[styles.searchButton, { backgroundColor: tintColor }]}
-                onPress={handleSearch}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="search" size={18} color="#fff" />
-                <Text style={styles.searchButtonText}>Search</Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Date Picker */}
             {showDatePicker && Platform.OS === 'ios' && (
@@ -613,6 +655,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerTabs: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  headerTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    position: 'relative',
+  },
+  headerTabText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  headerTabTextActive: {
+    fontWeight: '600',
+  },
+  headerTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 1,
   },
   headerTitle: {
     fontSize: 20,
@@ -780,12 +846,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 4,
   },
-  footer: {
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
-    borderTopWidth: 1,
-  },
-  searchButton: {
+  inlineSearchButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -798,7 +859,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
-    width: '100%',
+    marginTop: 32,
+    marginBottom: 40,
   },
   searchButtonText: {
     color: '#fff',
