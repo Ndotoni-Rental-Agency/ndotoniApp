@@ -1,60 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import SignInModal from '@/components/auth/SignInModal';
+import SignUpModal from '@/components/auth/SignUpModal';
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
+import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
+import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 
 export default function ProfileScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
   
-  const { user, isAuthenticated, isLoading, signIn, signUp, signOut } = useAuth();
+  const { user, isAuthenticated, isLoading, signOut } = useAuth();
   
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSignIn = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await signIn(email, password);
-      Alert.alert('Success', 'Signed in successfully!');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Sign in failed');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    if (!email || !password || !firstName || !lastName || !phoneNumber) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await signUp({ email, password, firstName, lastName, phoneNumber });
-      if (result.requiresVerification) {
-        Alert.alert('Success', 'Account created! Please check your email to verify your account.');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Sign up failed');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -81,98 +52,122 @@ export default function ProfileScreen() {
     );
   }
 
-  // Show authentication form if not authenticated
+  // Show authentication screen if not authenticated
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.authContainer}>
-          <View style={styles.authHeader}>
-            <Text style={[styles.authTitle, { color: textColor }]}>
-              {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+        <View style={styles.unauthContainer}>
+          {/* Header */}
+          <View style={styles.unauthHeader}>
+            <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
+              <Ionicons name="person" size={48} color={tintColor} />
+            </View>
+            <Text style={[styles.unauthTitle, { color: textColor }]}>
+              Welcome to Ndotoni
             </Text>
-            <Text style={styles.authSubtitle}>
-              {authMode === 'signin' 
-                ? 'Welcome back! Sign in to continue' 
-                : 'Join us to find your perfect rental'}
+            <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
+              Sign in or create an account to access your profile, bookings, and more
             </Text>
           </View>
 
-          <View style={styles.authForm}>
-            {authMode === 'signup' && (
-              <>
-                <TextInput
-                  style={[styles.input, { color: textColor }]}
-                  placeholder="First Name"
-                  placeholderTextColor="#999"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoCapitalize="words"
-                />
-                <TextInput
-                  style={[styles.input, { color: textColor }]}
-                  placeholder="Last Name"
-                  placeholderTextColor="#999"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  autoCapitalize="words"
-                />
-                <TextInput
-                  style={[styles.input, { color: textColor }]}
-                  placeholder="Phone Number"
-                  placeholderTextColor="#999"
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  keyboardType="phone-pad"
-                />
-              </>
-            )}
-            
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              placeholder="Email"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              placeholder="Password"
-              placeholderTextColor="#999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-
+          {/* Action Buttons */}
+          <View style={styles.authButtons}>
             <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: tintColor }]}
-              onPress={authMode === 'signin' ? handleSignIn : handleSignUp}
-              disabled={isSubmitting}
+              style={[styles.primaryButton, { backgroundColor: tintColor }]}
+              onPress={() => setShowSignInModal(true)}
             >
-              {isSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>
-                  {authMode === 'signin' ? 'Sign In' : 'Sign Up'}
-                </Text>
-              )}
+              <Text style={styles.primaryButtonText}>Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.switchModeButton}
-              onPress={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}
+              style={[styles.secondaryButton, { borderColor: tintColor }]}
+              onPress={() => setShowSignUpModal(true)}
             >
-              <Text style={[styles.switchModeText, { color: tintColor }]}>
-                {authMode === 'signin' 
-                  ? "Don't have an account? Sign Up" 
-                  : 'Already have an account? Sign In'}
+              <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
+                Create Account
               </Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          {/* Features */}
+          <View style={styles.features}>
+            <View style={styles.featureItem}>
+              <Ionicons name="home" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                Save your favorite properties
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="calendar" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                Manage your bookings
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="chatbubbles" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                Message property owners
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Modals */}
+        <SignInModal
+          visible={showSignInModal}
+          onClose={() => setShowSignInModal(false)}
+          onSwitchToSignUp={() => {
+            setShowSignInModal(false);
+            setShowSignUpModal(true);
+          }}
+          onForgotPassword={() => {
+            setShowSignInModal(false);
+            setShowForgotPasswordModal(true);
+          }}
+          onNeedsVerification={(email) => {
+            setPendingEmail(email);
+            setShowVerifyEmailModal(true);
+          }}
+        />
+        <SignUpModal
+          visible={showSignUpModal}
+          onClose={() => setShowSignUpModal(false)}
+          onSwitchToSignIn={() => {
+            setShowSignUpModal(false);
+            setShowSignInModal(true);
+          }}
+          onNeedsVerification={(email) => {
+            setPendingEmail(email);
+            setShowVerifyEmailModal(true);
+          }}
+        />
+        <ForgotPasswordModal
+          visible={showForgotPasswordModal}
+          onClose={() => setShowForgotPasswordModal(false)}
+          onCodeSent={(email) => {
+            setPendingEmail(email);
+            setShowForgotPasswordModal(false);
+            setShowResetPasswordModal(true);
+          }}
+        />
+        <VerifyEmailModal
+          visible={showVerifyEmailModal}
+          onClose={() => setShowVerifyEmailModal(false)}
+          email={pendingEmail}
+          onVerified={() => {
+            setShowVerifyEmailModal(false);
+            setShowSignInModal(true);
+          }}
+        />
+        <ResetPasswordModal
+          visible={showResetPasswordModal}
+          onClose={() => setShowResetPasswordModal(false)}
+          email={pendingEmail}
+          onReset={() => {
+            setShowResetPasswordModal(false);
+            setShowSignInModal(true);
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -202,7 +197,7 @@ export default function ProfileScreen() {
           <Text style={[styles.name, { color: textColor }]}>
             {user?.firstName} {user?.lastName}
           </Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={[styles.email, { color: secondaryText }]}>{user?.email}</Text>
           <TouchableOpacity style={[styles.editButton, { borderColor: tintColor }]}>
             <Text style={[styles.editButtonText, { color: tintColor }]}>Edit Profile</Text>
           </TouchableOpacity>
@@ -211,7 +206,10 @@ export default function ProfileScreen() {
         {/* Menu Items */}
         <View style={styles.menuSection}>
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem}>
+            <TouchableOpacity 
+              key={item.id} 
+              style={[styles.menuItem, { backgroundColor: cardBg, borderColor }]}
+            >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${tintColor}20` }]}>
                   <Ionicons name={item.icon as any} size={24} color={tintColor} />
@@ -224,7 +222,7 @@ export default function ProfileScreen() {
                     <Text style={styles.badgeText}>{item.badge}</Text>
                   </View>
                 )}
-                <Ionicons name="chevron-forward" size={20} color="#666" />
+                <Ionicons name="chevron-forward" size={20} color={secondaryText} />
               </View>
             </TouchableOpacity>
           ))}
@@ -232,7 +230,10 @@ export default function ProfileScreen() {
 
         {/* Sign Out */}
         <View style={styles.signOutSection}>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <TouchableOpacity 
+            style={[styles.signOutButton, { backgroundColor: cardBg, borderColor }]} 
+            onPress={handleSignOut}
+          >
             <Ionicons name="log-out" size={20} color="#ef4444" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -240,7 +241,7 @@ export default function ProfileScreen() {
 
         {/* App Version */}
         <View style={styles.versionSection}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={[styles.versionText, { color: secondaryText }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -256,52 +257,70 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  authContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
+  unauthContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
   },
-  authHeader: {
-    marginBottom: 32,
+  unauthHeader: {
+    alignItems: 'center',
+    marginBottom: 48,
   },
-  authTitle: {
-    fontSize: 32,
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  unauthTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  authSubtitle: {
+  unauthSubtitle: {
     fontSize: 16,
-    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  authForm: {
+  authButtons: {
     gap: 16,
+    marginBottom: 48,
   },
-  input: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-  },
-  submitButton: {
+  primaryButton: {
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
   },
-  submitButtonText: {
+  primaryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  switchModeButton: {
-    paddingVertical: 12,
+  secondaryButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 2,
+    backgroundColor: 'transparent',
   },
-  switchModeText: {
-    fontSize: 14,
-    fontWeight: '500',
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  features: {
+    gap: 24,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  featureText: {
+    fontSize: 16,
+    flex: 1,
   },
   profileHeader: {
     alignItems: 'center',
@@ -328,7 +347,6 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 16,
   },
   editButton: {
@@ -348,17 +366,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 16,
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -403,14 +416,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
     paddingVertical: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
   },
   signOutText: {
     fontSize: 16,
@@ -424,6 +432,5 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 14,
-    color: '#999',
   },
 });

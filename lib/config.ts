@@ -8,8 +8,8 @@ export const amplifyConfig = {
         oauth: {
           domain: process.env.EXPO_PUBLIC_COGNITO_DOMAIN || 'rental-app-dev-055929692194.auth.us-west-2.amazoncognito.com',
           scopes: ['openid', 'email', 'profile'],
-          redirectSignIn: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotoni://'],
-          redirectSignOut: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotoni://'],
+          redirectSignIn: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotoniapp://'],
+          redirectSignOut: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotoniapp://'],
           responseType: 'code'
         }
       }
@@ -32,3 +32,6 @@ export const CACHE_URLS = {
   shortTermHomepage: process.env.EXPO_PUBLIC_SHORT_TERM_CACHE_URL || 'https://d2rvqxqxqxqxqx.cloudfront.net/short-term-homepage.json',
   longTermHomepage: process.env.EXPO_PUBLIC_LONG_TERM_CACHE_URL || 'https://d2rvqxqxqxqxqx.cloudfront.net/long-term-homepage.json',
 };
+
+// Google Maps API Key
+export const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w';

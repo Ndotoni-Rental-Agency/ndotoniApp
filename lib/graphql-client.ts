@@ -9,6 +9,7 @@
  */
 
 import { fetchAuthSession } from 'aws-amplify/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // GraphQL Configuration
 const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 
@@ -29,17 +30,32 @@ interface GraphQLResponse<T> {
 }
 
 /**
- * Get current auth token from Amplify
+ * Get current auth token from Amplify or AsyncStorage (for OAuth)
  */
 async function getAuthToken(): Promise<string | null> {
   try {
+    // First try to get token from Amplify session
     const session = await fetchAuthSession();
     const token = session.tokens?.idToken?.toString();
-    return token || null;
+    if (token) {
+      return token;
+    }
   } catch (error) {
-    console.log('[GraphQLClient] No auth session:', error);
-    return null;
+    console.log('[GraphQLClient] No Amplify session:', error);
   }
+  
+  // Fallback to OAuth token stored in AsyncStorage
+  try {
+    const oauthToken = await AsyncStorage.getItem('@ndotoni:oauth_id_token');
+    if (oauthToken) {
+      console.log('[GraphQLClient] Using OAuth token from AsyncStorage');
+      return oauthToken;
+    }
+  } catch (error) {
+    console.log('[GraphQLClient] No OAuth token in AsyncStorage:', error);
+  }
+  
+  return null;
 }
 
 /**
@@ -155,6 +171,8 @@ export class GraphQLClient {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[GraphQLClient] HTTP error:', response.status, errorText);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -162,17 +180,18 @@ export class GraphQLClient {
 
       if (result.errors && result.errors.length > 0) {
         const error = result.errors[0];
-        console.error('[GraphQLClient] GraphQL errors:', result.errors);
+        console.error('[GraphQLClient] GraphQL error:', error.message);
         throw new Error(error.message || 'GraphQL request failed');
       }
 
       if (!result.data) {
+        console.error('[GraphQLClient] No data in response');
         throw new Error('No data returned from GraphQL request');
       }
 
       return result.data;
     } catch (error) {
-      console.error('[GraphQLClient] Public request error:', error);
+      console.error('[GraphQLClient] Public request error:', (error as any)?.message || 'Unknown');
       throw error;
     }
   }

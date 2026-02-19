@@ -194,6 +194,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (input: SignUpInput): Promise<{ requiresVerification?: boolean }> => {
     try {
+      console.log('[AuthContext] Starting signUp');
+      
       // Use custom GraphQL mutation for sign up
       const authData = await AuthBridge.signUpWithCustom(input);
 
@@ -204,12 +206,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Backend returns { success: true, message: "..." } for successful signup
       if (authData.success) {
+        console.log('[AuthContext] Sign up successful, requires verification');
         return { requiresVerification: true };
       }
 
       // If success is false or undefined, something went wrong
       throw new Error(authData.message || 'Sign up failed');
     } catch (error) {
+      console.error('[AuthContext] signUp error:', (error as any)?.message || 'Unknown');
       // Re-throw the original error to preserve its structure
       throw error;
     }
@@ -237,13 +241,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithSocial = async (provider: 'google' | 'facebook') => {
     try {
+      let authData;
       if (provider === 'google') {
-        await AuthBridge.signInWithGoogle();
+        authData = await AuthBridge.signInWithGoogle();
       } else {
-        await AuthBridge.signInWithFacebook();
+        authData = await AuthBridge.signInWithFacebook();
       }
       
-      // The redirect will happen automatically
+      if (authData?.user) {
+        await storeAuthData(authData.user);
+      }
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Social sign in failed');
       throw new Error(errorMessage);

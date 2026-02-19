@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import GraphQLClient from '@/lib/graphql-client';
 import { getProperty } from '@/lib/graphql/queries';
+import PropertyMapView from '@/components/map/PropertyMapView';
+import { getApproximateCoordinates, CoordinatesInput } from '@/lib/geocoding';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -26,6 +28,7 @@ export default function LongTermPropertyDetailsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [coordinates, setCoordinates] = useState<CoordinatesInput | null>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -38,6 +41,34 @@ export default function LongTermPropertyDetailsScreen() {
   useEffect(() => {
     fetchPropertyDetails();
   }, [propertyId]);
+
+  useEffect(() => {
+    // Fetch coordinates if not available
+    if (property && !property.address?.coordinates) {
+      fetchCoordinates();
+    } else if (property?.address?.coordinates) {
+      setCoordinates(property.address.coordinates);
+    }
+  }, [property]);
+
+  const fetchCoordinates = async () => {
+    if (!property) return;
+
+    try {
+      const coords = await getApproximateCoordinates({
+        region: property.region,
+        district: property.district,
+        ward: property.ward,
+        street: property.street,
+      });
+
+      if (coords) {
+        setCoordinates(coords);
+      }
+    } catch (err) {
+      console.error('[LongTermProperty] Error fetching coordinates:', err);
+    }
+  };
 
   const fetchPropertyDetails = async () => {
     try {
@@ -239,6 +270,24 @@ export default function LongTermPropertyDetailsScreen() {
                 <Text style={[styles.sectionTitle, { color: textColor }]}>About this place</Text>
                 <Text style={[styles.descriptionText, { color: textColor }]}>
                   {property.description}
+                </Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: borderColor }]} />
+            </>
+          )}
+
+          {/* Map View */}
+          {coordinates && (
+            <>
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: textColor }]}>Location</Text>
+                <PropertyMapView
+                  latitude={coordinates.latitude}
+                  longitude={coordinates.longitude}
+                  title={property.title}
+                />
+                <Text style={styles.mapDisclaimer}>
+                  Approximate location shown for privacy
                 </Text>
               </View>
               <View style={[styles.divider, { backgroundColor: borderColor }]} />
@@ -500,6 +549,11 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  mapDisclaimer: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 8,
   },
   amenitiesList: {
     gap: 12,
