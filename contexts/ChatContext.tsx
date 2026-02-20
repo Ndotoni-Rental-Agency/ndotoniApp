@@ -74,6 +74,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         getUserConversations
       );
       const userConversations = data.getUserConversations;
+      
+      // Debug: Log conversation IDs in detail
+      console.log('[ChatContext] ===== getUserConversations Response =====');
+      console.log('[ChatContext] Total conversations:', userConversations.length);
+      userConversations.forEach((conv, index) => {
+        console.log(`[ChatContext] Conversation ${index + 1}:`, {
+          id: conv.id,
+          idLength: conv.id?.length,
+          hasHash: conv.id?.includes('#'),
+          idParts: conv.id?.split('#'),
+          propertyTitle: conv.propertyTitle,
+          otherPartyName: conv.otherPartyName,
+          lastMessage: conv.lastMessage?.substring(0, 50),
+          unreadCount: conv.unreadCount
+        });
+      });
+      console.log('[ChatContext] ===== End Response =====');
+      
       setConversations(userConversations);
       return userConversations;
     } catch (error) {
@@ -87,16 +105,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Load messages for a conversation
   const loadMessages = async (conversationId: string): Promise<void> => {
     try {
+      console.log('[ChatContext] Loading messages for conversation:', {
+        conversationId,
+        conversationIdLength: conversationId.length,
+        hasHash: conversationId.includes('#'),
+        parts: conversationId.split('#')
+      });
       setLoadingMessages(true);
       const data = await GraphQLClient.executeAuthenticated<{ getConversationMessages: ChatMessage[] }>(
         getConversationMessages,
         { conversationId }
       );
       const conversationMessages = data.getConversationMessages;
+      console.log('[ChatContext] Loaded messages count:', conversationMessages.length);
       setMessages(conversationMessages);
     } catch (error) {
       console.error('[ChatContext] Error loading messages:', error);
       setMessages([]);
+      // Don't throw - just set empty messages
+      // This prevents crashes when trying to load unauthorized conversations
     } finally {
       setLoadingMessages(false);
     }
@@ -150,6 +177,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Initialize chat for a property
   const initializeChat = async (propertyId: string): Promise<ChatInitializationData> => {
     try {
+      console.log('[ChatContext] Initializing chat for property:', propertyId);
       const data = await GraphQLClient.executeAuthenticated<{ 
         initializePropertyChat: ChatInitializationData 
       }>(
@@ -158,6 +186,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       );
       
       const chatData = data.initializePropertyChat;
+      
+      console.log('[ChatContext] Chat initialized:', {
+        conversationId: chatData.conversationId,
+        propertyId: chatData.propertyId,
+        landlordName: `${chatData.landlordInfo.firstName} ${chatData.landlordInfo.lastName}`
+      });
       
       if (!chatData) {
         throw new Error('Failed to initialize chat');
@@ -193,8 +227,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Refresh unread count
       refreshUnreadCount();
     } catch (error) {
-      console.error('[ChatContext] Error marking as read:', error);
-      throw error;
+      console.warn('[ChatContext] Error marking as read (non-critical):', error);
+      // Don't throw - just log the error
+      // This is non-critical and shouldn't block the user from viewing messages
+      // We'll still update the local state optimistically
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === conversationId
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+      );
     }
   };
 
@@ -233,10 +276,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Clear any previously selected conversation when user changes
+    setSelectedConversation(null);
+    setMessages([]);
+
     // Initial load
     loadConversations();
     refreshUnreadCount();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.userId]); // Add user?.userId to dependency array
 
   const value: ChatContextType = {
     // State

@@ -148,15 +148,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUserFromBackend = async () => {
     try {
+      console.log('[AuthContext] Fetching user from backend...');
       const data = await GraphQLClient.executeAuthenticated<{ getMe: UserProfile }>(
         getMe
       );
 
+      console.log('[AuthContext] Backend response:', data);
+
       if (data.getMe) {
+        console.log('[AuthContext] User fetched successfully:', {
+          userId: data.getMe.userId,
+          email: data.getMe.email,
+          userType: data.getMe.userType
+        });
         await storeAuthData(data.getMe);
+      } else {
+        console.warn('[AuthContext] getMe returned no user data');
       }
     } catch (error) {
       console.error('[AuthContext] Error fetching user from backend:', error);
+      // Re-throw to let caller handle it
+      throw error;
     }
   };
 

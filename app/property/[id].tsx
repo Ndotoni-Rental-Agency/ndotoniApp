@@ -113,7 +113,8 @@ export default function LongTermPropertyDetailsScreen() {
       const chatData = await initializeChat(property.propertyId);
       
       // Navigate to conversation
-      router.push(`/conversation/${chatData.conversationId}`);
+      const encodedConversationId = encodeURIComponent(chatData.conversationId);
+      router.push(`/conversation/${encodedConversationId}`);
     } catch (error) {
       console.error('Error initializing chat:', error);
       Alert.alert('Error', 'Failed to start chat. Please try again.');

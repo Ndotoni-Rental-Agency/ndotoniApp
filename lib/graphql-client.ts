@@ -70,7 +70,22 @@ async function executeGraphQLRequest<T>(
       throw new Error('No authentication token available');
     }
     headers['Authorization'] = token;
+    
+    // Log token details for debugging
+    console.log('[GraphQLClient] Token details:', {
+      tokenLength: token.length,
+      startsWithBearer: token.startsWith('Bearer '),
+      firstChars: token.substring(0, 30)
+    });
   }
+
+  console.log('[GraphQLClient] Request details:', {
+    endpoint: GRAPHQL_ENDPOINT,
+    authMode,
+    hasAuthHeader: !!headers['Authorization'],
+    queryName: query.match(/(?:query|mutation)\s+(\w+)/)?.[1] || 'unknown',
+    variables: variables || {}
+  });
 
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',

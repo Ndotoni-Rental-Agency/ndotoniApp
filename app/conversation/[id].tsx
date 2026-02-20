@@ -38,17 +38,36 @@ export default function ConversationScreen() {
     loadingMessages,
     sendingMessage,
     conversations,
+    loadingConversations,
   } = useChat();
 
   const [messageText, setMessageText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  const conversation = conversations.find(c => c.id === id);
+  // Decode the conversation ID from the URL parameter
+  const decodedId = id ? decodeURIComponent(id as string) : '';
+  const conversation = conversations.find(c => c.id === decodedId);
 
   useEffect(() => {
     if (id) {
-      loadMessages(id);
-      markConversationAsRead(id);
+      // Decode the conversation ID (it was URL-encoded to handle # character)
+      console.log('[Conversation] Raw ID from params:', {
+        id,
+        idType: typeof id,
+        isArray: Array.isArray(id),
+        idValue: JSON.stringify(id)
+      });
+      
+      const decodedId = decodeURIComponent(id as string);
+      console.log('[Conversation] Loading conversation:', {
+        encodedId: id,
+        decodedId,
+        hasHash: decodedId.includes('#'),
+        decodedParts: decodedId.split('#')
+      });
+      // Always try to load messages - the backend will handle authorization
+      loadMessages(decodedId);
+      markConversationAsRead(decodedId);
     }
   }, [id]);
 
@@ -62,13 +81,13 @@ export default function ConversationScreen() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!messageText.trim() || !id) return;
+    if (!messageText.trim() || !decodedId) return;
 
     const text = messageText.trim();
     setMessageText('');
 
     try {
-      await sendMessage(id, text);
+      await sendMessage(decodedId, text);
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert('Error', 'Failed to send message. Please try again.');

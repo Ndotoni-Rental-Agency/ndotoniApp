@@ -225,7 +225,16 @@ export default function MessagesScreen() {
               <TouchableOpacity 
                 key={conversation.id} 
                 style={[styles.messageCard, { backgroundColor: cardBg, borderColor }]}
-                onPress={() => router.push(`/conversation/${conversation.id}`)}
+                onPress={() => {
+                  console.log('[Messages] Opening conversation:', {
+                    id: conversation.id,
+                    hasHash: conversation.id.includes('#'),
+                    propertyTitle: conversation.propertyTitle
+                  });
+                  // URL-encode the conversation ID to handle the # character
+                  const encodedId = encodeURIComponent(conversation.id);
+                  router.push(`/conversation/${encodedId}`);
+                }}
               >
                 <View style={[styles.avatar, { backgroundColor: tintColor }]}>
                   {conversation.otherPartyImage ? (
