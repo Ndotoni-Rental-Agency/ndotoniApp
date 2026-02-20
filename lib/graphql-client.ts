@@ -8,13 +8,14 @@
  * - Type safety with generated types
  */
 
-import { fetchAuthSession } from 'aws-amplify/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 
-// GraphQL Configuration
-const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 
-  'https://pkqm7izcm5gm5hall3gc6o5dx4.appsync-api.us-west-2.amazonaws.com/graphql';
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY || 'da2-4kqoqw7d2jbndbilqiqpkypsve';
+// Ensure Amplify is configured
+import './amplify';
+
+// Initialize Amplify client
+const amplifyClient = generateClient();
 
 /**
  * GraphQL Response type
@@ -30,40 +31,15 @@ interface GraphQLResponse<T> {
 }
 
 /**
- * Get current auth token from Amplify or AsyncStorage (for OAuth)
- */
-async function getAuthToken(): Promise<string | null> {
-  try {
-    // First try to get token from Amplify session
-    const session = await fetchAuthSession();
-    const token = session.tokens?.idToken?.toString();
-    if (token) {
-      return token;
-    }
-  } catch (error) {
-    console.log('[GraphQLClient] No Amplify session:', error);
-  }
-  
-  // Fallback to OAuth token stored in AsyncStorage
-  try {
-    const oauthToken = await AsyncStorage.getItem('@ndotoni:oauth_id_token');
-    if (oauthToken) {
-      console.log('[GraphQLClient] Using OAuth token from AsyncStorage');
-      return oauthToken;
-    }
-  } catch (error) {
-    console.log('[GraphQLClient] No OAuth token in AsyncStorage:', error);
-  }
-  
-  return null;
-}
-
-/**
  * Check if user is authenticated
  */
 async function isAuthenticated(): Promise<boolean> {
-  const token = await getAuthToken();
-  return !!token;
+  try {
+    await getCurrentUser();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -86,13 +62,30 @@ export class GraphQLClient {
   ): Promise<T> {
     try {
       // Check if user is authenticated (unless forcing API key)
-      const authenticated = !forceApiKey && await isAuthenticated();
+      let authMode: 'userPool' | 'apiKey' = 'apiKey';
       
-      if (authenticated) {
-        return await this.executeAuthenticated<T>(query, variables);
-      } else {
-        return await this.executePublic<T>(query, variables);
+      if (!forceApiKey) {
+        try {
+          await getCurrentUser();
+          authMode = 'userPool'; // User is authenticated, use Cognito
+        } catch {
+          authMode = 'apiKey'; // User not authenticated, use API key
+        }
       }
+
+      const result = await amplifyClient.graphql({
+        query,
+        variables,
+        authMode,
+      }) as any;
+
+      if (result.errors && result.errors.length > 0) {
+        const error = result.errors[0];
+        console.error('[GraphQLClient] GraphQL errors:', result.errors);
+        throw new Error(error.message || 'GraphQL request failed');
+      }
+
+      return result.data as T;
     } catch (error) {
       console.error('[GraphQLClient] Execute error:', error);
       throw error;
@@ -107,34 +100,38 @@ export class GraphQLClient {
     query: string,
     variables?: Record<string, any>
   ): Promise<T> {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      throw new Error('Authentication required for this operation');
-    }
-
     try {
-      const response = await fetch(GRAPHQL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token,
-        },
-        body: JSON.stringify({
-          query,
-          variables: variables || {},
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Verify user is authenticated and get user details for debugging
+      const user = await getCurrentUser();
+      
+      // Also verify we have valid tokens
+      const session = await fetchAuthSession();
+      if (!session.tokens?.accessToken) {
+        console.error('[GraphQLClient] No access token in session');
+        throw new Error('No valid authentication token');
       }
-
-      const result: GraphQLResponse<T> = await response.json();
+      
+      console.log('[GraphQLClient] Authenticated request:', { 
+        userId: user.userId, 
+        username: user.username,
+        hasAccessToken: !!session.tokens.accessToken,
+        hasIdToken: !!session.tokens.idToken
+      });
+      
+      const result = await amplifyClient.graphql({
+        query,
+        variables,
+        authMode: 'userPool',
+      }) as any;
 
       if (result.errors && result.errors.length > 0) {
         const error = result.errors[0];
         console.error('[GraphQLClient] GraphQL errors:', result.errors);
+        console.error('[GraphQLClient] Request details:', { 
+          query: query.substring(0, 100), 
+          variables,
+          userId: user.userId 
+        });
         throw new Error(error.message || 'GraphQL request failed');
       }
 
@@ -142,9 +139,15 @@ export class GraphQLClient {
         throw new Error('No data returned from GraphQL request');
       }
 
-      return result.data;
+      return result.data as T;
     } catch (error) {
       console.error('[GraphQLClient] Authenticated request error:', error);
+      // If it's an auth error, provide more context
+      if (error instanceof Error && 
+          (error.message.includes('Unauthorized') || 
+           error.message.includes('No valid authentication'))) {
+        console.error('[GraphQLClient] Authentication failed - user may need to sign in again');
+      }
       throw error;
     }
   }
@@ -158,25 +161,11 @@ export class GraphQLClient {
     variables?: Record<string, any>
   ): Promise<T> {
     try {
-      const response = await fetch(GRAPHQL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-        },
-        body: JSON.stringify({
-          query,
-          variables: variables || {},
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[GraphQLClient] HTTP error:', response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result: GraphQLResponse<T> = await response.json();
+      const result = await amplifyClient.graphql({
+        query,
+        variables,
+        authMode: 'apiKey',
+      }) as any;
 
       if (result.errors && result.errors.length > 0) {
         const error = result.errors[0];
@@ -189,7 +178,7 @@ export class GraphQLClient {
         throw new Error('No data returned from GraphQL request');
       }
 
-      return result.data;
+      return result.data as T;
     } catch (error) {
       console.error('[GraphQLClient] Public request error:', (error as any)?.message || 'Unknown');
       throw error;

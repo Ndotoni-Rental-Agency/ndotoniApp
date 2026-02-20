@@ -510,6 +510,7 @@ export default function ListPropertyScreen() {
                   setSelectedVideos(videos);
                 }}
                 maxSelection={10}
+                onAuthRequired={() => setShowSignIn(true)}
               />
             )}
           </View>

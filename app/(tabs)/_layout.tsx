@@ -26,22 +26,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size || 28} color={color} />,
+          title: 'My Properties',
+          tabBarIcon: ({ color, size }) => <Ionicons name="business" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="list-property"
         options={{
-          title: 'List',
+          title: 'Add Property',
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="messages"
         options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size || 28} color={color} />,
+          title: 'Messages',
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen

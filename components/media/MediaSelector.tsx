@@ -12,6 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAuth } from '@/contexts/AuthContext';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
 
@@ -19,13 +20,16 @@ interface MediaSelectorProps {
   selectedMedia: string[];
   onMediaChange: (mediaUrls: string[], images: string[], videos: string[]) => void;
   maxSelection?: number;
+  onAuthRequired?: () => void;
 }
 
 export default function MediaSelector({
   selectedMedia,
   onMediaChange,
   maxSelection = 10,
+  onAuthRequired,
 }: MediaSelectorProps) {
+  const { user } = useAuth();
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const inputBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
@@ -33,6 +37,28 @@ export default function MediaSelector({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const [uploading, setUploading] = useState(false);
+
+  const checkAuthentication = () => {
+    if (!user) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in to upload photos',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Sign In', 
+            onPress: () => {
+              if (onAuthRequired) {
+                onAuthRequired();
+              }
+            }
+          },
+        ]
+      );
+      return false;
+    }
+    return true;
+  };
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -47,6 +73,8 @@ export default function MediaSelector({
   };
 
   const pickImage = async () => {
+    if (!checkAuthentication()) return;
+
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
@@ -73,6 +101,8 @@ export default function MediaSelector({
   };
 
   const takePhoto = async () => {
+    if (!checkAuthentication()) return;
+
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(

@@ -1,107 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { RentalType } from '@/hooks/useRentalType';
+import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
+import { useAuth } from '@/contexts/AuthContext';
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import PropertyCard from '@/components/property/PropertyCard';
-import { fetchLongTermHomepageCache, fetchShortTermHomepageCache } from '@/lib/homepage-cache';
 
 export default function HomeScreen() {
   const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
-  const [longTermProperties, setLongTermProperties] = useState<any>(null);
-  const [shortTermProperties, setShortTermProperties] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchParams, setSearchParams] = useState<SearchParams>({});
+  const [loadingMore, setLoadingMore] = useState(false);
+  const { isAuthenticated } = useAuth();
+  
+  // Use the categorized properties hook with rental type
+  const { appData, isLoading, error, refetch, loadMoreForCategory, hasMoreForCategory } = useCategorizedProperties(
+    isAuthenticated, 
+    rentalType === RentalType.LONG_TERM ? 'LONG_TERM' : 'SHORT_TERM'
+  );
   
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const headerBg = backgroundColor; // Use same background as main content
+  const headerBg = backgroundColor;
   const borderColor = useThemeColor({ light: '#ebebeb', dark: '#374151' }, 'background');
-
-  // Fetch properties on mount and when rental type changes
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        if (rentalType === RentalType.LONG_TERM && !longTermProperties) {
-          console.log('[HomeScreen] Fetching long-term properties from CloudFront...');
-          const cache = await fetchLongTermHomepageCache();
-          console.log('[HomeScreen] Long-term cache received:', {
-            lowestPrice: cache.lowestPrice?.length || 0,
-            nearby: cache.nearby?.length || 0,
-            mostViewed: cache.mostViewed?.length || 0,
-            generatedAt: cache.generatedAt,
-          });
-          
-          setLongTermProperties({
-            lowestPrice: cache.lowestPrice || [],
-            nearby: cache.nearby || [],
-            mostViewed: cache.mostViewed || [],
-            recentlyViewed: cache.recentlyViewed || [],
-            favorites: cache.favorites || [],
-          });
-        } else if (rentalType === RentalType.SHORT_TERM && !shortTermProperties) {
-          console.log('[HomeScreen] Fetching short-term properties from CloudFront...');
-          const cache = await fetchShortTermHomepageCache();
-          console.log('[HomeScreen] Short-term cache received:', {
-            lowestPrice: cache.lowestPrice?.length || 0,
-            topRated: cache.topRated?.length || 0,
-            featured: cache.featured?.length || 0,
-            generatedAt: cache.generatedAt,
-          });
-          
-          setShortTermProperties({
-            lowestPrice: cache.lowestPrice || [],
-            topRated: cache.topRated || [],
-            featured: cache.featured || [],
-          });
-        }
-      } catch (err) {
-        setError('Failed to load properties');
-        console.error('Error fetching properties:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, [rentalType, longTermProperties, shortTermProperties]);
 
   // Get properties organized by category with headers
   const getPropertiesByCategory = () => {
-    if (rentalType === RentalType.LONG_TERM) {
-      return [
-        {
-          title: 'Best Prices',
-          properties: longTermProperties?.lowestPrice || [],
-        },
-        {
-          title: 'Nearby',
-          properties: longTermProperties?.nearby || [],
-        },
-      ];
-    }
+    if (!appData) return [];
     
+    // Both rental types use the same structure now
     return [
       {
-        title: 'Best Prices',
-        properties: shortTermProperties?.lowestPrice || [],
+        title: rentalType === RentalType.LONG_TERM ? 'Best Prices' : 'Best Nightly Rates',
+        properties: appData.categorizedProperties.lowestPrice?.properties || [],
+        category: 'LOWEST_PRICE' as const,
+        hasMore: hasMoreForCategory('LOWEST_PRICE'),
       },
       {
-        title: 'Top Rated',
-        properties: shortTermProperties?.topRated || [],
+        title: rentalType === RentalType.LONG_TERM ? 'Nearby' : 'Recent Stays',
+        properties: appData.categorizedProperties.nearby?.properties || [],
+        category: 'NEARBY' as const,
+        hasMore: hasMoreForCategory('NEARBY'),
       },
       {
-        title: 'Featured',
-        properties: shortTermProperties?.featured || [],
+        title: rentalType === RentalType.LONG_TERM ? 'Most Viewed' : 'Top Rated',
+        properties: appData.categorizedProperties.mostViewed?.properties || [],
+        category: 'MOST_VIEWED' as const,
+        hasMore: hasMoreForCategory('MOST_VIEWED'),
+      },
+      {
+        title: rentalType === RentalType.LONG_TERM ? 'More Properties' : 'Featured Stays',
+        properties: appData.categorizedProperties.more?.properties || [],
+        category: 'MORE' as const,
+        hasMore: hasMoreForCategory('MORE'),
       },
     ];
   };
@@ -112,6 +68,32 @@ export default function HomeScreen() {
     setSearchParams(params);
     console.log('Search params:', params);
     // TODO: Navigate to search results page with params
+  };
+
+  const handleLoadMore = async (category: 'LOWEST_PRICE' | 'NEARBY' | 'MOST_VIEWED' | 'MORE') => {
+    if (loadingMore) return;
+    
+    setLoadingMore(true);
+    try {
+      await loadMoreForCategory(category);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100;
+    
+    // Check if user is near the bottom
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+      // Load more for the last section that has more items
+      const sectionsWithMore = categorizedProperties.filter(s => s.hasMore && s.properties.length > 0);
+      if (sectionsWithMore.length > 0 && !loadingMore) {
+        const lastSection = sectionsWithMore[sectionsWithMore.length - 1];
+        handleLoadMore(lastSection.category);
+      }
+    }
   };
 
   return (
@@ -172,6 +154,8 @@ export default function HomeScreen() {
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -184,10 +168,7 @@ export default function HomeScreen() {
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity 
               style={[styles.retryButton, { backgroundColor: tintColor }]}
-              onPress={() => {
-                setLongTermProperties(null);
-                setShortTermProperties(null);
-              }}
+              onPress={() => refetch()}
             >
               <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
@@ -223,9 +204,32 @@ export default function HomeScreen() {
                       />
                     ))}
                   </View>
+
+                  {/* Load More Button */}
+                  {section.hasMore && (
+                    <TouchableOpacity
+                      style={[styles.loadMoreButton, { backgroundColor: tintColor }]}
+                      onPress={() => handleLoadMore(section.category)}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Text style={styles.loadMoreText}>Load More</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
               )
             ))}
+
+            {/* Bottom Loading Indicator */}
+            {loadingMore && (
+              <View style={styles.bottomLoader}>
+                <ActivityIndicator size="large" color={tintColor} />
+                <Text style={[styles.loadingText, { color: textColor }]}>Loading more properties...</Text>
+              </View>
+            )}
           </>
         )}
       </ScrollView>
@@ -334,7 +338,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 16,
     paddingVertical: 14,
-    backgroundColor: '#222',
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -342,5 +345,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  bottomLoader: {
+    paddingVertical: 40,
+    alignItems: 'center',
   },
 });

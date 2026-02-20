@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Dimensions,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,12 +18,12 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLandlordProperties } from '@/hooks/useLandlordProperties';
 import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
-import SignInModal from '@/components/auth/SignInModal';
-import SignUpModal from '@/components/auth/SignUpModal';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LandlordPropertiesScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -32,33 +33,35 @@ export default function LandlordPropertiesScreen() {
 
   const [selectedTab, setSelectedTab] = useState<'long-term' | 'short-term'>('long-term');
   const [refreshing, setRefreshing] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState('');
 
-  // Long-term properties - only fetch when authenticated
+  // Long-term properties
   const {
     properties: longTermProperties,
     loading: longTermLoading,
     error: longTermError,
-    refetch: refetchLongTerm,
-  } = useLandlordProperties(isAuthenticated && !authLoading);
+    fetchProperties: fetchLongTerm,
+    refreshProperties: refreshLongTerm,
+  } = useLandlordProperties();
 
-  // Short-term properties - only fetch when authenticated
+  // Short-term properties
   const {
     properties: shortTermProperties,
     loading: shortTermLoading,
     error: shortTermError,
     refetch: refetchShortTerm,
-  } = useLandlordShortTermProperties(isAuthenticated && !authLoading);
+  } = useLandlordShortTermProperties(true);
+
+  useEffect(() => {
+    if (user?.userId) {
+      fetchLongTerm(user.userId);
+    }
+  }, [user?.userId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (selectedTab === 'long-term') {
-        await refetchLongTerm();
+      if (selectedTab === 'long-term' && user?.userId) {
+        await refreshLongTerm(user.userId);
       } else {
         await refetchShortTerm();
       }
@@ -276,112 +279,6 @@ export default function LandlordPropertiesScreen() {
     );
   };
 
-  // Show loading state
-  if (authLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Show authentication screen if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        <View style={styles.unauthContainer}>
-          {/* Header */}
-          <View style={styles.unauthHeader}>
-            <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
-              <Ionicons name="business" size={48} color={tintColor} />
-            </View>
-            <Text style={[styles.unauthTitle, { color: textColor }]}>
-              Manage Your Properties
-            </Text>
-            <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
-              Sign in to list and manage your rental properties
-            </Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.authButtons}>
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: tintColor }]}
-              onPress={() => setShowSignInModal(true)}
-            >
-              <Text style={styles.primaryButtonText}>Sign In</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryButton, { borderColor: tintColor }]}
-              onPress={() => setShowSignUpModal(true)}
-            >
-              <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
-                Create Account
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Features */}
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Ionicons name="add-circle" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                List your properties for rent
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="calendar" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                Manage availability and bookings
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="cash" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                Track your rental income
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Modals */}
-        <SignInModal
-          visible={showSignInModal}
-          onClose={() => setShowSignInModal(false)}
-          onSwitchToSignUp={() => {
-            setShowSignInModal(false);
-            setShowSignUpModal(true);
-          }}
-          onForgotPassword={() => {
-            setShowSignInModal(false);
-            setShowForgotPasswordModal(true);
-          }}
-          onNeedsVerification={(email) => {
-            setVerificationEmail(email);
-            setShowSignInModal(false);
-            setShowVerificationModal(true);
-          }}
-        />
-        <SignUpModal
-          visible={showSignUpModal}
-          onClose={() => setShowSignUpModal(false)}
-          onSwitchToSignIn={() => {
-            setShowSignUpModal(false);
-            setShowSignInModal(true);
-          }}
-          onNeedsVerification={(email) => {
-            setVerificationEmail(email);
-            setShowSignUpModal(false);
-            setShowVerificationModal(true);
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       {/* Header */}
@@ -440,7 +337,7 @@ export default function LandlordPropertiesScreen() {
         }
         ListEmptyComponent={
           loading && !refreshing ? (
-            <View style={styles.centerContainer}>
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={tintColor} />
               <Text style={[styles.loadingText, { color: secondaryText }]}>Loading properties...</Text>
             </View>
@@ -473,114 +370,12 @@ export default function LandlordPropertiesScreen() {
           )
         }
       />
-
-      {/* Modals */}
-      <SignInModal
-        visible={showSignInModal}
-        onClose={() => setShowSignInModal(false)}
-        onSwitchToSignUp={() => {
-          setShowSignInModal(false);
-          setShowSignUpModal(true);
-        }}
-        onForgotPassword={() => {
-          setShowSignInModal(false);
-          setShowForgotPasswordModal(true);
-        }}
-        onNeedsVerification={(email) => {
-          setVerificationEmail(email);
-          setShowSignInModal(false);
-          setShowVerificationModal(true);
-        }}
-      />
-      <SignUpModal
-        visible={showSignUpModal}
-        onClose={() => setShowSignUpModal(false)}
-        onSwitchToSignIn={() => {
-          setShowSignUpModal(false);
-          setShowSignInModal(true);
-        }}
-        onNeedsVerification={(email) => {
-          setVerificationEmail(email);
-          setShowSignUpModal(false);
-          setShowVerificationModal(true);
-        }}
-      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  unauthContainer: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  unauthHeader: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  unauthTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  unauthSubtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  authButtons: {
-    gap: 16,
-    marginBottom: 48,
-  },
-  primaryButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    backgroundColor: 'transparent',
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  features: {
-    gap: 24,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  featureText: {
-    fontSize: 16,
     flex: 1,
   },
   header: {
@@ -615,7 +410,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
   },
-  centerContainer: {
+  loadingContainer: {
     paddingVertical: 80,
     alignItems: 'center',
   },

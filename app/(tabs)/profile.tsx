@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
@@ -11,6 +14,7 @@ import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -19,6 +23,8 @@ export default function ProfileScreen() {
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
   
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { themeMode, setThemeMode, isDark } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -26,6 +32,16 @@ export default function ProfileScreen() {
   const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+
+  const toggleTheme = async () => {
+    const newMode = isDark ? 'light' : 'dark';
+    await setThemeMode(newMode);
+  };
+
+  const toggleLanguage = async () => {
+    const newLanguage = language === 'en' ? 'sw' : 'en';
+    await setLanguage(newLanguage);
+  };
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -174,9 +190,10 @@ export default function ProfileScreen() {
 
   // Show profile UI if authenticated
   const menuItems = [
-    { id: 'properties', label: 'My Properties', icon: 'home', badge: '3' },
+    { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/explore' },
+    { id: 'favorites', label: 'Favorites', icon: 'heart' },
     { id: 'bookings', label: 'My Bookings', icon: 'calendar' },
-    { id: 'messages', label: 'Messages', icon: 'chatbubbles', badge: '2' },
+    { id: 'messages', label: 'Messages', icon: 'chatbubbles', badge: '2', route: '/(tabs)/messages' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
     { id: 'help', label: 'Help & Support', icon: 'help-circle' },
   ];
@@ -209,6 +226,11 @@ export default function ProfileScreen() {
             <TouchableOpacity 
               key={item.id} 
               style={[styles.menuItem, { backgroundColor: cardBg, borderColor }]}
+              onPress={() => {
+                if (item.route) {
+                  router.push(item.route as any);
+                }
+              }}
             >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${tintColor}20` }]}>
@@ -226,6 +248,53 @@ export default function ProfileScreen() {
               </View>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Preferences Section */}
+        <View style={styles.preferencesSection}>
+          <Text style={[styles.sectionTitle, { color: secondaryText }]}>PREFERENCES</Text>
+          
+          {/* Theme Toggle */}
+          <View style={[styles.preferenceItem, { backgroundColor: cardBg, borderColor }]}>
+            <View style={styles.preferenceLeft}>
+              <View style={[styles.preferenceIcon, { backgroundColor: `${tintColor}20` }]}>
+                <Ionicons name={isDark ? 'moon' : 'sunny'} size={24} color={tintColor} />
+              </View>
+              <View style={styles.preferenceText}>
+                <Text style={[styles.preferenceLabel, { color: textColor }]}>Dark Mode</Text>
+                <Text style={[styles.preferenceDescription, { color: secondaryText }]}>
+                  {isDark ? 'Enabled' : 'Disabled'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: borderColor, true: tintColor }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          {/* Language Toggle */}
+          <View style={[styles.preferenceItem, { backgroundColor: cardBg, borderColor }]}>
+            <View style={styles.preferenceLeft}>
+              <View style={[styles.preferenceIcon, { backgroundColor: `${tintColor}20` }]}>
+                <Ionicons name="language" size={24} color={tintColor} />
+              </View>
+              <View style={styles.preferenceText}>
+                <Text style={[styles.preferenceLabel, { color: textColor }]}>Language</Text>
+                <Text style={[styles.preferenceDescription, { color: secondaryText }]}>
+                  {language === 'en' ? 'English' : 'Kiswahili'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={language === 'sw'}
+              onValueChange={toggleLanguage}
+              trackColor={{ false: borderColor, true: tintColor }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
         {/* Sign Out */}
@@ -431,6 +500,51 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   versionText: {
+    fontSize: 14,
+  },
+  preferencesSection: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  preferenceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  preferenceLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  preferenceIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  preferenceText: {
+    flex: 1,
+  },
+  preferenceLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  preferenceDescription: {
     fontSize: 14,
   },
 });

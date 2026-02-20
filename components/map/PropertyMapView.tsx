@@ -13,6 +13,7 @@ interface PropertyMapViewProps {
 /**
  * Property Map View Component
  * Displays an approximate location with privacy offset (like Airbnb)
+ * Fully interactive map with pan, zoom, and scroll
  */
 export default function PropertyMapView({
   latitude,
@@ -41,7 +42,7 @@ export default function PropertyMapView({
   const circleColor = isDark ? '#065f46' : '#1f2937';
 
   return (
-    <View style={[styles.container, { backgroundColor, borderColor }]}>
+    <View style={styles.container}>
       <MapView
         style={styles.map}
         provider={PROVIDER_GOOGLE}
@@ -53,8 +54,8 @@ export default function PropertyMapView({
         }}
         scrollEnabled={true}
         zoomEnabled={true}
-        pitchEnabled={true}
-        rotateEnabled={true}
+        pitchEnabled={false}
+        rotateEnabled={false}
       >
         {/* Privacy circle */}
         <Circle
@@ -79,9 +80,7 @@ export default function PropertyMapView({
 const styles = StyleSheet.create({
   container: {
     height: 280,
-    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 1,
   },
   map: {
     flex: 1,

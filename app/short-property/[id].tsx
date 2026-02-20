@@ -14,9 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { CLOUDFRONT_DOMAIN } from '@/lib/config';
-import GraphQLClient from '@/lib/graphql-client';
-import { getShortTermProperty } from '@/lib/graphql/queries';
+import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import PropertyMapView from '@/components/map/PropertyMapView';
 import { getApproximateCoordinates, CoordinatesInput } from '@/lib/geocoding';
 
@@ -25,9 +23,11 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function ShortTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const [property, setProperty] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const propertyId = params.id as string;
+  
+  // Use the short-term property detail hook
+  const { property, loading: isLoading, error, retry } = useShortTermPropertyDetail(propertyId);
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [coordinates, setCoordinates] = useState<CoordinatesInput | null>(null);
 
@@ -36,12 +36,6 @@ export default function ShortTermPropertyDetailsScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
-
-  const propertyId = params.id as string;
-
-  useEffect(() => {
-    fetchPropertyDetails();
-  }, [propertyId]);
 
   useEffect(() => {
     // Fetch coordinates if not available or if they're placeholder (0,0)
@@ -85,68 +79,6 @@ export default function ShortTermPropertyDetailsScreen() {
     }
   };
 
-  const fetchPropertyDetails = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      console.log('[ShortTermProperty] Fetching from CloudFront:', propertyId);
-      
-      // Try CloudFront first
-      const url = `${CLOUDFRONT_DOMAIN}/short-term-properties/${propertyId}.json`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-      });
-
-      console.log('[ShortTermProperty] CloudFront response:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.deleted) {
-          setError('This property is no longer available');
-          return;
-        }
-        console.log('[ShortTermProperty] Property loaded from CloudFront');
-        setProperty(data);
-        return;
-      }
-
-      // CloudFront miss, try GraphQL
-      if (response.status === 403 || response.status === 404) {
-        console.log('[ShortTermProperty] CloudFront miss, trying GraphQL');
-        await fetchFromGraphQL();
-        return;
-      }
-
-      setError('Failed to load property');
-    } catch (err) {
-      console.error('[ShortTermProperty] Error:', err);
-      setError('Failed to load property details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchFromGraphQL = async () => {
-    try {
-      const data = await GraphQLClient.executePublic<{ getShortTermProperty: any }>(
-        getShortTermProperty,
-        { propertyId }
-      );
-
-      if (data.getShortTermProperty) {
-        console.log('[ShortTermProperty] Property loaded from GraphQL');
-        setProperty(data.getShortTermProperty);
-      } else {
-        setError('Property not found');
-      }
-    } catch (err) {
-      console.error('[ShortTermProperty] GraphQL error:', err);
-      throw err;
-    }
-  };
-
   const formatPrice = (amount: number, currency: string = 'TZS') => {
     return `${currency} ${amount?.toLocaleString()}`;
   };
@@ -183,7 +115,7 @@ export default function ShortTermPropertyDetailsScreen() {
           <Text style={styles.errorText}>{error || 'Property not found'}</Text>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: tintColor }]}
-            onPress={fetchPropertyDetails}
+            onPress={retry}
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
@@ -193,35 +125,9 @@ export default function ShortTermPropertyDetailsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      {/* Floating Header */}
-      <SafeAreaView style={styles.floatingHeader} edges={['top']}>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <View style={styles.headerRightButtons}>
-            <TouchableOpacity
-              style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
-              onPress={() => console.log('Share')}
-            >
-              <Ionicons name="share-outline" size={22} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
-              onPress={() => console.log('Favorite')}
-            >
-              <Ionicons name="heart-outline" size={22} color="#000" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Image Gallery */}
+        {/* Image Gallery with Overlay Buttons */}
         {images.length > 0 && (
           <View style={styles.imageGalleryContainer}>
             <FlatList
@@ -242,6 +148,33 @@ export default function ShortTermPropertyDetailsScreen() {
               )}
               keyExtractor={(item, index) => index.toString()}
             />
+            
+            {/* Overlay Header Buttons - Scroll with image */}
+            <View style={styles.imageOverlayHeader}>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
+                  onPress={() => router.back()}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <View style={styles.headerRightButtons}>
+                  <TouchableOpacity
+                    style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
+                    onPress={() => console.log('Share')}
+                  >
+                    <Ionicons name="share-outline" size={22} color="#000" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.headerButton, { backgroundColor: 'rgba(255,255,255,0.9)' }]}
+                    onPress={() => console.log('Favorite')}
+                  >
+                    <Ionicons name="heart-outline" size={22} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+            
             {/* Image Counter */}
             <View style={styles.imageCounter}>
               <Text style={styles.imageCounterText}>
@@ -275,6 +208,13 @@ export default function ShortTermPropertyDetailsScreen() {
                 )}
               </View>
             )}
+            {/* Price */}
+            <View style={styles.priceRow}>
+              <Text style={[styles.priceText, { color: textColor }]}>
+                {formatPrice(property.nightlyRate, property.currency)}
+              </Text>
+              <Text style={styles.priceUnitText}> per night</Text>
+            </View>
           </View>
 
           {/* Divider */}
@@ -327,24 +267,6 @@ export default function ShortTermPropertyDetailsScreen() {
             </>
           )}
 
-          {/* Map View */}
-          {coordinates && (
-            <>
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: textColor }]}>Location</Text>
-                <PropertyMapView
-                  latitude={coordinates.latitude}
-                  longitude={coordinates.longitude}
-                  title={property.title}
-                />
-                <Text style={styles.mapDisclaimer}>
-                  Approximate location shown for privacy
-                </Text>
-              </View>
-              <View style={[styles.divider, { backgroundColor: borderColor }]} />
-            </>
-          )}
-
           {/* Amenities */}
           {property.amenities && property.amenities.length > 0 && (
             <>
@@ -390,23 +312,41 @@ export default function ShortTermPropertyDetailsScreen() {
 
           {/* Host Info */}
           {property.host && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: textColor }]}>Hosted by</Text>
-              <View style={styles.hostInfo}>
-                <View style={[styles.hostAvatar, { backgroundColor: tintColor }]}>
-                  <Text style={styles.hostInitials}>
-                    {property.host.firstName?.[0]}{property.host.lastName?.[0]}
-                  </Text>
-                </View>
-                <View style={styles.hostDetails}>
-                  <Text style={[styles.hostName, { color: textColor }]}>
-                    {property.host.firstName} {property.host.lastName}
-                  </Text>
-                  {property.host.whatsappNumber && (
-                    <Text style={styles.hostContact}>{property.host.whatsappNumber}</Text>
-                  )}
+            <>
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: textColor }]}>Hosted by</Text>
+                <View style={styles.hostInfo}>
+                  <View style={[styles.hostAvatar, { backgroundColor: tintColor }]}>
+                    <Text style={styles.hostInitials}>
+                      {property.host.firstName?.[0]}{property.host.lastName?.[0]}
+                    </Text>
+                  </View>
+                  <View style={styles.hostDetails}>
+                    <Text style={[styles.hostName, { color: textColor }]}>
+                      {property.host.firstName} {property.host.lastName}
+                    </Text>
+                    {property.host.whatsappNumber && (
+                      <Text style={styles.hostContact}>{property.host.whatsappNumber}</Text>
+                    )}
+                  </View>
                 </View>
               </View>
+              <View style={[styles.divider, { backgroundColor: borderColor }]} />
+            </>
+          )}
+
+          {/* Map View */}
+          {coordinates && (
+            <View style={styles.mapSection}>
+              <Text style={[styles.sectionTitle, { color: textColor, paddingHorizontal: 20 }]}>Location</Text>
+              <PropertyMapView
+                latitude={coordinates.latitude}
+                longitude={coordinates.longitude}
+                title={property.title}
+              />
+              <Text style={[styles.mapDisclaimer, { paddingHorizontal: 20 }]}>
+                Approximate location shown for privacy
+              </Text>
             </View>
           )}
 
@@ -430,7 +370,7 @@ export default function ShortTermPropertyDetailsScreen() {
           <Text style={styles.bookButtonText}>Reserve</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -438,12 +378,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  floatingHeader: {
+  imageOverlayHeader: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -515,12 +454,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   imageGalleryContainer: {
-    height: 300,
+    height: 420,
     position: 'relative',
   },
   propertyImage: {
     width: SCREEN_WIDTH,
-    height: 300,
+    height: 420,
   },
   imageCounter: {
     position: 'absolute',
@@ -546,6 +485,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  mapSection: {
+    paddingVertical: 16,
+  },
   propertyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -565,6 +507,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: 8,
   },
   ratingText: {
     fontSize: 14,
@@ -572,6 +515,19 @@ const styles = StyleSheet.create({
   },
   reviewsText: {
     fontSize: 14,
+    color: '#666',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 12,
+  },
+  priceText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  priceUnitText: {
+    fontSize: 16,
     color: '#666',
   },
   divider: {
