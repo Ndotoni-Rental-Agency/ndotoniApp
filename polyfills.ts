@@ -30,4 +30,17 @@ if (typeof global.crypto.getRandomValues === 'undefined') {
   global.crypto.getRandomValues = getRandomValues;
 }
 
+// Base64 polyfills (atob/btoa) for JWT decoding
+if (typeof global.atob === 'undefined') {
+  global.atob = (str: string) => {
+    return Buffer.from(str, 'base64').toString('binary');
+  };
+}
+
+if (typeof global.btoa === 'undefined') {
+  global.btoa = (str: string) => {
+    return Buffer.from(str, 'binary').toString('base64');
+  };
+}
+
 console.log('[Polyfills] Loaded successfully');

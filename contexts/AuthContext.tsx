@@ -7,10 +7,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
-  verifyEmail as verifyEmailMutation, 
-  forgotPassword as forgotPasswordMutation, 
-  resetPassword as resetPasswordMutation, 
-  resendVerificationCode as resendVerificationCodeMutation,
   updateUser as updateUserMutation, 
   submitLandlordApplication as submitLandlordApplicationMutation
 } from '@/lib/graphql/mutations';
@@ -21,7 +17,7 @@ import {
   ApplicationResponse
 } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { AuthBridge } from '@/lib/auth-bridge';
+import HybridAuthService from '@/lib/auth/hybrid-auth-service';
 
 // Type alias for convenience
 type User = UserProfile;
@@ -120,10 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initializeAuth = async () => {
     try {
-      // Check if user has valid Cognito session
-      const hasCognitoSession = await AuthBridge.hasCognitoSession();
+      // Check if user is authenticated (checks both OIDC and Amplify)
+      const isAuth = await HybridAuthService.isAuthenticated();
       
-      if (hasCognitoSession) {
+      if (isAuth) {
         // Get user data from AsyncStorage or fetch from backend
         const storedUser = await AsyncStorage.getItem(USER_KEY);
         
@@ -181,11 +177,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Use Amplify signIn via auth bridge
-      const authData = await AuthBridge.signInWithAmplify(email, password);
+      // Use HybridAuthService for email/password sign in
+      await HybridAuthService.signIn(email, password);
 
-      const user = authData.user;
-      await storeAuthData(user);
+      // Fetch user profile from backend
+      await refreshUserFromBackend();
     } catch (error) {
       // Re-throw the original error to preserve its structure
       throw error;
@@ -196,22 +192,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[AuthContext] Starting signUp');
       
-      // Use custom GraphQL mutation for sign up
-      const authData = await AuthBridge.signUpWithCustom(input);
+      // Use HybridAuthService for sign up
+      await HybridAuthService.signUp(
+        input.email,
+        input.password,
+        input.firstName,
+        input.lastName,
+        input.phoneNumber
+      );
 
-      // Check for GraphQL errors
-      if (!authData) {
-        throw new Error('Invalid response from server');
-      }
-
-      // Backend returns { success: true, message: "..." } for successful signup
-      if (authData.success) {
-        console.log('[AuthContext] Sign up successful, requires verification');
-        return { requiresVerification: true };
-      }
-
-      // If success is false or undefined, something went wrong
-      throw new Error(authData.message || 'Sign up failed');
+      console.log('[AuthContext] Sign up successful, requires verification');
+      return { requiresVerification: true };
     } catch (error) {
       console.error('[AuthContext] signUp error:', (error as any)?.message || 'Unknown');
       // Re-throw the original error to preserve its structure
@@ -221,8 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Sign out from Cognito
-      await AuthBridge.signOutFromBridge();
+      // Sign out using HybridAuthService (handles both OIDC and Amplify)
+      await HybridAuthService.signOut();
       
       // Clear AsyncStorage
       await AsyncStorage.removeItem(USER_KEY);
@@ -241,16 +232,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithSocial = async (provider: 'google' | 'facebook') => {
     try {
-      let authData;
+      // Use HybridAuthService for social auth (OIDC)
       if (provider === 'google') {
-        authData = await AuthBridge.signInWithGoogle();
+        await HybridAuthService.signInWithGoogle();
       } else {
-        authData = await AuthBridge.signInWithFacebook();
+        await HybridAuthService.signInWithFacebook();
       }
       
-      if (authData?.user) {
-        await storeAuthData(authData.user);
-      }
+      // After OAuth redirect completes, fetch user profile
+      await refreshUserFromBackend();
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Social sign in failed');
       throw new Error(errorMessage);
@@ -269,15 +259,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = async (email: string, code: string) => {
     try {
-      const data = await GraphQLClient.executePublic<{ verifyEmail: any }>(
-        verifyEmailMutation,
-        { email, code }
-      );
-
-      const result = data.verifyEmail;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Email verification failed');
-      }
+      // Use HybridAuthService for Amplify confirmation
+      await HybridAuthService.confirmSignUp(email, code);
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Email verification failed');
       throw new Error(errorMessage);
@@ -286,15 +269,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resendVerificationCode = async (email: string) => {
     try {
-      const data = await GraphQLClient.executePublic<{ resendVerificationCode: any }>(
-        resendVerificationCodeMutation,
-        { email }
-      );
-
-      const result = data.resendVerificationCode;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Failed to resend verification code');
-      }
+      // Use HybridAuthService for resending code
+      await HybridAuthService.resendCode(email);
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Failed to resend verification code');
       throw new Error(errorMessage);
@@ -303,15 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const forgotPassword = async (email: string) => {
     try {
-      const data = await GraphQLClient.executePublic<{ forgotPassword: any }>(
-        forgotPasswordMutation,
-        { email }
-      );
-
-      const result = data.forgotPassword;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Failed to send reset email');
-      }
+      // Use HybridAuthService for password reset
+      await HybridAuthService.forgotPassword(email);
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Failed to send reset email');
       throw new Error(errorMessage);
@@ -320,15 +289,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     try {
-      const data = await GraphQLClient.executePublic<{ resetPassword: any }>(
-        resetPasswordMutation,
-        { email, confirmationCode: code, newPassword }
-      );
-
-      const result = data.resetPassword;
-      if (!result?.success) {
-        throw new Error(result?.message || 'Password reset failed');
-      }
+      // Use HybridAuthService for password reset confirmation
+      await HybridAuthService.confirmForgotPassword(email, code, newPassword);
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Password reset failed');
       throw new Error(errorMessage);
