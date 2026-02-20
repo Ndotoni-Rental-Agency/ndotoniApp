@@ -53,8 +53,11 @@ export default function PropertyCard({
       onPress();
     } else {
       // Navigate to property details based on rental type
-      const route = priceUnit === 'night' ? `/short-property/${propertyId}` : `/property/${propertyId}`;
-      router.push(route);
+      if (priceUnit === 'night') {
+        router.push(`/short-property/${propertyId}`);
+      } else {
+        router.push(`/property/${propertyId}`);
+      }
     }
   };
 

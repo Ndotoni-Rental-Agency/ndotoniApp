@@ -39,8 +39,7 @@ export default function LandlordPropertiesScreen() {
     properties: longTermProperties,
     loading: longTermLoading,
     error: longTermError,
-    fetchProperties: fetchLongTerm,
-    refreshProperties: refreshLongTerm,
+    refetch: refetchLongTerm,
   } = useLandlordProperties();
 
   // Short-term properties
@@ -51,17 +50,11 @@ export default function LandlordPropertiesScreen() {
     refetch: refetchShortTerm,
   } = useLandlordShortTermProperties(true);
 
-  useEffect(() => {
-    if (user?.userId) {
-      fetchLongTerm(user.userId);
-    }
-  }, [user?.userId]);
-
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (selectedTab === 'long-term' && user?.userId) {
-        await refreshLongTerm(user.userId);
+      if (selectedTab === 'long-term') {
+        await refetchLongTerm();
       } else {
         await refetchShortTerm();
       }

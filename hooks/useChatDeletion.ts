@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { deleteConversation, deleteMessage } from '@/graphql/mutations';
-import { toast } from 'react-hot-toast';
+import { deleteConversation, deleteMessage } from '@/lib/graphql/mutations';
 
 interface DeleteResponse {
   success: boolean;
@@ -33,15 +33,15 @@ export function useChatDeletion(): UseChatDeletionReturn {
       const result = data.deleteConversation;
       
       if (result && result.success) {
-        toast.success(result.message || 'Conversation deleted successfully');
+        // Success - no toast in React Native, just return true
         return true;
       } else {
-        toast.error(result?.message || 'Failed to delete conversation');
+        Alert.alert('Error', result?.message || 'Failed to delete conversation');
         return false;
       }
     } catch (error) {
       console.error('Error deleting conversation:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete conversation');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete conversation');
       return false;
     } finally {
       setIsDeletingConversation(false);
@@ -62,15 +62,15 @@ export function useChatDeletion(): UseChatDeletionReturn {
       const result = data.deleteMessage;
       
       if (result && result.success) {
-        toast.success(result.message || 'Message deleted successfully');
+        // Success - no toast in React Native, just return true
         return true;
       } else {
-        toast.error(result?.message || 'Failed to delete message');
+        Alert.alert('Error', result?.message || 'Failed to delete message');
         return false;
       }
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete message');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete message');
       return false;
     } finally {
       setIsDeletingMessage(false);

@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w"
-      }
+      },
+      "bundleIdentifier": "com.anonymous.ndotoniApp"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w"
         }
-      }
+      },
+      "package": "com.anonymous.ndotoniApp"
     },
     "web": {
       "output": "static",

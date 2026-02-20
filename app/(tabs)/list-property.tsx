@@ -543,17 +543,29 @@ export default function ListPropertyScreen() {
       <SignInModal
         visible={showSignIn}
         onClose={() => setShowSignIn(false)}
-        onSignUpPress={() => {
+        onSwitchToSignUp={() => {
           setShowSignIn(false);
           setShowSignUp(true);
+        }}
+        onForgotPassword={() => {
+          // TODO: Implement forgot password flow
+          Alert.alert('Forgot Password', 'Password reset functionality coming soon!');
+        }}
+        onNeedsVerification={(email) => {
+          // TODO: Implement email verification flow
+          Alert.alert('Verify Email', `Please check ${email} for verification code`);
         }}
       />
       <SignUpModal
         visible={showSignUp}
         onClose={() => setShowSignUp(false)}
-        onSignInPress={() => {
+        onSwitchToSignIn={() => {
           setShowSignUp(false);
           setShowSignIn(true);
+        }}
+        onNeedsVerification={(email) => {
+          // TODO: Implement email verification flow
+          Alert.alert('Verify Email', `Please check ${email} for verification code`);
         }}
       />
     </SafeAreaView>

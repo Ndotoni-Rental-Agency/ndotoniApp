@@ -62,9 +62,9 @@ export default function EditLongTermPropertyScreen() {
         ward: property.address?.ward || '',
         street: property.address?.street || '',
         monthlyRent: property.pricing?.monthlyRent?.toString() || '',
-        bedrooms: property.bedrooms?.toString() || '',
-        bathrooms: property.bathrooms?.toString() || '',
-        available: property.available ?? true,
+        bedrooms: property.specifications?.bedrooms?.toString() || '',
+        bathrooms: property.specifications?.bathrooms?.toString() || '',
+        available: property.availability?.available ?? true,
       });
 
       const images = property.media?.images || [];

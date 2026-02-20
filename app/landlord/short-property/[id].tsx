@@ -59,10 +59,9 @@ export default function EditShortTermPropertyScreen() {
       });
 
       const images = property.images || [];
-      const videos = property.videos || [];
-      setSelectedMedia([...images, ...videos]);
+      setSelectedMedia(images);
       setSelectedImages(images);
-      setSelectedVideos(videos);
+      setSelectedVideos([]);
     }
   }, [property]);
 

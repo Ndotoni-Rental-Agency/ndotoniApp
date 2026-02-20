@@ -31,17 +31,20 @@ export function useChatNavigation() {
     }
 
     // Build chat URL with property context if available
+    // TODO: Create /chat route
     if (options.propertyId && options.landlordId && options.propertyTitle) {
-      router.push({
-        pathname: '/chat',
-        params: {
-          propertyId: options.propertyId,
-          landlordId: options.landlordId,
-          propertyTitle: options.propertyTitle
-        }
-      });
+      // router.push({
+      //   pathname: '/chat',
+      //   params: {
+      //     propertyId: options.propertyId,
+      //     landlordId: options.landlordId,
+      //     propertyTitle: options.propertyTitle
+      //   }
+      // });
+      console.log('Chat navigation not yet implemented');
     } else {
-      router.push('/chat');
+      // router.push('/chat');
+      console.log('Chat navigation not yet implemented');
     }
   };
 

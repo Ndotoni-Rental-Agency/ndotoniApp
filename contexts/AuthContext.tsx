@@ -157,7 +157,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.getMe) {
         console.log('[AuthContext] User fetched successfully:', {
-          userId: data.getMe.userId,
           email: data.getMe.email,
           userType: data.getMe.userType
         });

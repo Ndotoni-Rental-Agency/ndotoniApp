@@ -283,7 +283,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Initial load
     loadConversations();
     refreshUnreadCount();
-  }, [isAuthenticated, user?.userId]); // Add user?.userId to dependency array
+  }, [isAuthenticated]);
 
   const value: ChatContextType = {
     // State

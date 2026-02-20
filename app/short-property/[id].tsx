@@ -45,7 +45,7 @@ export default function ShortTermPropertyDetailsScreen() {
       
     if (property && !hasValidCoordinates) {
       fetchCoordinates();
-    } else if (hasValidCoordinates) {
+    } else if (hasValidCoordinates && property.coordinates) {
       setCoordinates(property.coordinates);
     }
   }, [property]);
@@ -57,13 +57,12 @@ export default function ShortTermPropertyDetailsScreen() {
       console.log('[ShortTermProperty] Fetching coordinates for:', {
         region: property.region,
         district: property.district,
-        ward: property.address?.ward,
+        street: property.address?.street,
       });
       
       const coords = await getApproximateCoordinates({
         region: property.region || '',
         district: property.district || '',
-        ward: property.address?.ward,
         street: property.address?.street,
       });
 

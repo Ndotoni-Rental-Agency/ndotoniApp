@@ -107,7 +107,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
@@ -144,5 +144,24 @@ export function safeJsonParse<T>(json: string, fallback: T): T {
  * Generate unique ID
  */
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Format number with commas
+ * Example: "1000000" -> "1,000,000"
+ */
+export function formatNumberWithCommas(value: string): string {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US');
+}
+
+/**
+ * Parse formatted number (remove commas)
+ * Example: "1,000,000" -> "1000000"
+ */
+export function parseFormattedNumber(value: string): string {
+  return value.replace(/,/g, '');
 }
