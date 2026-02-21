@@ -146,7 +146,11 @@ export default function ProfileScreen() {
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
-        <View style={styles.unauthContainer}>
+        <ScrollView 
+          style={styles.unauthScrollView}
+          contentContainerStyle={styles.unauthContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
           <View style={styles.unauthHeader}>
             <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
@@ -200,7 +204,56 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
-        </View>
+
+          {/* Preferences Section - Available without sign in */}
+          <View style={styles.unauthPreferencesSection}>
+            <Text style={[styles.sectionTitle, { color: secondaryText }]}>PREFERENCES</Text>
+            
+            {/* Theme Toggle */}
+            <View style={[styles.preferenceItem, { backgroundColor: cardBg, borderColor }]}>
+              <View style={styles.preferenceLeft}>
+                <View style={[styles.preferenceIcon, { backgroundColor: `${tintColor}20` }]}>
+                  <Ionicons name={isDark ? 'moon' : 'sunny'} size={24} color={tintColor} />
+                </View>
+                <View style={styles.preferenceText}>
+                  <Text style={[styles.preferenceLabel, { color: textColor }]}>Dark Mode</Text>
+                  <Text style={[styles.preferenceDescription, { color: secondaryText }]}>
+                    {isDark ? 'Enabled' : 'Disabled'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#d1d5db', true: tintColor }}
+                thumbColor="#fff"
+                ios_backgroundColor="#d1d5db"
+              />
+            </View>
+
+            {/* Language Toggle */}
+            <View style={[styles.preferenceItem, { backgroundColor: cardBg, borderColor }]}>
+              <View style={styles.preferenceLeft}>
+                <View style={[styles.preferenceIcon, { backgroundColor: `${tintColor}20` }]}>
+                  <Ionicons name="language" size={24} color={tintColor} />
+                </View>
+                <View style={styles.preferenceText}>
+                  <Text style={[styles.preferenceLabel, { color: textColor }]}>Language</Text>
+                  <Text style={[styles.preferenceDescription, { color: secondaryText }]}>
+                    {language === 'en' ? 'English' : 'Kiswahili'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={language === 'sw'}
+                onValueChange={toggleLanguage}
+                trackColor={{ false: '#d1d5db', true: tintColor }}
+                thumbColor="#fff"
+                ios_backgroundColor="#d1d5db"
+              />
+            </View>
+          </View>
+        </ScrollView>
 
         {/* Modals */}
         <SignInModal
@@ -417,10 +470,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  unauthContainer: {
+  unauthScrollView: {
     flex: 1,
+  },
+  unauthContainer: {
     paddingHorizontal: 24,
     paddingTop: 40,
+    paddingBottom: 40,
   },
   unauthHeader: {
     alignItems: 'center',
@@ -472,6 +528,7 @@ const styles = StyleSheet.create({
   },
   features: {
     gap: 24,
+    marginBottom: 32,
   },
   featureItem: {
     flexDirection: 'row',
@@ -481,6 +538,11 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 16,
     flex: 1,
+  },
+  unauthPreferencesSection: {
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5e5',
   },
   profileHeader: {
     alignItems: 'center',

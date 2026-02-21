@@ -6,8 +6,8 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Dimensions, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -16,6 +16,9 @@ export default function HomeScreen() {
   const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('monthly');
+  
+  // Animated scroll value
+  const scrollY = useRef(new Animated.Value(0)).current;
   
   // Initialize with default dates
   const today = new Date();
@@ -28,6 +31,7 @@ export default function HomeScreen() {
     moveInDate: today.toISOString().split('T')[0],
   });
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { isAuthenticated } = useAuth();
   
   // Use the categorized properties hook with rental type
@@ -94,6 +98,25 @@ export default function HomeScreen() {
 
   const categorizedProperties = getPropertiesByCategory();
 
+  // Animated scale values for smooth shrinking
+  const searchBarScale = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.92],
+    extrapolate: 'clamp',
+  });
+
+  const categoriesScale = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.88],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [1, 0.95],
+    extrapolate: 'clamp',
+  });
+
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
     console.log('Search params:', params);
@@ -111,40 +134,60 @@ export default function HomeScreen() {
     }
   };
 
-  const handleScroll = (event: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 100;
-    
-    // Check if user is near the bottom
-    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
-      // Load more for the last section that has more items
-      const sectionsWithMore = categorizedProperties.filter(s => s.hasMore && s.properties.length > 0);
-      if (sectionsWithMore.length > 0 && !loadingMore) {
-        const lastSection = sectionsWithMore[sectionsWithMore.length - 1];
-        handleLoadMore(lastSection.category);
-      }
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    { useNativeDriver: false }
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Sticky Header - Airbnb Style */}
-      <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
-        {/* Search Bar at Top */}
-        <SearchBar 
-          onPress={() => setShowSearchModal(true)} 
-          rentalType={rentalType}
-          checkInDate={searchParams.checkInDate}
-          checkOutDate={searchParams.checkOutDate}
-          moveInDate={searchParams.moveInDate}
-        />
+      {/* Sticky Header */}
+      <Animated.View 
+        style={[
+          styles.header, 
+          { 
+            backgroundColor: headerBg, 
+            borderBottomColor: borderColor,
+            opacity: headerOpacity,
+          }
+        ]}
+      >
+        {/* Search Bar */}
+        <Animated.View 
+          style={{ 
+            transform: [{ scale: searchBarScale }],
+          }}
+        >
+          <SearchBar 
+            onPress={() => setShowSearchModal(true)} 
+            rentalType={rentalType}
+            checkInDate={searchParams.checkInDate}
+            checkOutDate={searchParams.checkOutDate}
+            moveInDate={searchParams.moveInDate}
+          />
+        </Animated.View>
 
-        {/* Category Filters - Airbnb Style */}
-        <ScrollView 
+        {/* Category Filters */}
+        <Animated.ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
-          style={[styles.categoriesScroll, { borderBottomColor: borderColor }]}
+          style={[
+            styles.categoriesScroll,
+            { 
+              borderBottomColor: borderColor,
+              transform: [{ scale: categoriesScale }],
+            }
+          ]}
         >
           {categories.map((category) => (
             <TouchableOpacity
@@ -175,8 +218,8 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      </View>
+        </Animated.ScrollView>
+      </Animated.View>
 
       {/* Search Modal */}
       <SearchModal
@@ -188,11 +231,19 @@ export default function HomeScreen() {
       />
 
       {/* Property Grid */}
-      <ScrollView 
+      <Animated.ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         onScroll={handleScroll}
-        scrollEventThrottle={400}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={tintColor}
+            colors={[tintColor]}
+          />
+        }
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -271,7 +322,7 @@ export default function HomeScreen() {
             )}
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

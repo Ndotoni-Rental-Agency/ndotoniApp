@@ -1,20 +1,20 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface SignInModalProps {
   visible: boolean;
@@ -55,7 +55,14 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       setEmail('');
       setPassword('');
     } catch (error: any) {
-      console.error('[SignInModal] Sign in error:', error?.name || 'Unknown', '-', error?.message);
+      // Log full error details for debugging
+      console.error('[SignInModal] Sign in error:', {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        underlyingError: error?.underlyingError,
+        fullError: error
+      });
       
       // Check if user needs email verification
       if (error.name === 'UserNotConfirmedException') {
@@ -73,15 +80,29 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
             { text: 'Cancel', style: 'cancel' },
           ]
         );
+      } else if (error.name === 'NotAuthorizedException') {
+        Alert.alert('Sign In Failed', 'Incorrect email or password. Please try again.');
+      } else if (error.name === 'UserNotFoundException') {
+        Alert.alert('Sign In Failed', 'No account found with this email. Please sign up first.');
+      } else if (error.name === 'Unknown' || !error.name) {
+        // Check if it's the react-native linking issue
+        const underlyingMessage = error?.underlyingError?.message || '';
+        if (underlyingMessage.includes('@aws-amplify/react-native') || underlyingMessage.includes('Expo Go')) {
+          Alert.alert(
+            'Development Build Required',
+            'Email/password sign-in requires a development build and cannot work with Expo Go.\n\nPlease use "Continue with Google" to sign in, or create a development build with:\n\nnpx expo run:ios\nor\nnpx expo run:android'
+          );
+        } else {
+          // Unknown error - likely a configuration issue
+          Alert.alert(
+            'Sign In Error',
+            'Unable to sign in. This might be a configuration issue. Please try signing in with Google or contact support.\n\nFor now, please use "Continue with Google" to sign in.'
+          );
+        }
       } else {
-        // Show detailed error in alert
-        const errorDetails = `
-Name: ${error?.name || 'Unknown'}
-Message: ${error?.message || 'Unknown error'}
-${error?.code ? `Code: ${error.code}` : ''}
-        `.trim();
-        
-        Alert.alert('Sign In Error', errorDetails);
+        // Show user-friendly error message
+        const errorMessage = error?.message || error?.toString() || 'An error occurred during sign in';
+        Alert.alert('Sign In Error', errorMessage);
       }
     } finally {
       setIsSubmitting(false);
