@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import PropertyMapView from '@/components/map/PropertyMapView';
+import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { usePropertyGeocode } from '@/hooks/useGeocode';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
-  Image,
   Dimensions,
   FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
-import PropertyMapView from '@/components/map/PropertyMapView';
-import { getApproximateCoordinates, CoordinatesInput } from '@/lib/geocoding';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,8 +28,10 @@ export default function ShortTermPropertyDetailsScreen() {
   // Use the short-term property detail hook
   const { property, loading: isLoading, error, retry } = useShortTermPropertyDetail(propertyId);
   
+  // Use the new geocoding hook
+  const { coordinates } = usePropertyGeocode(property);
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [coordinates, setCoordinates] = useState<CoordinatesInput | null>(null);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -37,46 +39,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
 
-  useEffect(() => {
-    // Fetch coordinates if not available or if they're placeholder (0,0)
-    const hasValidCoordinates = property?.coordinates && 
-      property.coordinates.latitude !== 0 && 
-      property.coordinates.longitude !== 0;
-      
-    if (property && !hasValidCoordinates) {
-      fetchCoordinates();
-    } else if (hasValidCoordinates && property.coordinates) {
-      setCoordinates(property.coordinates);
-    }
-  }, [property]);
 
-  const fetchCoordinates = async () => {
-    if (!property) return;
-
-    try {
-      console.log('[ShortTermProperty] Fetching coordinates for:', {
-        region: property.region,
-        district: property.district,
-        street: property.address?.street,
-      });
-      
-      const coords = await getApproximateCoordinates({
-        region: property.region || '',
-        district: property.district || '',
-        street: property.address?.street,
-      });
-
-      console.log('[ShortTermProperty] Coordinates result:', coords);
-
-      if (coords) {
-        setCoordinates(coords);
-      } else {
-        console.warn('[ShortTermProperty] No coordinates returned');
-      }
-    } catch (err) {
-      console.error('[ShortTermProperty] Error fetching coordinates:', err);
-    }
-  };
 
   const formatPrice = (amount: number, currency: string = 'TZS') => {
     return `${currency} ${amount?.toLocaleString()}`;

@@ -1,27 +1,28 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
-import { GraphQLClient } from '@/lib/graphql-client';
-import { createPropertyDraft, createShortTermPropertyDraft } from '@/lib/graphql/mutations';
-import LocationSelector from '@/components/location/LocationSelector';
-import MediaSelector from '@/components/media/MediaSelector';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
+import LocationSelector from '@/components/location/LocationSelector';
+import MediaSelector from '@/components/media/MediaSelector';
+import MapCoordinatesPicker from '@/components/property/MapCoordinatesPicker';
+import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { createPropertyDraft, createShortTermPropertyDraft } from '@/lib/graphql/mutations';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PROPERTY_TYPES = [
   { value: 'HOUSE', label: 'House' },
@@ -68,6 +69,7 @@ export default function ListPropertyScreen() {
     minimumStay: '1',
     bedrooms: '1',
     bathrooms: '1',
+    coordinates: null as { latitude: number; longitude: number } | null,
   });
 
   const [selectedMedia, setSelectedMedia] = useState<string[]>([]);
@@ -143,8 +145,8 @@ export default function ListPropertyScreen() {
       monthlyRent: parseFloat(formData.monthlyRent),
       currency: 'TZS',
       available: false,
-      latitude: 0.0,
-      longitude: 0.0,
+      latitude: formData.coordinates?.latitude || 0.0,
+      longitude: formData.coordinates?.longitude || 0.0,
     };
 
     if (formData.ward) input.ward = formData.ward;
@@ -174,8 +176,8 @@ export default function ListPropertyScreen() {
       district: formData.district,
       nightlyRate: parseFloat(formData.nightlyRate),
       currency: 'TZS',
-      latitude: 0.0,
-      longitude: 0.0,
+      latitude: formData.coordinates?.latitude || 0.0,
+      longitude: formData.coordinates?.longitude || 0.0,
     };
 
     // Optional fields - only include if provided
@@ -223,6 +225,7 @@ export default function ListPropertyScreen() {
               minimumStay: '1',
               bedrooms: '1',
               bathrooms: '1',
+              coordinates: null,
             });
             setSelectedMedia([]);
             setSelectedImages([]);
@@ -393,6 +396,18 @@ export default function ListPropertyScreen() {
             onChange={(location) => setFormData({ ...formData, ...location })}
             required
           />
+
+          {/* GPS Coordinates */}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: textColor }]}>GPS Coordinates (optional)</Text>
+            <MapCoordinatesPicker
+              value={formData.coordinates}
+              onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
+              region={formData.region}
+              district={formData.district}
+              ward={formData.ward}
+            />
+          </View>
 
           {/* Pricing */}
           {formData.rentalType === 'LONG_TERM' ? (

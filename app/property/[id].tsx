@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  Dimensions,
-  FlatList,
-  Linking,
-  Alert,
-  Modal,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import PropertyMapView from '@/components/map/PropertyMapView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { usePropertyDetail } from '@/hooks/propertyDetails/usePropertyDetail';
-import PropertyMapView from '@/components/map/PropertyMapView';
-import { getApproximateCoordinates, CoordinatesInput } from '@/lib/geocoding';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { generateWhatsAppUrl } from '@/lib/utils/whatsapp';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Linking,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -36,8 +36,10 @@ export default function LongTermPropertyDetailsScreen() {
   const { isAuthenticated } = useAuth();
   const { initializeChat } = useChat();
   
+  // Use the new geocoding hook
+  const { coordinates } = usePropertyGeocode(property);
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [coordinates, setCoordinates] = useState<CoordinatesInput | null | undefined>(null);
   const [isInitializingChat, setIsInitializingChat] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
 
@@ -47,47 +49,7 @@ export default function LongTermPropertyDetailsScreen() {
   const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
 
-  useEffect(() => {
-    // Fetch coordinates if not available or if they're placeholder (0,0)
-    const hasValidCoordinates = property?.address?.coordinates && 
-      property.address.coordinates.latitude !== 0 && 
-      property.address.coordinates.longitude !== 0;
-      
-    if (property && !hasValidCoordinates) {
-      fetchCoordinates();
-    } else if (hasValidCoordinates) {
-      setCoordinates(property.address.coordinates);
-    }
-  }, [property]);
 
-  const fetchCoordinates = async () => {
-    if (!property) return;
-
-    try {
-      console.log('[LongTermProperty] Fetching coordinates for:', {
-        region: property.address?.region,
-        district: property.address?.district,
-        ward: property.address?.ward,
-      });
-      
-      const coords = await getApproximateCoordinates({
-        region: property.address?.region || '',
-        district: property.address?.district || '',
-        ward: property.address?.ward ?? '',
-        street: property.address?.street ?? '',
-      });
-
-      console.log('[LongTermProperty] Coordinates result:', coords);
-
-      if (coords) {
-        setCoordinates(coords);
-      } else {
-        console.warn('[LongTermProperty] No coordinates returned');
-      }
-    } catch (err) {
-      console.error('[LongTermProperty] Error fetching coordinates:', err);
-    }
-  };
 
   const formatPrice = (amount: number, currency: string = 'TZS') => {
     return `${currency} ${amount?.toLocaleString()}`;

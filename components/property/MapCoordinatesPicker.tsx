@@ -1,5 +1,6 @@
 import { MAPS_CONFIG } from '@/config/maps';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { geocodeLocation } from '@/lib/geocoding-service';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
@@ -26,10 +27,10 @@ export default function MapCoordinatesPicker({
   district, 
   ward 
 }: MapCoordinatesPickerProps) {
-  const [expanded, setExpanded] = useState(false);
   const [markerCoords, setMarkerCoords] = useState<Coordinates | null>(value);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -38,52 +39,33 @@ export default function MapCoordinatesPicker({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   // Geocode address to get approximate coordinates
-  const geocodeAddress = async () => {
+  const geocodeAddress = async (): Promise<Coordinates | null> => {
     if (!region && !district) {
       return null;
     }
 
     setIsGeocoding(true);
     try {
-      // Build address string
-      const addressParts = [ward, district, region, 'Tanzania'].filter(Boolean);
-      const address = addressParts.join(', ');
-
-      console.log('[MapCoordinatesPicker] Geocoding address:', address);
-
-      // Use Google Geocoding API
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${MAPS_CONFIG.GOOGLE_API_KEY}`
+      const result = await geocodeLocation(
+        { region, district, ward },
+        null // Don't use saved coordinates for initial geocoding
       );
       
-      const data = await response.json();
-
-      if (data.status === 'OK' && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        const coords = {
-          latitude: location.lat,
-          longitude: location.lng,
-        };
-        console.log('[MapCoordinatesPicker] Geocoded coordinates:', coords);
-        return coords;
-      } else {
-        console.warn('[MapCoordinatesPicker] Geocoding failed:', data.status);
-        // Fallback to Tanzania center if geocoding fails
-        return MAPS_CONFIG.TANZANIA_CENTER;
-      }
+      console.log(`[MapCoordinatesPicker] Geocoded from ${result.source}:`, result.coordinates);
+      return result.coordinates;
     } catch (error) {
       console.error('[MapCoordinatesPicker] Geocoding error:', error);
-      // Fallback to Tanzania center
       return MAPS_CONFIG.TANZANIA_CENTER;
     } finally {
       setIsGeocoding(false);
     }
   };
 
-  // Initialize map when expanded
+  // Initialize map on mount or when address is first available
   useEffect(() => {
-    if (expanded && !mapRegion) {
+    if (!hasInitialized && (region || district)) {
       const initializeMap = async () => {
+        setIsGeocoding(true);
         let initialCoords: Coordinates;
 
         if (value) {
@@ -102,11 +84,45 @@ export default function MapCoordinatesPicker({
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         });
+        
+        setHasInitialized(true);
+        setIsGeocoding(false);
       };
 
       initializeMap();
     }
-  }, [expanded, value, region, district, ward]);
+  }, [region, district, hasInitialized]);
+
+  // Re-geocode when address changes (after initialization)
+  useEffect(() => {
+    if (hasInitialized && (region || district)) {
+      const updateMapLocation = async () => {
+        console.log('[MapCoordinatesPicker] Address changed, re-geocoding...');
+        setIsGeocoding(true);
+        
+        const geocoded = await geocodeAddress();
+        
+        if (geocoded) {
+          // Always update map region to new location
+          setMapRegion({
+            latitude: geocoded.latitude,
+            longitude: geocoded.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          });
+          
+          // Update marker position if user hasn't manually set coordinates
+          if (!value) {
+            setMarkerCoords(geocoded);
+          }
+        }
+        
+        setIsGeocoding(false);
+      };
+
+      updateMapLocation();
+    }
+  }, [region, district, ward]);
 
   const handleMarkerDragEnd = (e: any) => {
     const coords = e.nativeEvent.coordinate;
@@ -116,7 +132,7 @@ export default function MapCoordinatesPicker({
   const handleSave = () => {
     if (markerCoords) {
       onChange(markerCoords);
-      setExpanded(false);
+      Alert.alert('Success', 'Location saved successfully!');
     } else {
       Alert.alert('No Location', 'Please drag the pin to set a location.');
     }
@@ -125,7 +141,14 @@ export default function MapCoordinatesPicker({
   const handleClear = () => {
     setMarkerCoords(null);
     onChange(null);
-    setExpanded(false);
+    
+    // Reset to geocoded location
+    if (mapRegion) {
+      setMarkerCoords({
+        latitude: mapRegion.latitude,
+        longitude: mapRegion.longitude,
+      });
+    }
   };
 
   const handleUseCurrentLocation = async () => {
@@ -177,163 +200,145 @@ export default function MapCoordinatesPicker({
   };
 
   return (
-    <View>
-      <TouchableOpacity
-        style={[styles.header, { backgroundColor: cardBg, borderColor }]}
-        onPress={() => setExpanded(!expanded)}
-      >
-        <View style={styles.headerContent}>
-          <Ionicons name="map" size={20} color={tintColor} />
-          <Text style={[styles.headerText, { color: textColor }]}>
-            {value 
-              ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}` 
-              : 'Set location on map (optional)'}
+    <View style={styles.container}>
+      {/* Map Display */}
+      {isGeocoding ? (
+        <View style={[styles.loadingContainer, { backgroundColor: cardBg, borderColor }]}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <Text style={[styles.loadingText, { color: textColor }]}>
+            Finding location...
           </Text>
         </View>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color={textColor}
-        />
-      </TouchableOpacity>
+      ) : mapRegion ? (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            region={mapRegion}
+            onRegionChangeComplete={setMapRegion}
+            scrollEnabled={true}
+            zoomEnabled={true}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            {markerCoords && (
+              <Marker
+                coordinate={markerCoords}
+                draggable
+                onDragEnd={handleMarkerDragEnd}
+                title="Property Location"
+                description="Drag to adjust"
+              />
+            )}
+          </MapView>
 
-      {expanded && (
-        <View style={[styles.content, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.helperText, { color: placeholderColor }]}>
-            Drag the pin to set the exact property location
-          </Text>
-
-          {isGeocoding ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
-              <Text style={[styles.loadingText, { color: textColor }]}>
-                Finding location...
+          {/* Coordinate Display Overlay */}
+          {markerCoords && (
+            <View style={[styles.coordsOverlay, { backgroundColor: cardBg, borderColor }]}>
+              <Ionicons name="location" size={14} color={tintColor} />
+              <Text style={[styles.coordsText, { color: placeholderColor }]}>
+                {markerCoords.latitude.toFixed(6)}, {markerCoords.longitude.toFixed(6)}
               </Text>
             </View>
-          ) : mapRegion ? (
-            <View style={styles.mapContainer}>
-              <MapView
-                style={styles.map}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={mapRegion}
-                scrollEnabled={true}
-                zoomEnabled={true}
-                pitchEnabled={false}
-                rotateEnabled={false}
-              >
-                {markerCoords && (
-                  <Marker
-                    coordinate={markerCoords}
-                    draggable
-                    onDragEnd={handleMarkerDragEnd}
-                    title="Property Location"
-                    description="Drag to adjust"
-                  />
-                )}
-              </MapView>
+          )}
 
-              {markerCoords && (
-                <View style={[styles.coordsDisplay, { backgroundColor: cardBg, borderColor }]}>
-                  <Ionicons name="location" size={16} color={tintColor} />
-                  <Text style={[styles.coordsText, { color: textColor }]}>
-                    {markerCoords.latitude.toFixed(6)}, {markerCoords.longitude.toFixed(6)}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ) : null}
-
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton, { borderColor }]}
-              onPress={handleUseCurrentLocation}
-            >
-              <Ionicons name="navigate" size={18} color={tintColor} />
-              <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
-                Current
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton, { borderColor }]}
-              onPress={handleClear}
-            >
-              <Text style={[styles.secondaryButtonText, { color: textColor }]}>Clear</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton, { backgroundColor: tintColor }]}
-              onPress={handleSave}
-            >
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
+          {/* Helper Text Overlay */}
+          <View style={[styles.helperOverlay, { backgroundColor: cardBg, borderColor }]}>
+            <Text style={[styles.helperText, { color: placeholderColor }]}>
+              Drag the pin to set exact location
+            </Text>
           </View>
         </View>
+      ) : (
+        <View style={[styles.placeholderContainer, { backgroundColor: cardBg, borderColor }]}>
+          <Ionicons name="map-outline" size={48} color={placeholderColor} />
+          <Text style={[styles.placeholderText, { color: placeholderColor }]}>
+            Select region and district to see map
+          </Text>
+        </View>
       )}
+
+      {/* Action Buttons */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton, { borderColor }]}
+          onPress={handleUseCurrentLocation}
+          disabled={isGeocoding}
+        >
+          <Ionicons name="navigate" size={18} color={tintColor} />
+          <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
+            Current
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton, { borderColor }]}
+          onPress={handleClear}
+          disabled={isGeocoding || !markerCoords}
+        >
+          <Text style={[styles.secondaryButtonText, { color: textColor }]}>Reset</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.saveButton, { backgroundColor: tintColor }]}
+          onPress={handleSave}
+          disabled={isGeocoding || !markerCoords}
+        >
+          <Text style={styles.saveButtonText}>Save Location</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  headerText: {
-    fontSize: 15,
-  },
-  content: {
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  helperText: {
-    fontSize: 13,
-    marginBottom: 12,
-    lineHeight: 18,
+  container: {
+    gap: 12,
   },
   loadingContainer: {
-    height: 280,
+    height: 320,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   loadingText: {
     fontSize: 15,
   },
+  placeholderContainer: {
+    height: 320,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  placeholderText: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
   mapContainer: {
-    height: 280,
+    height: 320,
     borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 16,
     position: 'relative',
   },
   map: {
     flex: 1,
   },
-  coordsDisplay: {
+  coordsOverlay: {
     position: 'absolute',
-    top: 12,
+    bottom: 12,
     left: 12,
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -342,8 +347,27 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   coordsText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  helperOverlay: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  helperText: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   buttonRow: {
     flexDirection: 'row',

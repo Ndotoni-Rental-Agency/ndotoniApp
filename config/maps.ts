@@ -8,6 +8,9 @@ export const MAPS_CONFIG = {
   // Used for: Geocoding, Maps Display, Places API
   GOOGLE_API_KEY: 'AIzaSyAA79IOdXt_LrssAhIYer_ZQQHNeD8Xogs',
   
+  // URL Signing Secret (optional, for enhanced security)
+  URL_SIGNING_SECRET: 'c4Wnwr0M6DfAQHazFGrzBjaZXKY=',
+  
   // Default map settings
   DEFAULT_REGION: {
     latitude: -6.369028,

@@ -20,6 +20,7 @@ Replaced the manual text-input coordinates picker with an interactive map-based 
 - Automatically calculates initial coordinates from address fields
 - Uses region, district, and optionally ward to geocode
 - Powered by Google Geocoding API (accurate and reliable)
+- **Real-time Updates**: Re-geocodes and updates map when address changes
 - Fallback to Tanzania center (-6.369028, 34.888822) if geocoding fails
 
 #### 3. Current Location Support
@@ -56,6 +57,12 @@ interface MapCoordinatesPickerProps {
 #### Address Building
 1. Combines ward (optional), district, region, and "Tanzania"
 2. Example: "Kinondoni, Dar es Salaam, Tanzania"
+
+#### Dynamic Updates
+- Map automatically re-geocodes when region, district, or ward changes
+- Updates map center to new location
+- Preserves manually set marker position (if user already dragged pin)
+- Only updates marker if user hasn't manually set coordinates yet
 
 #### API Used
 - **Service**: Google Geocoding API
@@ -180,11 +187,20 @@ export const MAPS_CONFIG = {
 - Pitch: Disabled (2D view only)
 - Rotation: Disabled (north always up)
 - Scroll/Zoom: Enabled
+- **Dynamic Region**: Map updates when address changes
 
 ### Coordinate Precision
 - Display: 6 decimal places
 - Storage: Full precision (double)
 - Accuracy: ~0.11 meters at 6 decimal places
+
+### React Hooks Used
+1. **Initial Load Effect**: Geocodes address when map first expands
+2. **Address Change Effect**: Re-geocodes when region/district/ward changes
+3. **State Management**: 
+   - `mapRegion`: Current map viewport
+   - `markerCoords`: Pin position
+   - `isGeocoding`: Loading state
 
 ## Future Enhancements
 
@@ -206,14 +222,20 @@ export const MAPS_CONFIG = {
 ## Testing Recommendations
 
 ### Manual Testing
-1. Test with various address combinations (region only, region+district, full address)
-2. Verify geocoding works for different Tanzania regions
-3. Test drag functionality on both iOS and Android
-4. Verify fallback behavior when geocoding fails
-5. Test save/clear/cancel actions
-6. Check coordinate display accuracy
-7. Test current location feature with location permissions
-8. Verify location permission denial handling
+1. Test with region only
+2. Test with region + district
+3. Test with region + district + ward
+4. **Test address changes while map is open**
+5. **Verify map re-centers when address changes**
+6. **Verify marker updates only if not manually set**
+7. Test with invalid addresses
+8. Test network failure handling
+9. Test drag functionality on both iOS and Android
+10. Verify fallback behavior when geocoding fails
+11. Test save/clear/cancel actions
+12. Check coordinate display accuracy
+13. Test current location feature with location permissions
+14. Verify location permission denial handling
 
 ### Edge Cases
 1. No address provided (should show Tanzania center)
@@ -263,8 +285,12 @@ export const MAPS_CONFIG = {
 ✅ Component created and integrated
 ✅ Geocoding implemented with Google API
 ✅ Current location feature implemented
+✅ Dynamic address updates (re-geocodes on change)
+✅ Map re-centers when address changes
+✅ Preserves manual marker placement
 ✅ LocationSection updated
 ✅ Both property edit pages updated automatically
+✅ Property creation form integrated
 ✅ TypeScript types defined
 ✅ No diagnostics errors
 ✅ expo-location installed
