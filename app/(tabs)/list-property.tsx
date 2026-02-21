@@ -11,16 +11,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -55,7 +56,7 @@ export default function ListPropertyScreen() {
 
   const [formData, setFormData] = useState({
     rentalType: 'LONG_TERM', // 'LONG_TERM' or 'SHORT_TERM'
-    title: '',
+    title: 'Beautiful Home Available',
     propertyType: 'HOUSE',
     shortTermPropertyType: 'HOUSE',
     region: '',
@@ -79,6 +80,56 @@ export default function ListPropertyScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showPropertyTypePicker, setShowPropertyTypePicker] = useState(false);
+  const [showTitleGenerator, setShowTitleGenerator] = useState(false);
+
+  // Generate multiple title variations
+  const generateTitleOptions = () => {
+    const titles: string[] = [];
+    
+    const bedrooms = formData.bedrooms && parseInt(formData.bedrooms) > 0 ? formData.bedrooms : null;
+    const propertyType = formData.rentalType === 'LONG_TERM' 
+      ? PROPERTY_TYPES.find(t => t.value === formData.propertyType)?.label
+      : SHORT_TERM_PROPERTY_TYPES.find(t => t.value === formData.shortTermPropertyType)?.label;
+    const location = formData.ward || formData.district || formData.region;
+    
+    if (!propertyType || !location) {
+      return [
+        'Modern Property for Rent',
+        'Beautiful Home Available',
+        'Spacious Living Space',
+        'Comfortable Accommodation',
+        'Quality Property Available',
+      ];
+    }
+
+    // Template variations
+    if (bedrooms) {
+      titles.push(`${bedrooms} Bedroom ${propertyType} in ${location}`);
+      titles.push(`Spacious ${bedrooms} Bedroom ${propertyType} - ${location}`);
+      titles.push(`Modern ${bedrooms}BR ${propertyType} | ${location}`);
+      titles.push(`Beautiful ${bedrooms} Bed ${propertyType}, ${location}`);
+      titles.push(`${bedrooms}BR ${propertyType} Available in ${location}`);
+      titles.push(`Cozy ${bedrooms} Bedroom ${propertyType} - ${location}`);
+      titles.push(`${location}: ${bedrooms} Bedroom ${propertyType}`);
+      titles.push(`Lovely ${bedrooms}BR ${propertyType} in ${location}`);
+      titles.push(`${bedrooms} Bedroom ${propertyType} | ${location} Area`);
+      titles.push(`Quality ${bedrooms}BR ${propertyType} - ${location}`);
+    } else {
+      titles.push(`${propertyType} in ${location}`);
+      titles.push(`Modern ${propertyType} - ${location}`);
+      titles.push(`Beautiful ${propertyType} | ${location}`);
+      titles.push(`Spacious ${propertyType}, ${location}`);
+      titles.push(`${propertyType} Available in ${location}`);
+      titles.push(`Cozy ${propertyType} - ${location}`);
+      titles.push(`${location}: ${propertyType}`);
+      titles.push(`Lovely ${propertyType} in ${location}`);
+      titles.push(`${propertyType} | ${location} Area`);
+      titles.push(`Quality ${propertyType} - ${location}`);
+    }
+    
+    return titles.slice(0, 10);
+  };
 
   const handleSubmit = async () => {
     // Validation
@@ -137,6 +188,8 @@ export default function ListPropertyScreen() {
   };
 
   const handleLongTermSubmit = async () => {
+    const hasMedia = selectedMedia.length > 0;
+    
     const input: any = {
       title: formData.title.trim(),
       propertyType: formData.propertyType,
@@ -144,7 +197,7 @@ export default function ListPropertyScreen() {
       district: formData.district,
       monthlyRent: parseFloat(formData.monthlyRent),
       currency: 'TZS',
-      available: false,
+      available: hasMedia, // Publish if has media, draft otherwise
       latitude: formData.coordinates?.latitude || 0.0,
       longitude: formData.coordinates?.longitude || 0.0,
     };
@@ -162,13 +215,18 @@ export default function ListPropertyScreen() {
     );
 
     if (data.createPropertyDraft?.success) {
-      showSuccessAndReset('Long-term rental draft created successfully!');
+      const message = hasMedia 
+        ? 'Property published successfully!' 
+        : 'Long-term rental draft created successfully!';
+      showSuccessAndReset(message);
     } else {
       Alert.alert('Error', data.createPropertyDraft?.message || 'Failed to create property');
     }
   };
 
   const handleShortTermSubmit = async () => {
+    const hasMedia = selectedMedia.length > 0;
+    
     const input: any = {
       title: formData.title.trim(),
       propertyType: formData.shortTermPropertyType,
@@ -176,6 +234,7 @@ export default function ListPropertyScreen() {
       district: formData.district,
       nightlyRate: parseFloat(formData.nightlyRate),
       currency: 'TZS',
+      available: hasMedia, // Publish if has media, draft otherwise
       latitude: formData.coordinates?.latitude || 0.0,
       longitude: formData.coordinates?.longitude || 0.0,
     };
@@ -195,16 +254,24 @@ export default function ListPropertyScreen() {
     );
 
     if (data.createShortTermPropertyDraft?.success) {
-      showSuccessAndReset('Short-term rental draft created successfully!');
+      const message = hasMedia 
+        ? 'Property published successfully!' 
+        : 'Short-term rental draft created successfully!';
+      showSuccessAndReset(message);
     } else {
       Alert.alert('Error', data.createShortTermPropertyDraft?.message || 'Failed to create property');
     }
   };
 
   const showSuccessAndReset = (message: string) => {
+    const hasMedia = selectedMedia.length > 0;
+    const detailMessage = hasMedia 
+      ? 'Your property is now live and visible to potential tenants!'
+      : 'You can add more details, photos, and videos later.';
+    
     Alert.alert(
       'Success!',
-      message + ' You can add more details and photos later.',
+      message + ' ' + detailMessage,
       [
         {
           text: 'OK',
@@ -248,141 +315,167 @@ export default function ListPropertyScreen() {
           <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: textColor }]}>List a Property</Text>
-            <Text style={[styles.subtitle, { color: placeholderColor }]}>
-              Create a draft in seconds. Add photos later.
-            </Text>
+            <View style={styles.headerContent}>
+              <View style={[styles.headerIcon, { backgroundColor: `${tintColor}15` }]}>
+                <View style={[styles.headerIconInner, { backgroundColor: tintColor }]}>
+                  <Ionicons name="add" size={32} color="#fff" />
+                </View>
+              </View>
+              <View style={styles.headerText}>
+                <Text style={[styles.title, { color: textColor }]}>List Your Property</Text>
+                <Text style={[styles.subtitle, { color: placeholderColor }]}>
+                  Quick draft • Add details later
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Rental Type Selector */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Rental Type</Text>
+            <Text style={[styles.label, { color: textColor }]}>
+              Rental Type <Text style={styles.required}>*</Text>
+            </Text>
             <View style={styles.rentalTypeRow}>
               <TouchableOpacity
                 style={[
                   styles.rentalTypeButton,
-                  { borderColor },
+                  { 
+                    borderColor,
+                    backgroundColor: formData.rentalType === 'LONG_TERM' ? tintColor : inputBg,
+                  },
                   formData.rentalType === 'LONG_TERM' && {
-                    backgroundColor: tintColor,
                     borderColor: tintColor,
                   },
                 ]}
                 onPress={() => setFormData({ ...formData, rentalType: 'LONG_TERM' })}
+                activeOpacity={0.7}
               >
-                <Ionicons 
-                  name="home" 
-                  size={20} 
-                  color={formData.rentalType === 'LONG_TERM' ? '#fff' : textColor} 
-                />
-                <Text
-                  style={[
-                    styles.rentalTypeText,
-                    { color: textColor },
-                    formData.rentalType === 'LONG_TERM' && styles.rentalTypeTextActive,
-                  ]}
-                >
-                  Long-term
-                </Text>
-                <Text
-                  style={[
-                    styles.rentalTypeSubtext,
-                    { color: placeholderColor },
-                    formData.rentalType === 'LONG_TERM' && { color: '#fff' },
-                  ]}
-                >
-                  Monthly rent
-                </Text>
+                <View style={[
+                  styles.iconCircle,
+                  { 
+                    backgroundColor: formData.rentalType === 'LONG_TERM' 
+                      ? 'rgba(255,255,255,0.2)' 
+                      : `${tintColor}15`,
+                  }
+                ]}>
+                  <Ionicons 
+                    name="home" 
+                    size={20} 
+                    color={formData.rentalType === 'LONG_TERM' ? '#fff' : tintColor} 
+                  />
+                </View>
+                <View style={styles.rentalTypeTextContainer}>
+                  <Text
+                    style={[
+                      styles.rentalTypeText,
+                      { color: textColor },
+                      formData.rentalType === 'LONG_TERM' && styles.rentalTypeTextActive,
+                    ]}
+                  >
+                    Long-term
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rentalTypeSubtext,
+                      { color: placeholderColor },
+                      formData.rentalType === 'LONG_TERM' && { color: 'rgba(255,255,255,0.8)' },
+                    ]}
+                  >
+                    Monthly rent
+                  </Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.rentalTypeButton,
-                  { borderColor },
+                  { 
+                    borderColor,
+                    backgroundColor: formData.rentalType === 'SHORT_TERM' ? tintColor : inputBg,
+                  },
                   formData.rentalType === 'SHORT_TERM' && {
-                    backgroundColor: tintColor,
                     borderColor: tintColor,
                   },
                 ]}
                 onPress={() => setFormData({ ...formData, rentalType: 'SHORT_TERM' })}
+                activeOpacity={0.7}
               >
-                <Ionicons 
-                  name="calendar" 
-                  size={20} 
-                  color={formData.rentalType === 'SHORT_TERM' ? '#fff' : textColor} 
-                />
-                <Text
-                  style={[
-                    styles.rentalTypeText,
-                    { color: textColor },
-                    formData.rentalType === 'SHORT_TERM' && styles.rentalTypeTextActive,
-                  ]}
-                >
-                  Short-term
-                </Text>
-                <Text
-                  style={[
-                    styles.rentalTypeSubtext,
-                    { color: placeholderColor },
-                    formData.rentalType === 'SHORT_TERM' && { color: '#fff' },
-                  ]}
-                >
-                  Nightly rate
-                </Text>
+                <View style={[
+                  styles.iconCircle,
+                  { 
+                    backgroundColor: formData.rentalType === 'SHORT_TERM' 
+                      ? 'rgba(255,255,255,0.2)' 
+                      : `${tintColor}15`,
+                  }
+                ]}>
+                  <Ionicons 
+                    name="calendar" 
+                    size={20} 
+                    color={formData.rentalType === 'SHORT_TERM' ? '#fff' : tintColor} 
+                  />
+                </View>
+                <View style={styles.rentalTypeTextContainer}>
+                  <Text
+                    style={[
+                      styles.rentalTypeText,
+                      { color: textColor },
+                      formData.rentalType === 'SHORT_TERM' && styles.rentalTypeTextActive,
+                    ]}
+                  >
+                    Short-term
+                  </Text>
+                  <Text
+                    style={[
+                      styles.rentalTypeSubtext,
+                      { color: placeholderColor },
+                      formData.rentalType === 'SHORT_TERM' && { color: 'rgba(255,255,255,0.8)' },
+                    ]}
+                  >
+                    Nightly rate
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Title */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Title</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-              placeholder="e.g., 2 cozy bedrooms near city center"
-              placeholderTextColor={placeholderColor}
-              value={formData.title}
-              onChangeText={(text) => setFormData({ ...formData, title: text })}
-            />
+            <Text style={[styles.label, { color: textColor }]}>
+              Property Title <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={styles.titleInputContainer}>
+              <TextInput
+                style={[styles.titleInput, { color: textColor, backgroundColor: inputBg, borderColor }]}
+                placeholder="e.g., 2 Bedroom Apartment in Ilala"
+                placeholderTextColor={placeholderColor}
+                value={formData.title}
+                onChangeText={(text) => setFormData({ ...formData, title: text })}
+              />
+              <TouchableOpacity
+                style={[styles.generateIconButton, { backgroundColor: tintColor }]}
+                onPress={() => setShowTitleGenerator(true)}
+              >
+                <Ionicons name="sparkles" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Property Type */}
           <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Type</Text>
-            <View style={styles.typeGrid}>
-              {(formData.rentalType === 'LONG_TERM' ? PROPERTY_TYPES : SHORT_TERM_PROPERTY_TYPES).map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={[
-                    styles.typeButton,
-                    { borderColor },
-                    (formData.rentalType === 'LONG_TERM' 
-                      ? formData.propertyType === type.value 
-                      : formData.shortTermPropertyType === type.value) && {
-                      backgroundColor: tintColor,
-                      borderColor: tintColor,
-                    },
-                  ]}
-                  onPress={() => {
-                    if (formData.rentalType === 'LONG_TERM') {
-                      setFormData({ ...formData, propertyType: type.value });
-                    } else {
-                      setFormData({ ...formData, shortTermPropertyType: type.value });
-                    }
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      { color: textColor },
-                      (formData.rentalType === 'LONG_TERM' 
-                        ? formData.propertyType === type.value 
-                        : formData.shortTermPropertyType === type.value) && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    {type.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={[styles.label, { color: textColor }]}>
+              Property Type <Text style={styles.required}>*</Text>
+            </Text>
+            <TouchableOpacity
+              style={[styles.selector, { backgroundColor: inputBg, borderColor }]}
+              onPress={() => setShowPropertyTypePicker(true)}
+            >
+              <Text style={[styles.selectorText, { color: textColor }]}>
+                {formData.rentalType === 'LONG_TERM'
+                  ? PROPERTY_TYPES.find(t => t.value === formData.propertyType)?.label
+                  : SHORT_TERM_PROPERTY_TYPES.find(t => t.value === formData.shortTermPropertyType)?.label}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={placeholderColor} />
+            </TouchableOpacity>
           </View>
 
           {/* Location */}
@@ -412,7 +505,9 @@ export default function ListPropertyScreen() {
           {/* Pricing */}
           {formData.rentalType === 'LONG_TERM' ? (
             <View style={styles.section}>
-              <Text style={[styles.label, { color: textColor }]}>Monthly Rent (TZS)</Text>
+              <Text style={[styles.label, { color: textColor }]}>
+                Monthly Rent (TZS) <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
                 placeholder="e.g., 500000"
@@ -425,7 +520,9 @@ export default function ListPropertyScreen() {
           ) : (
             <>
               <View style={styles.section}>
-                <Text style={[styles.label, { color: textColor }]}>Nightly Rate (TZS)</Text>
+                <Text style={[styles.label, { color: textColor }]}>
+                  Nightly Rate (TZS) <Text style={styles.required}>*</Text>
+                </Text>
                 <TextInput
                   style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
                   placeholder="e.g., 50000"
@@ -465,7 +562,9 @@ export default function ListPropertyScreen() {
           {/* Bedrooms & Bathrooms */}
           <View style={styles.row}>
             <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Bedrooms</Text>
+              <Text style={[styles.label, { color: textColor }]}>
+                Bedrooms <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
                 value={formData.bedrooms}
@@ -508,12 +607,38 @@ export default function ListPropertyScreen() {
           {/* Media Selector */}
           <View style={styles.section}>
             <TouchableOpacity
-              style={styles.mediaSelectorToggle}
+              style={[
+                styles.mediaSelectorToggle,
+                { 
+                  backgroundColor: showMediaSelector ? `${tintColor}10` : inputBg,
+                  borderColor: showMediaSelector ? tintColor : borderColor,
+                }
+              ]}
               onPress={() => setShowMediaSelector(!showMediaSelector)}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.label, { color: tintColor }]}>
-                {showMediaSelector ? '− Hide' : '+ Add'} photos (optional)
-              </Text>
+              <View style={styles.mediaSelectorHeader}>
+                <View style={styles.mediaSelectorLeft}>
+                  <Ionicons 
+                    name={showMediaSelector ? "images" : "images-outline"} 
+                    size={20} 
+                    color={tintColor} 
+                  />
+                  <Text style={[styles.mediaSelectorText, { color: tintColor }]}>
+                    {showMediaSelector ? 'Hide' : 'Add'} photos & videos
+                  </Text>
+                </View>
+                <Ionicons 
+                  name={showMediaSelector ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={tintColor} 
+                />
+              </View>
+              {selectedMedia.length > 0 && (
+                <Text style={[styles.mediaCount, { color: placeholderColor }]}>
+                  {selectedMedia.length} {selectedMedia.length === 1 ? 'file' : 'files'} selected
+                </Text>
+              )}
             </TouchableOpacity>
 
             {showMediaSelector && (
@@ -543,16 +668,122 @@ export default function ListPropertyScreen() {
             style={[styles.submitButton, { backgroundColor: tintColor }]}
             onPress={handleSubmit}
             disabled={isSubmitting}
+            activeOpacity={0.8}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Save Draft</Text>
+              <View style={styles.submitButtonContent}>
+                <Text style={styles.submitButtonText}>
+                  {selectedMedia.length > 0 ? 'Publish Property' : 'Save Draft'}
+                </Text>
+                <Ionicons 
+                  name={selectedMedia.length > 0 ? "checkmark-done-circle" : "checkmark-circle"} 
+                  size={22} 
+                  color="#fff" 
+                />
+              </View>
             )}
           </TouchableOpacity>
         </View>
       </ScrollView>
       </TouchableWithoutFeedback>
+
+      {/* Property Type Picker Modal */}
+      <Modal visible={showPropertyTypePicker} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: textColor }]}>Select Property Type</Text>
+              <TouchableOpacity onPress={() => setShowPropertyTypePicker(false)}>
+                <Ionicons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalList}>
+              {(formData.rentalType === 'LONG_TERM' ? PROPERTY_TYPES : SHORT_TERM_PROPERTY_TYPES).map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.modalListItem,
+                    { borderBottomColor: borderColor },
+                    (formData.rentalType === 'LONG_TERM' 
+                      ? formData.propertyType === type.value 
+                      : formData.shortTermPropertyType === type.value) && { 
+                      backgroundColor: `${tintColor}15` 
+                    },
+                  ]}
+                  onPress={() => {
+                    if (formData.rentalType === 'LONG_TERM') {
+                      setFormData({ ...formData, propertyType: type.value });
+                    } else {
+                      setFormData({ ...formData, shortTermPropertyType: type.value });
+                    }
+                    setShowPropertyTypePicker(false);
+                  }}
+                >
+                  <Text style={[styles.modalListItemText, { color: textColor }]}>
+                    {type.label}
+                  </Text>
+                  {(formData.rentalType === 'LONG_TERM' 
+                    ? formData.propertyType === type.value 
+                    : formData.shortTermPropertyType === type.value) && (
+                    <Ionicons name="checkmark-circle" size={22} color={tintColor} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Title Generator Modal */}
+      <Modal visible={showTitleGenerator} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Ionicons name="sparkles" size={22} color={tintColor} />
+                <Text style={[styles.modalTitle, { color: textColor }]}>Generate Title</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowTitleGenerator(false)}>
+                <Ionicons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalList}>
+              {generateTitleOptions().map((title, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.titleOption,
+                    { borderBottomColor: borderColor },
+                    formData.title === title && { backgroundColor: `${tintColor}15` },
+                  ]}
+                  onPress={() => {
+                    setFormData({ ...formData, title });
+                    setShowTitleGenerator(false);
+                  }}
+                >
+                  <Text 
+                    style={[
+                      styles.titleOptionText, 
+                      { color: textColor },
+                      formData.title === title && { fontWeight: '600' },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {title}
+                  </Text>
+                  {formData.title === title && (
+                    <Ionicons name="checkmark-circle" size={22} color={tintColor} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* Authentication Modals */}
       <SignInModal
@@ -598,45 +829,127 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 32,
+    paddingTop: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  headerIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerIconInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.7,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: -0.2,
+  },
+  required: {
+    color: '#ef4444',
+    fontSize: 15,
+  },
+  titleInputContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  titleInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    fontSize: 16,
+    borderWidth: 1.5,
+  },
+  generateIconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   input: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     fontSize: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
+  },
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  selectorText: {
+    fontSize: 16,
   },
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    marginTop: 2,
   },
   typeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    minWidth: 100,
+    alignItems: 'center',
   },
   typeButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   typeButtonTextActive: {
     color: '#fff',
@@ -649,31 +962,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mediaSelectorToggle: {
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
     marginBottom: 12,
+  },
+  mediaSelectorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mediaSelectorLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  mediaSelectorText: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  mediaCount: {
+    fontSize: 13,
+    marginTop: 6,
+    marginLeft: 30,
   },
   infoBox: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-    gap: 12,
+    padding: 18,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 28,
+    gap: 14,
+    alignItems: 'flex-start',
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.8,
   },
   submitButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: 'center',
     marginBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   rentalTypeRow: {
     flexDirection: 'row',
@@ -681,20 +1030,97 @@ const styles = StyleSheet.create({
   },
   rentalTypeButton: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 2,
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rentalTypeTextContainer: {
+    flex: 1,
   },
   rentalTypeText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 2,
   },
   rentalTypeSubtext: {
     fontSize: 12,
+    opacity: 0.7,
   },
   rentalTypeTextActive: {
     color: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+    maxHeight: '60%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  modalList: {
+    maxHeight: 400,
+  },
+  modalListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+  },
+  modalListItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  titleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  titleOptionText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });

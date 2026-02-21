@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 interface MediaSelectorProps {
   selectedMedia: string[];
@@ -37,6 +37,8 @@ export default function MediaSelector({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [videoThumbnails, setVideoThumbnails] = useState<Record<string, string>>({});
 
   const checkAuthentication = () => {
     if (!user) {
@@ -85,18 +87,18 @@ export default function MediaSelector({
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ['images', 'videos'],
         allowsMultipleSelection: true,
         quality: 0.8,
         selectionLimit: maxSelection - selectedMedia.length,
       });
 
       if (!result.canceled && result.assets) {
-        await uploadImages(result.assets);
+        await uploadMedia(result.assets);
       }
     } catch (error) {
-      console.error('[MediaSelector] Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('[MediaSelector] Error picking media:', error);
+      Alert.alert('Error', 'Failed to pick media');
     }
   };
 
@@ -123,7 +125,7 @@ export default function MediaSelector({
       });
 
       if (!result.canceled && result.assets) {
-        await uploadImages(result.assets);
+        await uploadMedia(result.assets);
       }
     } catch (error) {
       console.error('[MediaSelector] Error taking photo:', error);
@@ -131,18 +133,55 @@ export default function MediaSelector({
     }
   };
 
-  const uploadImages = async (assets: ImagePicker.ImagePickerAsset[]) => {
+  const generateVideoThumbnail = async (videoUri: string): Promise<string | null> => {
+    try {
+      const VideoThumbnails = require('expo-video-thumbnails');
+      const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
+        time: 1000, // Get frame at 1 second
+        quality: 0.8,
+      });
+      return uri;
+    } catch (error) {
+      console.error('[MediaSelector] Error generating thumbnail:', error);
+      return null;
+    }
+  };
+
+  const uploadMedia = async (assets: ImagePicker.ImagePickerAsset[]) => {
     setUploading(true);
+    setUploadProgress({ current: 0, total: assets.length });
+    
     try {
       const uploadedUrls: string[] = [];
+      const newThumbnails: Record<string, string> = { ...videoThumbnails };
 
-      for (const asset of assets) {
-        const filename = asset.uri.split('/').pop() || 'photo.jpg';
+      // Upload all assets in parallel for better performance
+      const uploadPromises = assets.map(async (asset, index) => {
+        const filename = asset.uri.split('/').pop() || 'media.jpg';
         const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        // Determine content type based on file extension or asset type
+        let type = 'image/jpeg';
+        const isVideo = asset.type === 'video' || (match && ['mp4', 'mov', 'avi', 'webm'].includes(match[1].toLowerCase()));
+        
+        if (match) {
+          const ext = match[1].toLowerCase();
+          if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
+            type = `video/${ext === 'mov' ? 'quicktime' : ext}`;
+          } else {
+            type = `image/${ext}`;
+          }
+        } else if (isVideo) {
+          type = 'video/mp4';
+        }
+
+        // Generate thumbnail for videos (in parallel)
+        let thumbnailPromise: Promise<string | null> | null = null;
+        if (isVideo) {
+          thumbnailPromise = generateVideoThumbnail(asset.uri);
+        }
 
         // Step 1: Get presigned URL from backend
-        // Smart decision: use authenticated if signed in, otherwise guest mode
         const isAuthenticated = await GraphQLClient.isAuthenticated();
         const urlData = isAuthenticated
           ? await GraphQLClient.executeAuthenticated<{ getMediaUploadUrl: any }>(
@@ -178,10 +217,47 @@ export default function MediaSelector({
           },
         });
 
-        uploadedUrls.push(fileUrl);
+        // Wait for thumbnail if it was being generated
+        if (thumbnailPromise) {
+          const thumbnailUri = await thumbnailPromise;
+          if (thumbnailUri) {
+            newThumbnails[fileUrl] = thumbnailUri;
+          }
+        }
+
+        // Update progress
+        setUploadProgress({ current: index + 1, total: assets.length });
+
+        return fileUrl;
+      });
+
+      // Wait for all uploads to complete (even if some fail)
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // Collect successful uploads and count failures
+      let failedCount = 0;
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          uploadedUrls.push(result.value);
+        } else {
+          failedCount++;
+          console.error('[MediaSelector] Upload failed:', result.reason);
+        }
+      });
+
+      // Show warning if some uploads failed
+      if (failedCount > 0) {
+        Alert.alert(
+          'Partial Upload',
+          `${uploadedUrls.length} file(s) uploaded successfully. ${failedCount} file(s) failed.`,
+          [{ text: 'OK' }]
+        );
       }
 
-      // Update selected media
+      // Update thumbnails state
+      setVideoThumbnails(newThumbnails);
+
+      // Update selected media with successful uploads
       const newSelectedMedia = [...selectedMedia, ...uploadedUrls];
       const images = newSelectedMedia.filter(url => 
         url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)
@@ -192,10 +268,11 @@ export default function MediaSelector({
 
       onMediaChange(newSelectedMedia, images, videos);
     } catch (error) {
-      console.error('[MediaSelector] Error uploading images:', error);
-      Alert.alert('Error', 'Failed to upload images');
+      console.error('[MediaSelector] Error uploading media:', error);
+      Alert.alert('Error', 'Failed to upload media');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -220,7 +297,7 @@ export default function MediaSelector({
           disabled={uploading}
         >
           <Ionicons name="images" size={20} color="#fff" />
-          <Text style={styles.uploadButtonText}>Choose Photos</Text>
+          <Text style={styles.uploadButtonText}>Choose Media</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -237,7 +314,11 @@ export default function MediaSelector({
       {uploading && (
         <View style={[styles.uploadingBox, { backgroundColor: inputBg, borderColor }]}>
           <ActivityIndicator size="small" color={tintColor} />
-          <Text style={[styles.uploadingText, { color: textColor }]}>Uploading...</Text>
+          <Text style={[styles.uploadingText, { color: textColor }]}>
+            {uploadProgress 
+              ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
+              : 'Uploading...'}
+          </Text>
         </View>
       )}
 
@@ -248,22 +329,35 @@ export default function MediaSelector({
             {selectedMedia.length} / {maxSelection} selected
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {selectedMedia.map((url, index) => (
-              <View key={index} style={styles.mediaItem}>
-                <Image source={{ uri: url }} style={styles.mediaImage} />
-                <TouchableOpacity
-                  style={[styles.removeButton, { backgroundColor: '#ef4444' }]}
-                  onPress={() => removeMedia(url)}
-                >
-                  <Ionicons name="close" size={16} color="#fff" />
-                </TouchableOpacity>
-                {index === 0 && (
-                  <View style={[styles.primaryBadge, { backgroundColor: tintColor }]}>
-                    <Text style={styles.primaryBadgeText}>Primary</Text>
-                  </View>
-                )}
-              </View>
-            ))}
+            {selectedMedia.map((url, index) => {
+              const isVideo = url.match(/\.(mp4|mov|avi|webm)(\?|$)/i);
+              const thumbnailUri = isVideo ? videoThumbnails[url] : null;
+              
+              return (
+                <View key={index} style={styles.mediaItem}>
+                  <Image 
+                    source={{ uri: thumbnailUri || url }} 
+                    style={styles.mediaImage} 
+                  />
+                  {isVideo && (
+                    <View style={styles.playIconOverlay}>
+                      <Ionicons name="play-circle" size={40} color="rgba(255,255,255,0.9)" />
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    style={[styles.removeButton, { backgroundColor: '#ef4444' }]}
+                    onPress={() => removeMedia(url)}
+                  >
+                    <Ionicons name="close" size={16} color="#fff" />
+                  </TouchableOpacity>
+                  {index === 0 && (
+                    <View style={[styles.primaryBadge, { backgroundColor: tintColor }]}>
+                      <Text style={styles.primaryBadgeText}>Primary</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       )}
@@ -272,7 +366,7 @@ export default function MediaSelector({
       <View style={[styles.infoBox, { backgroundColor: inputBg, borderColor }]}>
         <Ionicons name="information-circle" size={18} color={tintColor} />
         <Text style={[styles.infoText, { color: placeholderColor }]}>
-          The first image will be used as the property thumbnail
+          Upload photos and videos. The first image will be the thumbnail.
         </Text>
       </View>
     </View>
@@ -326,6 +420,17 @@ const styles = StyleSheet.create({
   mediaImage: {
     width: 120,
     height: 120,
+    borderRadius: 12,
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: 12,
   },
   removeButton: {

@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { getRegions, getDistricts, getWards } from '@/lib/graphql/queries';
+import { getDistricts, getRegions, getWards } from '@/lib/graphql/queries';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface LocationValue {
   region: string;
@@ -151,7 +151,7 @@ export default function LocationSelector({ value, onChange, required }: Location
 
   return (
     <View style={styles.container}>
-      {/* Region Selector */}
+      {/* Region Selector - Always visible */}
       <View style={styles.field}>
         <Text style={[styles.label, { color: textColor }]}>
           Region {required && <Text style={styles.required}>*</Text>}
@@ -167,57 +167,53 @@ export default function LocationSelector({ value, onChange, required }: Location
         </TouchableOpacity>
       </View>
 
-      {/* District Selector */}
-      <View style={styles.field}>
-        <Text style={[styles.label, { color: textColor }]}>
-          District {required && <Text style={styles.required}>*</Text>}
-        </Text>
-        <TouchableOpacity
-          style={[
-            styles.selector,
-            { backgroundColor: inputBg, borderColor },
-            !value.region && styles.disabled,
-          ]}
-          onPress={() => value.region && setShowDistrictPicker(true)}
-          disabled={!value.region}
-        >
-          <Text style={[styles.selectorText, { color: value.district ? textColor : placeholderColor }]}>
-            {value.district ? toTitleCase(value.district) : 'Select District'}
+      {/* District Selector - Only show after region is selected */}
+      {value.region && (
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: textColor }]}>
+            District {required && <Text style={styles.required}>*</Text>}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={placeholderColor} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.selector, { backgroundColor: inputBg, borderColor }]}
+            onPress={() => setShowDistrictPicker(true)}
+          >
+            <Text style={[styles.selectorText, { color: value.district ? textColor : placeholderColor }]}>
+              {value.district ? toTitleCase(value.district) : 'Select District'}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color={placeholderColor} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {/* Ward Selector */}
-      <View style={styles.field}>
-        <Text style={[styles.label, { color: textColor }]}>Ward (Optional)</Text>
-        <TouchableOpacity
-          style={[
-            styles.selector,
-            { backgroundColor: inputBg, borderColor },
-            !value.district && styles.disabled,
-          ]}
-          onPress={() => value.district && setShowWardPicker(true)}
-          disabled={!value.district}
-        >
-          <Text style={[styles.selectorText, { color: value.ward ? textColor : placeholderColor }]}>
-            {value.ward ? toTitleCase(value.ward) : 'Select Ward'}
-          </Text>
-          <Ionicons name="chevron-down" size={20} color={placeholderColor} />
-        </TouchableOpacity>
-      </View>
+      {/* Ward Selector - Only show after district is selected */}
+      {value.district && (
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: textColor }]}>Ward (Optional)</Text>
+          <TouchableOpacity
+            style={[styles.selector, { backgroundColor: inputBg, borderColor }]}
+            onPress={() => setShowWardPicker(true)}
+          >
+            <Text style={[styles.selectorText, { color: value.ward ? textColor : placeholderColor }]}>
+              {value.ward ? toTitleCase(value.ward) : 'Select Ward'}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color={placeholderColor} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {/* Optional Street Input */}
-      <View style={styles.field}>
-        <Text style={[styles.label, { color: textColor }]}>Street Address (Optional)</Text>
-        <TextInput
-          style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-          placeholder="e.g., Haile Selassie Road"
-          placeholderTextColor={placeholderColor}
-          value={value.street || ''}
-          onChangeText={(text) => onChange({ ...value, street: text })}
-        />
-      </View>
+      {/* Street Input - Only show after ward is selected or skipped */}
+      {value.district && (
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: textColor }]}>Street Address (Optional)</Text>
+          <TextInput
+            style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
+            placeholder="e.g., Haile Selassie Road"
+            placeholderTextColor={placeholderColor}
+            value={value.street || ''}
+            onChangeText={(text) => onChange({ ...value, street: text })}
+          />
+        </View>
+      )}
 
       {/* Region Picker Modal */}
       <Modal visible={showRegionPicker} animationType="slide" transparent>
@@ -380,15 +376,16 @@ export default function LocationSelector({ value, onChange, required }: Location
 
 const styles = StyleSheet.create({
   container: {
-    gap: 16,
+    gap: 0,
   },
   field: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: -0.2,
   },
   required: {
     color: '#ef4444',
@@ -398,9 +395,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
   },
   selectorText: {
     fontSize: 16,
@@ -410,10 +407,10 @@ const styles = StyleSheet.create({
   },
   input: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     fontSize: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   modalOverlay: {
     flex: 1,
@@ -436,7 +433,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   searchInput: {
     margin: 16,
