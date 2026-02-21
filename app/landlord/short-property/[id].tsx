@@ -768,11 +768,6 @@ export default function EditShortTermPropertyScreen() {
             setSelectedVideos(videos);
             setThumbnail(property?.thumbnail || '');
           }}
-          hasChanges={
-            JSON.stringify(selectedImages) !== JSON.stringify(property?.images || []) ||
-            thumbnail !== (property?.thumbnail || '')
-          }
-          isSaving={sectionSaving['Photos & Media']}
         >
           <MediaSection
             selectedMedia={selectedMedia}

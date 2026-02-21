@@ -32,7 +32,6 @@ export default function SearchScreen() {
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const [regions, setRegions] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
-
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -48,6 +47,7 @@ export default function SearchScreen() {
   const checkOutDate = params.checkOutDate as string;
   const moveInDate = params.moveInDate as string;
 
+  // Local state for selected location (can be changed without navigation)
   const [selectedRegion, setSelectedRegion] = useState(region || '');
   const [selectedDistrict, setSelectedDistrict] = useState(district || '');
 
@@ -55,6 +55,7 @@ export default function SearchScreen() {
 
   // Fetch regions on mount
   useEffect(() => {
+    
     fetchRegions();
   }, []);
 
@@ -67,6 +68,16 @@ export default function SearchScreen() {
       }
     }
   }, [region, regions]);
+
+  // Fetch districts when selected region changes
+  useEffect(() => {
+    if (selectedRegion) {
+      const regionObj = regions.find(r => r.name === selectedRegion);
+      if (regionObj) {
+        fetchDistricts(regionObj.id);
+      }
+    }
+  }, [selectedRegion, regions]);
 
   // Fetch properties
   const fetchProperties = async () => {
@@ -87,8 +98,8 @@ export default function SearchScreen() {
           searchShortTermProperties,
           {
             input: {
-              region: region || 'Dar es Salaam',
-              district,
+              region: selectedRegion || 'Dar es Salaam',
+              district: selectedDistrict,
               checkInDate: defaultCheckIn,
               checkOutDate: defaultCheckOut,
               numberOfGuests: 2, // Default to 2 guests
@@ -100,8 +111,8 @@ export default function SearchScreen() {
         const data = await GraphQLClient.executePublic<{ getPropertiesByLocation: any }>(
           getPropertiesByLocation,
           {
-            region: region || 'Dar es Salaam',
-            district,
+            region: selectedRegion || 'Dar es Salaam',
+            district: selectedDistrict,
             moveInDate,
           }
         );
@@ -118,7 +129,7 @@ export default function SearchScreen() {
 
   useEffect(() => {
     fetchProperties();
-  }, [region, district, checkInDate, checkOutDate, moveInDate, rentalType]);
+  }, [selectedRegion, selectedDistrict, checkInDate, checkOutDate, moveInDate, rentalType]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -160,25 +171,13 @@ export default function SearchScreen() {
   };
 
   const handleRegionSelect = (regionName: string) => {
-    router.push({
-      pathname: '/search',
-      params: {
-        ...params,
-        region: regionName,
-        district: undefined, // Reset district when region changes
-      },
-    } as any);
+    setSelectedRegion(regionName);
+    setSelectedDistrict(''); // Reset district when region changes
     setShowRegionDropdown(false);
   };
 
   const handleDistrictSelect = (districtName: string) => {
-    router.push({
-      pathname: '/search',
-      params: {
-        ...params,
-        district: districtName || undefined,
-      },
-    } as any);
+    setSelectedDistrict(districtName);
     setShowDistrictDropdown(false);
   };
 
@@ -247,7 +246,7 @@ export default function SearchScreen() {
   }, [properties, filters, isShortTerm]);
 
   const getSearchTitle = () => {
-    const locationText = location || district || region || 'Properties';
+    const locationText = location || selectedDistrict || selectedRegion || 'Properties';
     return toTitleCase(locationText);
   };
 
@@ -327,7 +326,7 @@ export default function SearchScreen() {
                 >
                   <Ionicons name="location-outline" size={16} color={textColor} />
                   <Text style={[styles.locationChipText, { color: textColor }]} numberOfLines={1}>
-                    {region ? toTitleCase(region) : 'Region'}
+                    {selectedRegion ? toTitleCase(selectedRegion) : 'Region'}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={textColor} />
                 </TouchableOpacity>
@@ -343,7 +342,7 @@ export default function SearchScreen() {
                         <Text style={[styles.dropdownItemText, { color: textColor }]}>
                           {toTitleCase(reg.name)}
                         </Text>
-                        {region === reg.name && (
+                        {selectedRegion === reg.name && (
                           <Ionicons name="checkmark" size={18} color={tintColor} />
                         )}
                       </TouchableOpacity>
@@ -353,7 +352,7 @@ export default function SearchScreen() {
               </View>
 
               {/* District Dropdown - Only show when region is selected */}
-              {region && (
+              {selectedRegion && (
                 <View style={styles.locationDropdownWrapper}>
                   <TouchableOpacity
                     style={[styles.locationChip, { backgroundColor: headerBg, borderColor }]}
@@ -361,7 +360,7 @@ export default function SearchScreen() {
                   >
                     <Ionicons name="navigate-outline" size={16} color={textColor} />
                     <Text style={[styles.locationChipText, { color: textColor }]} numberOfLines={1}>
-                      {district ? toTitleCase(district) : 'District'}
+                      {selectedDistrict ? toTitleCase(selectedDistrict) : 'District'}
                     </Text>
                     <Ionicons name="chevron-down" size={14} color={textColor} />
                   </TouchableOpacity>
@@ -375,7 +374,7 @@ export default function SearchScreen() {
                         <Text style={[styles.dropdownItemText, { color: textColor }]}>
                           All Districts
                         </Text>
-                        {!district && (
+                        {!selectedDistrict && (
                           <Ionicons name="checkmark" size={18} color={tintColor} />
                         )}
                       </TouchableOpacity>
@@ -388,7 +387,7 @@ export default function SearchScreen() {
                           <Text style={[styles.dropdownItemText, { color: textColor }]}>
                             {toTitleCase(dist.name)}
                           </Text>
-                          {district === dist.name && (
+                          {selectedDistrict === dist.name && (
                             <Ionicons name="checkmark" size={18} color={tintColor} />
                           )}
                         </TouchableOpacity>
