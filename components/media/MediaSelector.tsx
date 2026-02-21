@@ -4,6 +4,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
 import { getMediaLibrary } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
@@ -367,55 +368,57 @@ export default function MediaSelector({
 
   return (
     <View style={styles.container}>
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'upload' && [styles.activeTab, { borderBottomColor: tintColor }],
-          ]}
-          onPress={() => setActiveTab('upload')}
-        >
-          <Ionicons 
-            name="cloud-upload" 
-            size={18} 
-            color={activeTab === 'upload' ? tintColor : placeholderColor} 
-          />
-          <Text
+      {/* Tabs - Only show if user is authenticated */}
+      {user && (
+        <View style={styles.tabs}>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: activeTab === 'upload' ? tintColor : placeholderColor },
+              styles.tab,
+              activeTab === 'upload' && [styles.activeTab, { borderBottomColor: tintColor }],
             ]}
+            onPress={() => setActiveTab('upload')}
           >
-            Upload New
-          </Text>
-        </TouchableOpacity>
+            <Ionicons 
+              name="cloud-upload" 
+              size={18} 
+              color={activeTab === 'upload' ? tintColor : placeholderColor} 
+            />
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'upload' ? tintColor : placeholderColor },
+              ]}
+            >
+              Upload New
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'library' && [styles.activeTab, { borderBottomColor: tintColor }],
-          ]}
-          onPress={() => setActiveTab('library')}
-        >
-          <Ionicons 
-            name="images" 
-            size={18} 
-            color={activeTab === 'library' ? tintColor : placeholderColor} 
-          />
-          <Text
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: activeTab === 'library' ? tintColor : placeholderColor },
+              styles.tab,
+              activeTab === 'library' && [styles.activeTab, { borderBottomColor: tintColor }],
             ]}
+            onPress={() => setActiveTab('library')}
           >
-            My Library
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Ionicons 
+              name="images" 
+              size={18} 
+              color={activeTab === 'library' ? tintColor : placeholderColor} 
+            />
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'library' ? tintColor : placeholderColor },
+              ]}
+            >
+              My Library
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Upload Tab */}
-      {activeTab === 'upload' && (
+      {(!user || activeTab === 'upload') && (
         <>
           {/* Upload Buttons */}
           <View style={styles.buttonRow}>
@@ -452,8 +455,8 @@ export default function MediaSelector({
         </>
       )}
 
-      {/* Library Tab */}
-      {activeTab === 'library' && (
+      {/* Library Tab - Only accessible when authenticated */}
+      {user && activeTab === 'library' && (
         <View style={styles.libraryContainer}>
           {loadingLibrary ? (
             <View style={styles.loadingContainer}>
@@ -488,7 +491,24 @@ export default function MediaSelector({
                       ]}
                       onPress={() => toggleLibraryMedia(url)}
                     >
-                      <Image source={{ uri: url }} style={styles.libraryImage} />
+                      {isVideo ? (
+                        <Video
+                          source={{ uri: url }}
+                          style={styles.libraryImage}
+                          resizeMode={ResizeMode.COVER}
+                          shouldPlay={false}
+                          isLooping={false}
+                          isMuted
+                          usePoster
+                          posterSource={{ uri: url }}
+                          posterStyle={styles.libraryImage}
+                        />
+                      ) : (
+                        <Image 
+                          source={{ uri: url }} 
+                          style={styles.libraryImage}
+                        />
+                      )}
                       {isVideo && (
                         <View style={styles.playIconOverlay}>
                           <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
