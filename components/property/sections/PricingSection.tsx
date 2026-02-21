@@ -1,4 +1,3 @@
-import CurrencyPicker from '@/components/property/CurrencyPicker';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React from 'react';
 import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
@@ -29,11 +28,10 @@ export default function PricingSection({ formData, onUpdate, propertyCategory }:
   return (
     <>
       <View style={styles.section}>
-        <Text style={[styles.label, { color: textColor }]}>Currency *</Text>
-        <CurrencyPicker
-          value={formData.currency}
-          onChange={(currency) => onUpdate('currency', currency)}
-        />
+        <Text style={[styles.label, { color: textColor }]}>Currency</Text>
+        <View style={[styles.currencyDisplay, { backgroundColor: cardBg, borderColor }]}>
+          <Text style={[styles.currencyText, { color: textColor }]}>TZS - Tanzanian Shilling</Text>
+        </View>
       </View>
 
       {propertyCategory === 'long-term' ? (
@@ -180,5 +178,14 @@ const styles = StyleSheet.create({
   switchSubtext: {
     fontSize: 12,
     marginTop: 4,
+  },
+  currencyDisplay: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  currencyText: {
+    fontSize: 16,
   },
 });

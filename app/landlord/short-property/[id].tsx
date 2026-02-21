@@ -1,5 +1,6 @@
 import AmenitiesSelector from '@/components/property/AmenitiesSelector';
 import CollapsibleSection from '@/components/property/CollapsibleSection';
+import DatePicker from '@/components/property/DatePicker';
 import BasicInfoSection from '@/components/property/sections/BasicInfoSection';
 import ContactSection from '@/components/property/sections/ContactSection';
 import LocationSection from '@/components/property/sections/LocationSection';
@@ -143,7 +144,6 @@ export default function EditShortTermPropertyScreen() {
       if (fields.includes('title')) input.title = formData.title;
       if (fields.includes('description')) input.description = formData.description;
       if (fields.includes('propertyType')) input.propertyType = formData.propertyType as any;
-      if (fields.includes('status')) input.status = formData.status as any;
       
       if (fields.some(f => ['region', 'district', 'ward', 'street', 'city', 'country', 'postalCode', 'coordinates'].includes(f as string))) {
         if (fields.includes('region')) input.region = formData.region;
@@ -153,12 +153,12 @@ export default function EditShortTermPropertyScreen() {
         }
       }
       
-      if (fields.some(f => ['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'].includes(f as string))) {
-        if (fields.includes('currency')) input.currency = formData.currency;
+      if (fields.some(f => ['nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'].includes(f as string))) {
         if (fields.includes('nightlyRate')) input.nightlyRate = parseFloat(formData.nightlyRate) || 0;
         if (fields.includes('cleaningFee')) input.cleaningFee = parseFloat(formData.cleaningFee) || undefined;
         if (fields.includes('serviceFeePercentage')) input.serviceFeePercentage = parseFloat(formData.serviceFeePercentage) || undefined;
         if (fields.includes('taxPercentage')) input.taxPercentage = parseFloat(formData.taxPercentage) || undefined;
+        input.currency = 'TZS';
       }
       
       if (fields.some(f => ['maxGuests', 'maxAdults', 'maxChildren', 'maxInfants'].includes(f as string))) {
@@ -176,9 +176,9 @@ export default function EditShortTermPropertyScreen() {
       }
       
       if (fields.some(f => ['checkInTime', 'checkOutTime', 'checkInInstructions'].includes(f as string))) {
-        if (fields.includes('checkInTime')) input.checkInTime = formData.checkInTime || undefined;
-        if (fields.includes('checkOutTime')) input.checkOutTime = formData.checkOutTime || undefined;
-        if (fields.includes('checkInInstructions')) input.checkInInstructions = formData.checkInInstructions || undefined;
+        if (fields.includes('checkInTime')) input.checkInTime = formData.checkInTime && formData.checkInTime.trim() !== '' ? formData.checkInTime : undefined;
+        if (fields.includes('checkOutTime')) input.checkOutTime = formData.checkOutTime && formData.checkOutTime.trim() !== '' ? formData.checkOutTime : undefined;
+        if (fields.includes('checkInInstructions')) input.checkInInstructions = formData.checkInInstructions && formData.checkInInstructions.trim() !== '' ? formData.checkInInstructions : undefined;
       }
       
       if (fields.some(f => ['cancellationPolicy', 'allowsPets', 'allowsSmoking', 'allowsChildren', 'allowsInfants'].includes(f as string))) {
@@ -315,7 +315,7 @@ export default function EditShortTermPropertyScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColor} />
           <Text style={[styles.loadingText, { color: textColor }]}>Loading property...</Text>
@@ -326,7 +326,7 @@ export default function EditShortTermPropertyScreen() {
 
   if (error || !property) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#ef4444" />
           <Text style={[styles.errorText, { color: textColor }]}>{error || 'Property not found'}</Text>
@@ -342,27 +342,23 @@ export default function EditShortTermPropertyScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={24} color={textColor} />
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
+      <View style={[styles.titleContainer, { backgroundColor: cardBg }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+          <Ionicons name="arrow-back" size={28} color={textColor} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: textColor }]}>Edit Property</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-          <Ionicons name="checkmark" size={24} color={tintColor} />
-        </TouchableOpacity>
+        <Text style={[styles.pageTitle, { color: textColor }]}>Edit Property</Text>
       </View>
-
+      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Basic Information */}
         <CollapsibleSection 
           title="Basic Information" 
           icon="information-circle" 
           defaultExpanded
-          onSave={() => saveSection('Basic Information', ['title', 'description', 'propertyType', 'status'])}
-          onCancel={() => resetSection(['title', 'description', 'propertyType', 'status'])}
-          hasChanges={hasSectionChanges(['title', 'description', 'propertyType', 'status'])}
+          onSave={() => saveSection('Basic Information', ['title', 'description', 'propertyType'])}
+          onCancel={() => resetSection(['title', 'description', 'propertyType'])}
+          hasChanges={hasSectionChanges(['title', 'description', 'propertyType'])}
           isSaving={sectionSaving['Basic Information']}
         >
           <BasicInfoSection
@@ -370,7 +366,6 @@ export default function EditShortTermPropertyScreen() {
               title: formData.title,
               description: formData.description,
               propertyType: formData.propertyType,
-              status: formData.status,
             }}
             onUpdate={updateField}
             propertyCategory="short-term"
@@ -409,9 +404,9 @@ export default function EditShortTermPropertyScreen() {
           title="Pricing & Fees" 
           icon="cash" 
           defaultExpanded
-          onSave={() => saveSection('Pricing & Fees', ['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
-          onCancel={() => resetSection(['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
-          hasChanges={hasSectionChanges(['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
+          onSave={() => saveSection('Pricing & Fees', ['nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
+          onCancel={() => resetSection(['nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
+          hasChanges={hasSectionChanges(['nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
           isSaving={sectionSaving['Pricing & Fees']}
         >
           <PricingSection
@@ -563,25 +558,33 @@ export default function EditShortTermPropertyScreen() {
           isSaving={sectionSaving['Check-in & Check-out']}
         >
           <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Check-in Time</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
+            <View style={styles.halfWidth}>
+              <DatePicker
+                label="Check-in Time"
                 value={formData.checkInTime}
-                onChangeText={(text) => setFormData({ ...formData, checkInTime: text })}
+                onChange={(time: string) => setFormData({ ...formData, checkInTime: time })}
+                mode="time"
                 placeholder="14:00"
-                placeholderTextColor={placeholderColor}
+                textColor={textColor}
+                tintColor={tintColor}
+                backgroundColor={cardBg}
+                borderColor={borderColor}
+                placeholderColor={placeholderColor}
               />
             </View>
 
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Check-out Time</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
+            <View style={styles.halfWidth}>
+              <DatePicker
+                label="Check-out Time"
                 value={formData.checkOutTime}
-                onChangeText={(text) => setFormData({ ...formData, checkOutTime: text })}
+                onChange={(time: string) => setFormData({ ...formData, checkOutTime: time })}
+                mode="time"
                 placeholder="11:00"
-                placeholderTextColor={placeholderColor}
+                textColor={textColor}
+                tintColor={tintColor}
+                backgroundColor={cardBg}
+                borderColor={borderColor}
+                placeholderColor={placeholderColor}
               />
             </View>
           </View>
@@ -780,26 +783,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 12,
   },
-  headerButton: {
+  backArrow: {
     padding: 4,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
     padding: 20,
+    paddingTop: 0,
   },
   loadingContainer: {
     flex: 1,

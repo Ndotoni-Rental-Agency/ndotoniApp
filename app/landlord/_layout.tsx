@@ -7,9 +7,9 @@ export default function LandlordLayout() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="properties" />
-      <Stack.Screen name="property/[id]" />
-      <Stack.Screen name="short-property/[id]" />
+      <Stack.Screen name="properties" options={{ headerShown: false }} />
+      <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="short-property/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

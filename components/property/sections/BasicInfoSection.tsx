@@ -1,14 +1,13 @@
 import PropertyTypePicker from '@/components/property/PropertyTypePicker';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface BasicInfoSectionProps {
   formData: {
     title: string;
     description: string;
     propertyType: string;
-    status: string;
   };
   onUpdate: (field: string, value: any) => void;
   propertyCategory: 'long-term' | 'short-term';
@@ -16,14 +15,9 @@ interface BasicInfoSectionProps {
 
 export default function BasicInfoSection({ formData, onUpdate, propertyCategory }: BasicInfoSectionProps) {
   const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
-
-  const statuses = propertyCategory === 'long-term' 
-    ? ['AVAILABLE', 'DRAFT', 'MAINTENANCE', 'RENTED']
-    : ['AVAILABLE', 'DRAFT', 'MAINTENANCE', 'BOOKED'];
 
   return (
     <>
@@ -59,33 +53,6 @@ export default function BasicInfoSection({ formData, onUpdate, propertyCategory 
           propertyCategory={propertyCategory}
         />
       </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.label, { color: textColor }]}>Status</Text>
-        <View style={styles.statusButtons}>
-          {statuses.map((status) => (
-            <TouchableOpacity
-              key={status}
-              style={[
-                styles.statusButton,
-                { borderColor },
-                formData.status === status && { backgroundColor: tintColor, borderColor: tintColor },
-              ]}
-              onPress={() => onUpdate('status', status)}
-            >
-              <Text
-                style={[
-                  styles.statusButtonText,
-                  { color: textColor },
-                  formData.status === status && { color: '#fff' },
-                ]}
-              >
-                {status}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
     </>
   );
 }
@@ -114,20 +81,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 100,
     textAlignVertical: 'top',
-  },
-  statusButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statusButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1.5,
-  },
-  statusButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

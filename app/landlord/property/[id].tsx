@@ -1,5 +1,6 @@
 import AmenitiesSelector from '@/components/property/AmenitiesSelector';
 import CollapsibleSection from '@/components/property/CollapsibleSection';
+import DatePicker from '@/components/property/DatePicker';
 import BasicInfoSection from '@/components/property/sections/BasicInfoSection';
 import ContactSection from '@/components/property/sections/ContactSection';
 import LocationSection from '@/components/property/sections/LocationSection';
@@ -115,7 +116,6 @@ export default function EditLongTermPropertyScreen() {
       if (fields.includes('title')) input.title = formData.title;
       if (fields.includes('description')) input.description = formData.description;
       if (fields.includes('propertyType')) input.propertyType = formData.propertyType as any;
-      if (fields.includes('status')) input.status = formData.status as any;
       
       if (fields.some(f => ['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'].includes(f as string))) {
         input.address = {
@@ -128,9 +128,9 @@ export default function EditLongTermPropertyScreen() {
         };
       }
       
-      if (fields.some(f => ['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'].includes(f as string))) {
+      if (fields.some(f => ['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'].includes(f as string))) {
         input.pricing = {
-          currency: formData.currency,
+          currency: 'TZS',
           monthlyRent: parseFloat(formData.monthlyRent) || 0,
           deposit: parseFloat(formData.deposit) || undefined,
           serviceCharge: parseFloat(formData.serviceCharge) || undefined,
@@ -152,7 +152,7 @@ export default function EditLongTermPropertyScreen() {
       if (fields.some(f => ['available', 'availableFrom', 'minimumLeaseTerm', 'maximumLeaseTerm'].includes(f as string))) {
         input.availability = {
           available: formData.available,
-          availableFrom: formData.availableFrom || undefined,
+          availableFrom: formData.availableFrom && formData.availableFrom.trim() !== '' ? formData.availableFrom : undefined,
           minimumLeaseTerm: parseInt(formData.minimumLeaseTerm) || undefined,
           maximumLeaseTerm: parseInt(formData.maximumLeaseTerm) || undefined,
         };
@@ -259,7 +259,7 @@ export default function EditLongTermPropertyScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColor} />
           <Text style={[styles.loadingText, { color: textColor }]}>Loading property...</Text>
@@ -270,7 +270,7 @@ export default function EditLongTermPropertyScreen() {
 
   if (error || !property) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#ef4444" />
           <Text style={[styles.errorText, { color: textColor }]}>{error || 'Property not found'}</Text>
@@ -286,29 +286,22 @@ export default function EditLongTermPropertyScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={24} color={textColor} />
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
+      <View style={[styles.titleContainer, { backgroundColor: cardBg }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+          <Ionicons name="arrow-back" size={28} color={textColor} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: textColor }]}>Edit Property</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton} disabled={isSaving}>
-          {isSaving ? (
-            <ActivityIndicator size="small" color={tintColor} />
-          ) : (
-            <Ionicons name="checkmark" size={24} color={tintColor} />
-          )}
-        </TouchableOpacity>
+        <Text style={[styles.pageTitle, { color: textColor }]}>Edit Property</Text>
       </View>
-
+      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <CollapsibleSection 
           title="Basic Information" 
           icon="information-circle" 
           defaultExpanded
-          onSave={() => saveSection('Basic Information', ['title', 'description', 'propertyType', 'status'])}
-          onCancel={() => resetSection(['title', 'description', 'propertyType', 'status'])}
-          hasChanges={hasSectionChanges(['title', 'description', 'propertyType', 'status'])}
+          onSave={() => saveSection('Basic Information', ['title', 'description', 'propertyType'])}
+          onCancel={() => resetSection(['title', 'description', 'propertyType'])}
+          hasChanges={hasSectionChanges(['title', 'description', 'propertyType'])}
           isSaving={sectionSaving['Basic Information']}
         >
           <BasicInfoSection
@@ -316,7 +309,6 @@ export default function EditLongTermPropertyScreen() {
               title: formData.title,
               description: formData.description,
               propertyType: formData.propertyType,
-              status: formData.status,
             }}
             onUpdate={updateField}
             propertyCategory="long-term"
@@ -351,9 +343,9 @@ export default function EditLongTermPropertyScreen() {
           title="Pricing & Fees" 
           icon="cash" 
           defaultExpanded
-          onSave={() => saveSection('Pricing & Fees', ['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
-          onCancel={() => resetSection(['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
-          hasChanges={hasSectionChanges(['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
+          onSave={() => saveSection('Pricing & Fees', ['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
+          onCancel={() => resetSection(['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
+          hasChanges={hasSectionChanges(['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
           isSaving={sectionSaving['Pricing & Fees']}
         >
           <PricingSection
@@ -480,19 +472,19 @@ export default function EditLongTermPropertyScreen() {
             />
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Available From</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={placeholderColor}
-              value={formData.availableFrom}
-              onChangeText={(text) => updateField('availableFrom', text)}
-            />
-            <Text style={[styles.helperText, { color: placeholderColor }]}>
-              When the property will be available
-            </Text>
-          </View>
+          <DatePicker
+            label="Available From"
+            value={formData.availableFrom}
+            onChange={(date: string) => updateField('availableFrom', date)}
+            mode="date"
+            placeholder="YYYY-MM-DD"
+            helperText="When the property will be available"
+            textColor={textColor}
+            tintColor={tintColor}
+            backgroundColor={cardBg}
+            borderColor={borderColor}
+            placeholderColor={placeholderColor}
+          />
 
           <View style={styles.row}>
             <View style={[styles.section, styles.halfWidth]}>
@@ -625,26 +617,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 12,
   },
-  headerButton: {
+  backArrow: {
     padding: 4,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
     padding: 20,
+    paddingTop: 0,
   },
   loadingContainer: {
     flex: 1,

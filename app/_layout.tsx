@@ -7,9 +7,9 @@ import 'react-native-reanimated';
 import '@/polyfills';
 
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ChatProvider } from '@/contexts/ChatContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 // Initialize Amplify configuration
 import '@/lib/amplify';
@@ -25,6 +25,12 @@ function RootLayoutContent() {
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="landlord" 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
         <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="short-property/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
