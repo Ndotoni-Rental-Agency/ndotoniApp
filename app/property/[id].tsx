@@ -6,8 +6,9 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { generateWhatsAppUrl } from '@/lib/utils/whatsapp';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio, ResizeMode, Video } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -49,7 +50,15 @@ export default function LongTermPropertyDetailsScreen() {
   const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
 
-
+  // Set up audio mode for video playback with sound
+  useEffect(() => {
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
+  }, []);
 
   const formatPrice = (amount: number, currency: string = 'TZS') => {
     return `${currency} ${amount?.toLocaleString()}`;
@@ -107,6 +116,8 @@ export default function LongTermPropertyDetailsScreen() {
   };
 
   const images = property?.media?.images || [];
+  const videos = property?.media?.videos || [];
+  const allMedia = [...images, ...videos];
 
   if (isLoading) {
     return (
@@ -151,10 +162,10 @@ export default function LongTermPropertyDetailsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image Gallery with Overlay Buttons */}
-        {images.length > 0 && (
+        {allMedia.length > 0 && (
           <View style={styles.imageGalleryContainer}>
             <FlatList
-              data={images}
+              data={allMedia}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
@@ -162,13 +173,27 @@ export default function LongTermPropertyDetailsScreen() {
                 const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
                 setSelectedImageIndex(index);
               }}
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
-                  style={styles.propertyImage}
-                  resizeMode="cover"
-                />
-              )}
+              renderItem={({ item, index }) => {
+                const isVideo = item.match(/\.(mp4|mov|avi|webm)(\?|$)/i);
+                
+                return isVideo ? (
+                  <Video
+                    source={{ uri: item }}
+                    style={styles.propertyImage}
+                    resizeMode={ResizeMode.CONTAIN}
+                    useNativeControls
+                    shouldPlay={index === selectedImageIndex}
+                    isLooping
+                    isMuted={false}
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: item }}
+                    style={styles.propertyImage}
+                    resizeMode="cover"
+                  />
+                );
+              }}
               keyExtractor={(item, index) => index.toString()}
             />
             
@@ -198,10 +223,10 @@ export default function LongTermPropertyDetailsScreen() {
               </View>
             </View>
             
-            {/* Image Counter */}
+            {/* Media Counter */}
             <View style={styles.imageCounter}>
               <Text style={styles.imageCounterText}>
-                {selectedImageIndex + 1} / {images.length}
+                {selectedImageIndex + 1} / {allMedia.length}
               </Text>
             </View>
           </View>
