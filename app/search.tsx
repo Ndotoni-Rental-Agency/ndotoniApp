@@ -55,7 +55,7 @@ export default function SearchScreen() {
 
   // Fetch regions on mount
   useEffect(() => {
-    
+
     fetchRegions();
   }, []);
 
@@ -138,15 +138,6 @@ export default function SearchScreen() {
 
   const handleApplyFilters = (newFilters: FilterOptions) => {
     setFilters(newFilters);
-  };
-
-  const handleSortToggle = () => {
-    // Toggle between price_asc and price_desc only
-    if (!filters.sortBy || filters.sortBy === 'price_desc' || filters.sortBy === 'newest') {
-      setFilters({ ...filters, sortBy: 'price_asc' });
-    } else {
-      setFilters({ ...filters, sortBy: 'price_desc' });
-    }
   };
 
   const fetchRegions = async () => {

@@ -490,17 +490,19 @@ export default function ListPropertyScreen() {
             required
           />
 
-          {/* GPS Coordinates */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>GPS Coordinates (optional)</Text>
-            <MapCoordinatesPicker
-              value={formData.coordinates}
-              onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
-              region={formData.region}
-              district={formData.district}
-              ward={formData.ward}
-            />
-          </View>
+          {/* GPS Coordinates - Only show when region is selected */}
+          {formData.region && (
+            <View style={styles.section}>
+              <Text style={[styles.label, { color: textColor }]}>GPS Coordinates (optional)</Text>
+              <MapCoordinatesPicker
+                value={formData.coordinates}
+                onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
+                region={formData.region}
+                district={formData.district}
+                ward={formData.ward}
+              />
+            </View>
+          )}
 
           {/* Pricing */}
           {formData.rentalType === 'LONG_TERM' ? (

@@ -32,7 +32,8 @@ export default function SearchBar({
   const isShortTerm = rentalType === RentalType.SHORT_TERM;
   
   const getLocationText = () => {
-    return selectedLocation || 'Search destinations';
+    // Always show "Search destinations" - don't display selected location
+    return 'Search destinations';
   };
 
   const getDateText = () => {
@@ -52,7 +53,7 @@ export default function SearchBar({
     }
   };
 
-  const hasSearchCriteria = selectedLocation || checkInDate || checkOutDate || moveInDate;
+  const hasSearchCriteria = checkInDate || checkOutDate || moveInDate;
 
   return (
     <TouchableOpacity 

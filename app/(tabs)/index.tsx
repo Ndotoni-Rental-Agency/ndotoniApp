@@ -134,7 +134,6 @@ export default function HomeScreen() {
         <SearchBar 
           onPress={() => setShowSearchModal(true)} 
           rentalType={rentalType}
-          selectedLocation={searchParams.location?.displayName}
           checkInDate={searchParams.checkInDate}
           checkOutDate={searchParams.checkOutDate}
           moveInDate={searchParams.moveInDate}
