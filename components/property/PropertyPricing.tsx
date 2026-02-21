@@ -11,8 +11,6 @@ interface PropertyPricingProps {
   textColor: string;
   tintColor: string;
   secondaryText: string;
-  backgroundColor: string;
-  borderColor: string;
 }
 
 export default function PropertyPricing({
@@ -24,8 +22,6 @@ export default function PropertyPricing({
   textColor,
   tintColor,
   secondaryText,
-  backgroundColor,
-  borderColor,
 }: PropertyPricingProps) {
   const formatPrice = (amount: number) => {
     return `${currency} ${amount.toLocaleString()}`;

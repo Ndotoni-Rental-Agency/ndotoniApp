@@ -246,8 +246,6 @@ export default function LongTermPropertyDetailsScreen() {
                 textColor={textColor}
                 tintColor={tintColor}
                 secondaryText={secondaryText}
-                backgroundColor={backgroundColor}
-                borderColor={borderColor}
               />
               <View style={[styles.divider, { backgroundColor: borderColor }]} />
             </>

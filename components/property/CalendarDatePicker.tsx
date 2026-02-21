@@ -184,20 +184,20 @@ export default function CalendarDatePicker({
       const inRange = isDateInRange(dateStr);
       const isDisabled = isPast || isBlocked;
 
-      let dayStyle = [styles.dayCell];
-      let textStyle = [styles.dayText, { color: textColor }];
+      const dayStyle: any[] = [styles.dayCell];
+      let textStyle: any[] = [styles.dayText, { color: textColor }];
 
       if (isBlocked) {
-        dayStyle.push([styles.blockedDay, { backgroundColor: '#fee2e2', borderColor: '#ef4444' }]);
+        dayStyle.push(styles.blockedDay, { backgroundColor: '#fee2e2', borderColor: '#ef4444' });
         textStyle = [styles.blockedText, { color: '#ef4444' }];
       } else if (isPast) {
         dayStyle.push(styles.disabledDay);
         textStyle.push(styles.disabledText);
       } else if (isSelected) {
-        dayStyle.push([styles.selectedDay, { backgroundColor: tintColor }]);
+        dayStyle.push(styles.selectedDay, { backgroundColor: tintColor });
         textStyle = [styles.selectedText];
       } else if (inRange) {
-        dayStyle.push([styles.rangeDay, { backgroundColor: `${tintColor}20` }]);
+        dayStyle.push(styles.rangeDay, { backgroundColor: `${tintColor}20` });
       }
 
       days.push(

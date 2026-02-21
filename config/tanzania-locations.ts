@@ -78,7 +78,6 @@ export const TANZANIA_DISTRICTS: LocationData = {
   'MASAKI': { latitude: -6.7667, longitude: 39.2833 },
   'SINZA': { latitude: -6.7833, longitude: 39.2167 },
   'MWANANYAMALA': { latitude: -6.7667, longitude: 39.2333 },
-  'KINONDONI': { latitude: -6.7924, longitude: 39.2083 },
   'MAGOMENI': { latitude: -6.8000, longitude: 39.2500 },
   'MANZESE': { latitude: -6.7833, longitude: 39.2333 },
   'TANDALE': { latitude: -6.7900, longitude: 39.2400 },
@@ -88,7 +87,6 @@ export const TANZANIA_DISTRICTS: LocationData = {
   'GOBA': { latitude: -6.7300, longitude: 39.2000 },
   
   // Dar es Salaam Wards - Temeke
-  'TEMEKE': { latitude: -6.8500, longitude: 39.2667 },
   'MBAGALA': { latitude: -6.8667, longitude: 39.2500 },
   'CHANG\'OMBE': { latitude: -6.8400, longitude: 39.2700 },
   'KEKO': { latitude: -6.8350, longitude: 39.2750 },
@@ -97,13 +95,11 @@ export const TANZANIA_DISTRICTS: LocationData = {
   'SANDALI': { latitude: -6.8700, longitude: 39.2300 },
   
   // Dar es Salaam Wards - Ubungo
-  'UBUNGO': { latitude: -6.7833, longitude: 39.2500 },
   'MBURAHATI': { latitude: -6.7900, longitude: 39.2600 },
   'MAKUBURI': { latitude: -6.7950, longitude: 39.2550 },
   'MAKUMBUSHO': { latitude: -6.7800, longitude: 39.2450 },
   
   // Dar es Salaam Wards - Kigamboni
-  'KIGAMBONI': { latitude: -6.8667, longitude: 39.3167 },
   'VIJIBWENI': { latitude: -6.8700, longitude: 39.3200 },
   'KIBADA': { latitude: -6.8800, longitude: 39.3100 },
   'SOMANGIRA': { latitude: -6.8900, longitude: 39.3000 },
