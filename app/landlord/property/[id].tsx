@@ -574,8 +574,6 @@ export default function EditLongTermPropertyScreen() {
           icon="images"
           expanded={expandedSection === 'Photos & Media'}
           onToggle={handleToggleSection}
-          hasChanges={hasMediaChanges()}
-          isSaving={sectionSaving['Photos & Media']}
           onSave={async () => {
             setSectionSaving(prev => ({ ...prev, 'Photos & Media': true }));
             try {
@@ -596,12 +594,7 @@ export default function EditLongTermPropertyScreen() {
             setFloorPlan(property?.media?.floorPlan || '');
             setVirtualTour(property?.media?.virtualTour || '');
           }}
-          hasChanges={
-            JSON.stringify(selectedImages) !== JSON.stringify(property?.media?.images || []) ||
-            JSON.stringify(selectedVideos) !== JSON.stringify(property?.media?.videos || []) ||
-            floorPlan !== (property?.media?.floorPlan || '') ||
-            virtualTour !== (property?.media?.virtualTour || '')
-          }
+          hasChanges={hasMediaChanges()}
           isSaving={sectionSaving['Photos & Media']}
         >
           <MediaSection

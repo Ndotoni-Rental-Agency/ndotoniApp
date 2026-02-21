@@ -7,12 +7,15 @@ import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('monthly');
   
   // Initialize with default dates
   const today = new Date();
@@ -38,6 +41,17 @@ export default function HomeScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const headerBg = backgroundColor;
   const borderColor = useThemeColor({ light: '#ebebeb', dark: '#374151' }, 'background');
+  const categoryBg = useThemeColor({ light: '#f7f7f7', dark: '#111827' }, 'background');
+
+  // Category filters - Airbnb style with rental types integrated
+  const categories = [
+    { id: 'monthly', label: 'Monthly', icon: 'calendar', type: RentalType.LONG_TERM },
+    { id: 'nightly', label: 'Nightly', icon: 'moon', type: RentalType.SHORT_TERM },
+    { id: 'house', label: 'Houses', icon: 'home' },
+    { id: 'apartment', label: 'Apartments', icon: 'business' },
+    { id: 'villa', label: 'Villas', icon: 'bed' },
+    { id: 'studio', label: 'Studios', icon: 'cube' },
+  ];
 
   // Get properties organized by category with headers
   const getPropertiesByCategory = () => {
@@ -120,35 +134,43 @@ export default function HomeScreen() {
           moveInDate={searchParams.moveInDate}
         />
 
-        {/* Airbnb-style Rental Type Tabs - Below Search */}
-        <View style={styles.rentalTypeTabs}>
-          <TouchableOpacity 
-            style={styles.rentalTypeTab}
-            onPress={() => setRentalType(RentalType.LONG_TERM)}
-          >
-            <Text style={[
-              styles.rentalTypeText,
-              { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
-              rentalType === RentalType.LONG_TERM && styles.rentalTypeTextActive
-            ]}>
-              Monthly
-            </Text>
-            {rentalType === RentalType.LONG_TERM && <View style={[styles.activeIndicator, { backgroundColor: textColor }]} />}
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.rentalTypeTab}
-            onPress={() => setRentalType(RentalType.SHORT_TERM)}
-          >
-            <Text style={[
-              styles.rentalTypeText,
-              { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
-              rentalType === RentalType.SHORT_TERM && styles.rentalTypeTextActive
-            ]}>
-              Nightly
-            </Text>
-            {rentalType === RentalType.SHORT_TERM && <View style={[styles.activeIndicator, { backgroundColor: textColor }]} />}
-          </TouchableOpacity>
-        </View>
+        {/* Category Filters - Airbnb Style */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+          style={[styles.categoriesScroll, { borderBottomColor: borderColor }]}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.categoryItem,
+                { backgroundColor: selectedCategory === category.id ? categoryBg : 'transparent' },
+                selectedCategory === category.id && { borderColor: borderColor, borderWidth: 1 }
+              ]}
+              onPress={() => {
+                setSelectedCategory(category.id);
+                if (category.type) {
+                  setRentalType(category.type);
+                }
+              }}
+            >
+              <Ionicons 
+                name={category.icon as any} 
+                size={24} 
+                color={selectedCategory === category.id ? textColor : '#717171'} 
+              />
+              <Text style={[
+                styles.categoryText,
+                { color: selectedCategory === category.id ? textColor : '#717171' },
+                selectedCategory === category.id && styles.categoryTextActive
+              ]}>
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Search Modal */}
@@ -185,59 +207,54 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Property Sections with Headers */}
-            {categorizedProperties.map((section, sectionIndex) => (
-              section.properties.length > 0 && (
-                <View key={sectionIndex} style={styles.section}>
-                  {/* Section Header */}
-                  <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: textColor }]}>
-                      {section.title}
-                    </Text>
-                  </View>
+            {/* Continuous Property Grid - Airbnb Style */}
+            <View style={styles.propertyGrid}>
+              {categorizedProperties.map((section) => 
+                section.properties.map((property: any) => (
+                  <PropertyCard
+                    key={property.propertyId}
+                    propertyId={property.propertyId}
+                    title={property.title}
+                    location={property.district || property.region}
+                    price={rentalType === RentalType.LONG_TERM ? property.monthlyRent : property.nightlyRate}
+                    currency={property.currency}
+                    rating={property.averageRating}
+                    thumbnail={property.thumbnail}
+                    bedrooms={property.bedrooms || property.maxGuests}
+                    priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
+                    onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
+                  />
+                ))
+              )}
+            </View>
 
-                  {/* Property Grid */}
-                  <View style={styles.propertyGrid}>
-                    {section.properties.map((property: any) => (
-                      <PropertyCard
-                        key={property.propertyId}
-                        propertyId={property.propertyId}
-                        title={property.title}
-                        location={property.district || property.region}
-                        price={rentalType === RentalType.LONG_TERM ? property.monthlyRent : property.nightlyRate}
-                        currency={property.currency}
-                        rating={property.averageRating}
-                        thumbnail={property.thumbnail}
-                        bedrooms={property.bedrooms || property.maxGuests}
-                        priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
-                        onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Load More Button */}
-                  {section.hasMore && (
-                    <TouchableOpacity
-                      style={[styles.loadMoreButton, { backgroundColor: tintColor }]}
-                      onPress={() => handleLoadMore(section.category)}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <Text style={styles.loadMoreText}>Load More</Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )
-            ))}
+            {/* Load More Button */}
+            {categorizedProperties.some(s => s.hasMore) && (
+              <TouchableOpacity
+                style={[styles.loadMoreButton, { backgroundColor: tintColor }]}
+                onPress={() => {
+                  const sectionsWithMore = categorizedProperties.filter(s => s.hasMore && s.properties.length > 0);
+                  if (sectionsWithMore.length > 0) {
+                    handleLoadMore(sectionsWithMore[0].category);
+                  }
+                }}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.loadMoreText}>Show more</Text>
+                    <Ionicons name="chevron-down" size={20} color="#fff" />
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
 
             {/* Bottom Loading Indicator */}
             {loadingMore && (
               <View style={styles.bottomLoader}>
                 <ActivityIndicator size="large" color={tintColor} />
-                <Text style={[styles.loadingText, { color: textColor }]}>Loading more properties...</Text>
               </View>
             )}
           </>
@@ -255,54 +272,34 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingTop: 8,
   },
-  rentalTypeTabs: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    gap: 24,
-    paddingBottom: 12,
+  categoriesScroll: {
+    borderBottomWidth: 1,
   },
-  rentalTypeTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    position: 'relative',
+  categoriesContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
   },
-  rentalTypeText: {
-    fontSize: 16,
+  categoryItem: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginRight: 8,
+    minWidth: 80,
+  },
+  categoryText: {
+    fontSize: 12,
+    marginTop: 4,
     fontWeight: '500',
   },
-  rentalTypeTextActive: {
+  categoryTextActive: {
     fontWeight: '600',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderRadius: 1,
   },
   scrollContent: {
     paddingBottom: 24,
     paddingTop: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   propertyGrid: {
     flexDirection: 'row',
@@ -347,9 +344,13 @@ const styles = StyleSheet.create({
   loadMoreButton: {
     marginHorizontal: 20,
     marginTop: 16,
+    marginBottom: 16,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   loadMoreText: {
     color: '#fff',
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomLoader: {
-    paddingVertical: 40,
+    paddingVertical: 20,
     alignItems: 'center',
   },
 });

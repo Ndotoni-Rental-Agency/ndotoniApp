@@ -303,6 +303,12 @@ export default function EditShortTermPropertyScreen() {
       setSelectedImages(images);
       setSelectedVideos(videos);
       setThumbnail(property.thumbnail || '');
+      
+      setOriginalMedia({
+        images,
+        videos,
+        thumbnail: property.thumbnail || '',
+      });
     }
   }, [property]);
 
@@ -741,6 +747,8 @@ export default function EditShortTermPropertyScreen() {
           icon="images"
           expanded={expandedSection === 'Photos & Media'}
           onToggle={handleToggleSection}
+          hasChanges={hasMediaChanges()}
+          isSaving={sectionSaving['Photos & Media']}
           onSave={async () => {
             setSectionSaving(prev => ({ ...prev, 'Photos & Media': true }));
             try {

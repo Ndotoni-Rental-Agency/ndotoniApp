@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import React from 'react';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -47,6 +47,10 @@ export default function PropertyCard({
     return amount.toLocaleString('en-US');
   };
 
+  const formatCurrency = (curr: string) => {
+    return curr === 'TZS' ? 'Tshs' : curr;
+  };
+
   // Default navigation handler if none provided
   const handlePress = () => {
     if (onPress) {
@@ -63,11 +67,19 @@ export default function PropertyCard({
 
   // Ensure all text values are strings
   const safeLocation = String(location || 'Unknown Location');
-  const safeTitle = String(title || 'Untitled Property');
   const safeCurrency = String(currency || 'TZS');
   const safePrice = Number(price) || 0;
   const safeRating = Number(rating) || 0;
   const safeBedrooms = Number(bedrooms) || 0;
+
+  // Normalize location - capitalize first letter of each word
+  const normalizeLocation = (loc: string) => {
+    return loc
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   return (
     <TouchableOpacity 
@@ -105,29 +117,26 @@ export default function PropertyCard({
       <View style={styles.info}>
         <View style={styles.header}>
           <Text style={[styles.location, { color: textColor }]} numberOfLines={1}>
-            {safeLocation}
+            {normalizeLocation(safeLocation)}
           </Text>
-          {safeRating > 0 && (
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={12} color="#fbbf24" />
-              <Text style={[styles.ratingText, { color: textColor }]}>{safeRating.toFixed(1)}</Text>
-            </View>
+          {safeBedrooms > 0 && (
+            <Text style={styles.bedrooms}>
+              {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
+            </Text>
           )}
         </View>
-        <Text style={styles.title} numberOfLines={1}>
-          {safeTitle}
-        </Text>
-        {safeBedrooms > 0 && (
-          <Text style={styles.bedrooms}>
-            {safeBedrooms} bedroom{safeBedrooms > 1 ? 's' : ''}
-          </Text>
+        {safeRating > 0 && (
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={12} color="#fbbf24" />
+            <Text style={[styles.ratingText, { color: textColor }]}>{safeRating.toFixed(1)}</Text>
+          </View>
         )}
         <View style={styles.priceContainer}>
           <Text style={[styles.price, { color: textColor }]}>
-            {safeCurrency} {formatPrice(safePrice)}
+            {formatCurrency(safeCurrency)} {formatPrice(safePrice)}
           </Text>
           <Text style={styles.priceUnit}>
-            /{priceUnit}
+            {' '}per {priceUnit}
           </Text>
         </View>
       </View>
@@ -169,35 +178,34 @@ const styles = StyleSheet.create({
   },
   info: {
     gap: 2,
+    paddingHorizontal: 2,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   location: {
     fontSize: 15,
     fontWeight: '600',
     flex: 1,
+    marginRight: 8,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 4,
   },
   ratingText: {
     fontSize: 14,
     fontWeight: '500',
   },
-  title: {
-    fontSize: 14,
-    color: '#717171',
-    marginBottom: 4,
-  },
   bedrooms: {
     fontSize: 14,
     color: '#717171',
+    flexShrink: 0,
   },
   priceContainer: {
     flexDirection: 'row',
