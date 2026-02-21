@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useLanguage } from '@/contexts/LanguageContext';
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
+import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
-import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -270,8 +270,9 @@ export default function ProfileScreen() {
             <Switch
               value={isDark}
               onValueChange={toggleTheme}
-              trackColor={{ false: borderColor, true: tintColor }}
+              trackColor={{ false: '#d1d5db', true: tintColor }}
               thumbColor="#fff"
+              ios_backgroundColor="#d1d5db"
             />
           </View>
 
@@ -291,8 +292,9 @@ export default function ProfileScreen() {
             <Switch
               value={language === 'sw'}
               onValueChange={toggleLanguage}
-              trackColor={{ false: borderColor, true: tintColor }}
+              trackColor={{ false: '#d1d5db', true: tintColor }}
               thumbColor="#fff"
+              ios_backgroundColor="#d1d5db"
             />
           </View>
         </View>
