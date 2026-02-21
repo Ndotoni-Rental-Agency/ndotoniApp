@@ -1,5 +1,6 @@
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
+import PublishPropertyModal from '@/components/property/PublishPropertyModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLandlordProperties } from '@/hooks/useLandlordProperties';
@@ -38,6 +39,8 @@ export default function LandlordPropertiesScreen() {
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [publishModalVisible, setPublishModalVisible] = useState(false);
+  const [selectedPropertyForPublish, setSelectedPropertyForPublish] = useState<any>(null);
 
   // Long-term properties - only fetch when authenticated
   const {
@@ -209,7 +212,8 @@ export default function LandlordPropertiesScreen() {
             <TouchableOpacity
               style={[styles.actionButton, styles.publishButton]}
               onPress={() => {
-                Alert.alert('Publish Property', 'Publishing functionality coming soon!');
+                setSelectedPropertyForPublish(property);
+                setPublishModalVisible(true);
               }}
             >
               <Text style={styles.publishButtonText}>Publish</Text>
@@ -520,6 +524,25 @@ export default function LandlordPropertiesScreen() {
           setShowVerificationModal(true);
         }}
       />
+
+      {/* Publish Modal */}
+      {selectedPropertyForPublish && (
+        <PublishPropertyModal
+          visible={publishModalVisible}
+          onClose={() => {
+            setPublishModalVisible(false);
+            setSelectedPropertyForPublish(null);
+          }}
+          propertyId={selectedPropertyForPublish.propertyId}
+          existingMedia={
+            selectedTab === 'long-term'
+              ? selectedPropertyForPublish.media?.images || []
+              : selectedPropertyForPublish.images || []
+          }
+          onSuccess={handleRefresh}
+          isLongTerm={selectedTab === 'long-term'}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -813,8 +836,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   publishButton: {
-    backgroundColor: '#ef4444',
-    borderColor: '#ef4444',
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
   },
   publishButtonText: {
     color: '#fff',

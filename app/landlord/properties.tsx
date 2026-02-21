@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import PublishPropertyModal from '@/components/property/PublishPropertyModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLandlordProperties } from '@/hooks/useLandlordProperties';
 import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
@@ -9,22 +9,18 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   FlatList,
   Image,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export default function LandlordPropertiesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -34,6 +30,8 @@ export default function LandlordPropertiesScreen() {
 
   const [selectedTab, setSelectedTab] = useState<'long-term' | 'short-term'>('long-term');
   const [refreshing, setRefreshing] = useState(false);
+  const [publishModalVisible, setPublishModalVisible] = useState(false);
+  const [selectedPropertyForPublish, setSelectedPropertyForPublish] = useState<any>(null);
 
   // Long-term properties
   const {
@@ -205,7 +203,8 @@ export default function LandlordPropertiesScreen() {
             <TouchableOpacity
               style={[styles.actionButton, styles.publishButton]}
               onPress={() => {
-                Alert.alert('Publish Property', 'Publishing functionality coming soon!');
+                setSelectedPropertyForPublish(property);
+                setPublishModalVisible(true);
               }}
             >
               <Text style={styles.publishButtonText}>Publish</Text>
@@ -378,6 +377,25 @@ export default function LandlordPropertiesScreen() {
           )
         }
       />
+
+      {/* Publish Modal */}
+      {selectedPropertyForPublish && (
+        <PublishPropertyModal
+          visible={publishModalVisible}
+          onClose={() => {
+            setPublishModalVisible(false);
+            setSelectedPropertyForPublish(null);
+          }}
+          propertyId={selectedPropertyForPublish.propertyId}
+          existingMedia={
+            selectedTab === 'long-term'
+              ? selectedPropertyForPublish.media?.images || []
+              : selectedPropertyForPublish.images || []
+          }
+          onSuccess={handleRefresh}
+          isLongTerm={selectedTab === 'long-term'}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -601,8 +619,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   publishButton: {
-    backgroundColor: '#ef4444',
-    borderColor: '#ef4444',
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
   },
   publishButtonText: {
     color: '#fff',
