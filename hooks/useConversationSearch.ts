@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
 import { Conversation } from '@/lib/API';
 import Fuse from 'fuse.js';
+import { useMemo } from 'react';
 
 interface UseConversationSearchProps {
   conversations: Conversation[];
   searchQuery: string;
-  currentUserId: string;
+  currentUserId?: string;
 }
 
 export function useConversationSearch({ 
@@ -18,17 +18,21 @@ export function useConversationSearch({
     const options = {
       keys: [
         {
+          name: 'otherPartyName',
+          weight: 0.5
+        },
+        {
           name: 'propertyTitle',
-          weight: 0.6
+          weight: 0.4
         },
         {
           name: 'lastMessage',
-          weight: 0.4
+          weight: 0.1
         }
       ],
-      threshold: 0.4, // Lower = more strict, Higher = more fuzzy
+      threshold: 0.3, // Lower = more strict, Higher = more fuzzy
       distance: 100,
-      minMatchCharLength: 1,
+      minMatchCharLength: 2,
       includeScore: true,
       includeMatches: true
     };

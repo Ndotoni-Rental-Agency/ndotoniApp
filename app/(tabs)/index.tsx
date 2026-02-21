@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { RentalType } from '@/hooks/useRentalType';
-import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
-import { useAuth } from '@/contexts/AuthContext';
+import PropertyCard from '@/components/property/PropertyCard';
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
-import PropertyCard from '@/components/property/PropertyCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
+import { RentalType } from '@/hooks/useRentalType';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [searchParams, setSearchParams] = useState<SearchParams>({});
+  
+  // Initialize with default dates
+  const today = new Date();
+  const oneWeekLater = new Date(today);
+  oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+  
+  const [searchParams, setSearchParams] = useState<SearchParams>({
+    checkInDate: today.toISOString().split('T')[0],
+    checkOutDate: oneWeekLater.toISOString().split('T')[0],
+    moveInDate: today.toISOString().split('T')[0],
+  });
   const [loadingMore, setLoadingMore] = useState(false);
   const { isAuthenticated } = useAuth();
   

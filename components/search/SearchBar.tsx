@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { RentalType } from '@/hooks/useRentalType';
 import { formatDateShort } from '@/lib/utils/common';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface SearchBarProps {
   onPress?: () => void;
@@ -24,13 +24,18 @@ export default function SearchBar({
 }: SearchBarProps) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const textColor = useThemeColor({}, 'text');
-  const cardBg = backgroundColor; // Use same background as main screen
-  const borderColor = useThemeColor({ light: '#ddd', dark: '#374151' }, 'background');
-  const iconColor = useThemeColor({ light: '#222', dark: '#e5e7eb' }, 'text');
+  const cardBg = backgroundColor;
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const iconColor = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const tintColor = useThemeColor({}, 'tint');
   
   const isShortTerm = rentalType === RentalType.SHORT_TERM;
   
-  const getSubtitle = () => {
+  const getLocationText = () => {
+    return selectedLocation || 'Search destinations';
+  };
+
+  const getDateText = () => {
     if (isShortTerm) {
       if (checkInDate && checkOutDate) {
         return `${formatDateShort(checkInDate)} - ${formatDateShort(checkOutDate)}`;
@@ -38,27 +43,54 @@ export default function SearchBar({
       if (checkInDate) {
         return `From ${formatDateShort(checkInDate)}`;
       }
-      return 'Any dates';
+      return 'Add dates';
     } else {
       if (moveInDate) {
-        return `Move in: ${formatDateShort(moveInDate)}`;
+        return formatDateShort(moveInDate);
       }
-      return 'Any time';
+      return 'Anytime';
     }
   };
+
+  const hasSearchCriteria = selectedLocation || checkInDate || checkOutDate || moveInDate;
 
   return (
     <TouchableOpacity 
       style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]} 
       onPress={onPress} 
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <Ionicons name="search" size={20} color={iconColor} />
       <View style={styles.searchContent}>
-        <Text style={[styles.searchTitle, { color: textColor }]}>
-          {selectedLocation || 'Where to?'}
-        </Text>
-        <Text style={styles.searchSubtitle}>{getSubtitle()}</Text>
+        <View style={styles.searchRow}>
+          <Ionicons name="search" size={22} color={iconColor} style={styles.searchIcon} />
+          <View style={styles.searchTextContainer}>
+            <Text 
+              style={[
+                styles.searchTitle, 
+                { color: hasSearchCriteria ? textColor : iconColor }
+              ]} 
+              numberOfLines={1}
+            >
+              {getLocationText()}
+            </Text>
+            <View style={styles.searchMetaRow}>
+              <Text style={[styles.searchSubtitle, { color: iconColor }]}>
+                {getDateText()}
+              </Text>
+              {hasSearchCriteria && (
+                <>
+                  <View style={[styles.dot, { backgroundColor: iconColor }]} />
+                  <Text style={[styles.searchSubtitle, { color: iconColor }]}>
+                    {isShortTerm ? 'Stays' : 'Rentals'}
+                  </Text>
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+      <View style={[styles.searchButton, { backgroundColor: tintColor }]}>
+        <Ionicons name="search" size={18} color="#fff" />
       </View>
     </TouchableOpacity>
   );
@@ -68,30 +100,59 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 32,
+    paddingLeft: 20,
+    paddingRight: 8,
+    paddingVertical: 12,
+    borderRadius: 40,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   searchContent: {
     flex: 1,
-    marginLeft: 12,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchTextContainer: {
+    flex: 1,
   },
   searchTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  searchMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   searchSubtitle: {
-    fontSize: 12,
-    color: '#717171',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  searchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
 });

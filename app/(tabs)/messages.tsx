@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
-import { useChat } from '@/contexts/ChatContext';
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
+import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
-import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { useConversationSearch } from '@/hooks/useConversationSearch';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function MessagesScreen() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { conversations, loadConversations, loadingConversations } = useChat();
   
+  const [searchQuery, setSearchQuery] = useState('');
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -31,6 +33,12 @@ export default function MessagesScreen() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Use conversation search hook
+  const { filteredConversations } = useConversationSearch({
+    conversations,
+    searchQuery,
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -206,6 +214,27 @@ export default function MessagesScreen() {
           </Text>
         </View>
 
+        {/* Search Bar */}
+        {conversations.length > 0 && (
+          <View style={styles.searchContainer}>
+            <View style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]}>
+              <Ionicons name="search" size={20} color={secondaryText} />
+              <TextInput
+                style={[styles.searchInput, { color: textColor }]}
+                placeholder="Search by name or property..."
+                placeholderTextColor={secondaryText}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color={secondaryText} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Error State - Removed since ChatContext handles errors internally */}
 
         {/* Loading State */}
@@ -219,9 +248,9 @@ export default function MessagesScreen() {
         )}
 
         {/* Messages List */}
-        {!loadingConversations && conversations.length > 0 && (
+        {!loadingConversations && filteredConversations.length > 0 && (
           <View style={styles.listContainer}>
-            {conversations.map((conversation) => (
+            {filteredConversations.map((conversation) => (
               <TouchableOpacity 
                 key={conversation.id} 
                 style={[styles.messageCard, { backgroundColor: cardBg, borderColor }]}
@@ -282,6 +311,19 @@ export default function MessagesScreen() {
             </Text>
             <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
               Start a conversation with property owners
+            </Text>
+          </View>
+        )}
+
+        {/* No Search Results */}
+        {!loadingConversations && conversations.length > 0 && filteredConversations.length === 0 && searchQuery.length > 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="search-outline" size={64} color={secondaryText} />
+            <Text style={[styles.emptyTitle, { color: textColor }]}>
+              No results found
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
+              Try searching with a different name or property
             </Text>
           </View>
         )}
@@ -376,6 +418,24 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
   },
   listContainer: {
     paddingVertical: 8,
