@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  RefreshControl,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLandlordProperties } from '@/hooks/useLandlordProperties';
-import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { useLandlordProperties } from '@/hooks/useLandlordProperties';
+import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LandlordPropertiesScreen() {
   const router = useRouter();
@@ -230,7 +230,7 @@ export default function LandlordPropertiesScreen() {
           <TouchableOpacity
             style={[styles.actionButton, { borderColor }]}
             onPress={() => {
-              Alert.alert('Calendar', 'Calendar management coming soon!');
+              router.push(`/landlord/calendar/${property.propertyId}` as any);
             }}
           >
             <Ionicons name="calendar-outline" size={16} color={textColor} />

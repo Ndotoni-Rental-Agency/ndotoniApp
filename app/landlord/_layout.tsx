@@ -10,6 +10,7 @@ export default function LandlordLayout() {
       <Stack.Screen name="properties" options={{ headerShown: false }} />
       <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="short-property/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="calendar/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }
