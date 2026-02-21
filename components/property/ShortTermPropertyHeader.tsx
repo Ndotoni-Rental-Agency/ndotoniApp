@@ -23,8 +23,14 @@ export default function ShortTermPropertyHeader({
   tintColor,
   secondaryText,
 }: ShortTermPropertyHeaderProps) {
-  const formatPrice = (amount: number, curr: string) => {
-    return `${curr} ${amount?.toLocaleString()}`;
+  // Normalize location - capitalize first letter of each word
+  const normalizeLocation = (text: string) => {
+    if (!text) return '';
+    return text
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -33,7 +39,7 @@ export default function ShortTermPropertyHeader({
       <View style={styles.locationRow}>
         <Ionicons name="location" size={18} color={tintColor} />
         <Text style={[styles.locationText, { color: textColor }]}>
-          {district}, {region}
+          {normalizeLocation(district)}, {normalizeLocation(region)}
         </Text>
       </View>
       

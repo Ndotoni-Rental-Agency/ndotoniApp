@@ -15,6 +15,9 @@ interface DatePickerProps {
   backgroundColor: string;
   borderColor: string;
   placeholderColor: string;
+  minimumDate?: Date;
+  maximumDate?: Date;
+  disabledDates?: string[]; // Array of date strings in YYYY-MM-DD format
 }
 
 export default function DatePicker({
@@ -29,6 +32,9 @@ export default function DatePicker({
   backgroundColor,
   borderColor,
   placeholderColor,
+  minimumDate,
+  maximumDate,
+  disabledDates = [],
 }: DatePickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(() => {
@@ -73,12 +79,25 @@ export default function DatePicker({
     }
   };
 
+  const isDateDisabled = (date: Date) => {
+    if (mode !== 'date' || disabledDates.length === 0) return false;
+    
+    const dateStr = date.toISOString().split('T')[0];
+    return disabledDates.includes(dateStr);
+  };
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowPicker(false);
     }
     
     if (selectedDate) {
+      // Check if the selected date is disabled
+      if (isDateDisabled(selectedDate)) {
+        // Don't update if date is disabled
+        return;
+      }
+      
       setTempDate(selectedDate);
       if (Platform.OS === 'android') {
         onChange(formatDate(selectedDate));
@@ -87,6 +106,10 @@ export default function DatePicker({
   };
 
   const handleConfirm = () => {
+    // Double-check the date isn't disabled before confirming
+    if (isDateDisabled(tempDate)) {
+      return;
+    }
     onChange(formatDate(tempDate));
     setShowPicker(false);
   };
@@ -147,6 +170,8 @@ export default function DatePicker({
                 display="spinner"
                 onChange={handleDateChange}
                 textColor={textColor}
+                minimumDate={minimumDate}
+                maximumDate={maximumDate}
               />
             </Pressable>
           </Pressable>
@@ -158,6 +183,8 @@ export default function DatePicker({
             mode={mode}
             display="default"
             onChange={handleDateChange}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
           />
         )
       )}

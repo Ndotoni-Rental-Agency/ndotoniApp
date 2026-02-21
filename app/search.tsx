@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { RentalType } from '@/hooks/useRentalType';
-import PropertyCard from '@/components/property/PropertyCard';
 import GraphQLClient from '@/lib/graphql-client';
-import { searchShortTermProperties, getPropertiesByLocation } from '@/lib/graphql/queries';
-import { toTitleCase, formatDateShort } from '@/lib/utils/common';
+import { getDistricts, getPropertiesByLocation, getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
+import { formatDateShort, toTitleCase } from '@/lib/utils/common';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SearchScreen() {
   const params = useLocalSearchParams();
@@ -26,6 +26,12 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({});
+  const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -42,7 +48,25 @@ export default function SearchScreen() {
   const checkOutDate = params.checkOutDate as string;
   const moveInDate = params.moveInDate as string;
 
+  const [selectedRegion, setSelectedRegion] = useState(region || '');
+  const [selectedDistrict, setSelectedDistrict] = useState(district || '');
+
   const isShortTerm = rentalType === RentalType.SHORT_TERM;
+
+  // Fetch regions on mount
+  useEffect(() => {
+    fetchRegions();
+  }, []);
+
+  // Fetch districts when region changes
+  useEffect(() => {
+    if (region) {
+      const regionObj = regions.find(r => r.name === region);
+      if (regionObj) {
+        fetchDistricts(regionObj.id);
+      }
+    }
+  }, [region, regions]);
 
   // Fetch properties
   const fetchProperties = async () => {
@@ -101,6 +125,127 @@ export default function SearchScreen() {
     fetchProperties();
   };
 
+  const handleApplyFilters = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+  };
+
+  const handleSortToggle = () => {
+    // Toggle between price_asc and price_desc only
+    if (!filters.sortBy || filters.sortBy === 'price_desc' || filters.sortBy === 'newest') {
+      setFilters({ ...filters, sortBy: 'price_asc' });
+    } else {
+      setFilters({ ...filters, sortBy: 'price_desc' });
+    }
+  };
+
+  const fetchRegions = async () => {
+    try {
+      const data = await GraphQLClient.executePublic<{ getRegions: any[] }>(getRegions);
+      setRegions(data.getRegions || []);
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+    }
+  };
+
+  const fetchDistricts = async (regionId: string) => {
+    try {
+      const data = await GraphQLClient.executePublic<{ getDistricts: any[] }>(
+        getDistricts,
+        { regionId }
+      );
+      setDistricts(data.getDistricts || []);
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+    }
+  };
+
+  const handleRegionSelect = (regionName: string) => {
+    router.push({
+      pathname: '/search',
+      params: {
+        ...params,
+        region: regionName,
+        district: undefined, // Reset district when region changes
+      },
+    } as any);
+    setShowRegionDropdown(false);
+  };
+
+  const handleDistrictSelect = (districtName: string) => {
+    router.push({
+      pathname: '/search',
+      params: {
+        ...params,
+        district: districtName || undefined,
+      },
+    } as any);
+    setShowDistrictDropdown(false);
+  };
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.priceMin || filters.priceMax) count++;
+    if (filters.propertyTypes && filters.propertyTypes.length > 0) count++;
+    if (filters.bedrooms) count++;
+    if (filters.bathrooms) count++;
+    if (filters.sortBy) count++;
+    return count;
+  }, [filters]);
+
+  // Apply filters to properties
+  const filteredProperties = useMemo(() => {
+    let result = [...properties];
+
+    // Filter by price range
+    if (filters.priceMin || filters.priceMax) {
+      result = result.filter(property => {
+        const price = isShortTerm ? property.nightlyRate : property.monthlyRent;
+        if (filters.priceMin && price < filters.priceMin) return false;
+        if (filters.priceMax && price > filters.priceMax) return false;
+        return true;
+      });
+    }
+
+    // Filter by property types
+    if (filters.propertyTypes && filters.propertyTypes.length > 0) {
+      result = result.filter(property =>
+        filters.propertyTypes!.includes(property.propertyType)
+      );
+    }
+
+    // Filter by bedrooms
+    if (filters.bedrooms) {
+      result = result.filter(property => property.bedrooms >= filters.bedrooms!);
+    }
+
+    // Filter by bathrooms
+    if (filters.bathrooms) {
+      result = result.filter(property => property.bathrooms >= filters.bathrooms!);
+    }
+
+    // Sort
+    if (filters.sortBy) {
+      result.sort((a, b) => {
+        const priceA = isShortTerm ? a.nightlyRate : a.monthlyRent;
+        const priceB = isShortTerm ? b.nightlyRate : b.monthlyRent;
+
+        switch (filters.sortBy) {
+          case 'price_asc':
+            return priceA - priceB;
+          case 'price_desc':
+            return priceB - priceA;
+          case 'newest':
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return result;
+  }, [properties, filters, isShortTerm]);
+
   const getSearchTitle = () => {
     const locationText = location || district || region || 'Properties';
     return toTitleCase(locationText);
@@ -119,15 +264,19 @@ export default function SearchScreen() {
     return isShortTerm ? 'Short-term stays' : 'Long-term rentals';
   };
 
+  const getResultsCount = () => {
+    const count = filteredProperties.length;
+    return `${count} ${count === 1 ? 'property' : 'properties'}`;
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
+        <View style={styles.topSection}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={textColor} />
+            <Ionicons name="arrow-back" size={28} color={textColor} />
+            <Text style={[styles.backText, { color: textColor }]}>Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: textColor }]}>Search Results</Text>
-          <View style={{ width: 24 }} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColor} />
@@ -139,24 +288,6 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={textColor} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
-            {getSearchTitle()}
-          </Text>
-          <Text style={styles.headerSubtitle} numberOfLines={1}>
-            {getSearchSubtitle()}
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="options-outline" size={24} color={textColor} />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -168,6 +299,137 @@ export default function SearchScreen() {
           />
         }
       >
+        {/* Back Button and Location Header */}
+        <View style={styles.topSection}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={28} color={textColor} />
+            <Text style={[styles.backText, { color: textColor }]}>Back</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.locationHeader}>
+            <Text style={[styles.locationTitle, { color: textColor }]}>
+              {getSearchTitle()}
+            </Text>
+            <Text style={styles.locationSubtitle}>
+              {getSearchSubtitle()} • {getResultsCount()}
+            </Text>
+          </View>
+
+          {/* Location and Filter Row */}
+          <View style={styles.filterRow}>
+            {/* Location Dropdowns */}
+            <View style={styles.locationContainer}>
+              {/* Region Dropdown */}
+              <View style={styles.locationDropdownWrapper}>
+                <TouchableOpacity
+                  style={[styles.locationChip, { backgroundColor: headerBg, borderColor }]}
+                  onPress={() => setShowRegionDropdown(!showRegionDropdown)}
+                >
+                  <Ionicons name="location-outline" size={16} color={textColor} />
+                  <Text style={[styles.locationChipText, { color: textColor }]} numberOfLines={1}>
+                    {region ? toTitleCase(region) : 'Region'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={textColor} />
+                </TouchableOpacity>
+                
+                {showRegionDropdown && (
+                  <ScrollView style={[styles.dropdown, styles.scrollableDropdown, { backgroundColor: headerBg, borderColor }]}>
+                    {regions.map((reg) => (
+                      <TouchableOpacity
+                        key={reg.id}
+                        style={styles.dropdownItem}
+                        onPress={() => handleRegionSelect(reg.name)}
+                      >
+                        <Text style={[styles.dropdownItemText, { color: textColor }]}>
+                          {toTitleCase(reg.name)}
+                        </Text>
+                        {region === reg.name && (
+                          <Ionicons name="checkmark" size={18} color={tintColor} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+
+              {/* District Dropdown - Only show when region is selected */}
+              {region && (
+                <View style={styles.locationDropdownWrapper}>
+                  <TouchableOpacity
+                    style={[styles.locationChip, { backgroundColor: headerBg, borderColor }]}
+                    onPress={() => setShowDistrictDropdown(!showDistrictDropdown)}
+                  >
+                    <Ionicons name="navigate-outline" size={16} color={textColor} />
+                    <Text style={[styles.locationChipText, { color: textColor }]} numberOfLines={1}>
+                      {district ? toTitleCase(district) : 'District'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={14} color={textColor} />
+                  </TouchableOpacity>
+                  
+                  {showDistrictDropdown && (
+                    <ScrollView style={[styles.dropdown, styles.scrollableDropdown, { backgroundColor: headerBg, borderColor }]}>
+                      <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => handleDistrictSelect('')}
+                      >
+                        <Text style={[styles.dropdownItemText, { color: textColor }]}>
+                          All Districts
+                        </Text>
+                        {!district && (
+                          <Ionicons name="checkmark" size={18} color={tintColor} />
+                        )}
+                      </TouchableOpacity>
+                      {districts.map((dist) => (
+                        <TouchableOpacity
+                          key={dist.id}
+                          style={styles.dropdownItem}
+                          onPress={() => handleDistrictSelect(dist.name)}
+                        >
+                          <Text style={[styles.dropdownItemText, { color: textColor }]}>
+                            {toTitleCase(dist.name)}
+                          </Text>
+                          {district === dist.name && (
+                            <Ionicons name="checkmark" size={18} color={tintColor} />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Filters Button */}
+            <TouchableOpacity
+              style={[
+                styles.filtersButton,
+                { backgroundColor: headerBg, borderColor },
+                (activeFilterCount > 0 || (filters.propertyTypes && filters.propertyTypes.length > 0)) && { borderColor: tintColor },
+              ]}
+              onPress={() => setShowFilterModal(true)}
+            >
+              <Ionicons 
+                name="options-outline" 
+                size={20} 
+                color={(activeFilterCount > 0 || (filters.propertyTypes && filters.propertyTypes.length > 0)) ? tintColor : textColor} 
+              />
+              <Text style={[
+                styles.filtersButtonText, 
+                { color: (activeFilterCount > 0 || (filters.propertyTypes && filters.propertyTypes.length > 0)) ? tintColor : textColor }
+              ]}>
+                Filters
+              </Text>
+              {(activeFilterCount > 0 || (filters.propertyTypes && filters.propertyTypes.length > 0)) && (
+                <View style={[styles.filterBadge, { backgroundColor: tintColor }]}>
+                  <Text style={styles.filterBadgeText}>
+                    {activeFilterCount + (filters.propertyTypes?.length || 0)}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
@@ -182,103 +444,111 @@ export default function SearchScreen() {
           </View>
         ) : properties.length > 0 ? (
           <>
-            {/* Results Count */}
-            <View style={styles.resultsHeader}>
-              <Text style={[styles.resultsCount, { color: textColor }]}>
-                {properties.length} {properties.length === 1 ? 'property' : 'properties'} found
-              </Text>
-            </View>
+            {filteredProperties.length > 0 ? (
+              <View style={styles.propertyList}>
+                {filteredProperties.map((property) => (
+                  <TouchableOpacity
+                    key={property.propertyId}
+                    style={[styles.searchCard, { backgroundColor: headerBg, borderColor }]}
+                    onPress={() => {
+                      // Navigate to appropriate property details page
+                      if (isShortTerm) {
+                        router.push(`/short-property/${property.propertyId}` as any);
+                      } else {
+                        router.push(`/property/${property.propertyId}` as any);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    {/* Horizontal layout: Image on left, content on right */}
+                    <View style={styles.cardContent}>
+                      {/* Property Image */}
+                      <View style={styles.cardImageContainer}>
+                        {property.thumbnail ? (
+                          <Image
+                            source={{ uri: property.thumbnail }}
+                            style={styles.cardImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={[styles.cardImagePlaceholder, { backgroundColor: borderColor }]}>
+                            <Ionicons name="home-outline" size={32} color="#999" />
+                          </View>
+                        )}
+                      </View>
 
-            {/* Property List - Vertical cards like web */}
-            <View style={styles.propertyList}>
-              {properties.map((property) => (
-                <TouchableOpacity
-                  key={property.propertyId}
-                  style={[styles.searchCard, { backgroundColor: headerBg, borderColor }]}
-                  onPress={() => {
-                    // Navigate to appropriate property details page
-                    if (isShortTerm) {
-                      router.push(`/short-property/${property.propertyId}` as any);
-                    } else {
-                      router.push(`/property/${property.propertyId}` as any);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  {/* Horizontal layout: Image on left, content on right */}
-                  <View style={styles.cardContent}>
-                    {/* Property Image */}
-                    <View style={styles.cardImageContainer}>
-                      {property.thumbnail ? (
-                        <Image
-                          source={{ uri: property.thumbnail }}
-                          style={styles.cardImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={[styles.cardImagePlaceholder, { backgroundColor: borderColor }]}>
-                          <Ionicons name="home-outline" size={32} color="#999" />
-                        </View>
-                      )}
-                    </View>
+                      {/* Property Details */}
+                      <View style={styles.cardDetails}>
+                        {/* Location */}
+                        <Text style={styles.cardLocation} numberOfLines={1}>
+                          {property.district || property.region}
+                        </Text>
 
-                    {/* Property Details */}
-                    <View style={styles.cardDetails}>
-                      {/* Location */}
-                      <Text style={styles.cardLocation} numberOfLines={1}>
-                        {property.district || property.region}
-                      </Text>
+                        {/* Title */}
+                        <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={2}>
+                          {property.title}
+                        </Text>
 
-                      {/* Title */}
-                      <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={2}>
-                        {property.title}
-                      </Text>
+                        {/* Property Type & Bedrooms */}
+                        <Text style={styles.cardMeta} numberOfLines={1}>
+                          {property.propertyType}
+                          {property.bedrooms && ` • ${property.bedrooms} bed${property.bedrooms > 1 ? 's' : ''}`}
+                          {property.maxGuests && ` • ${property.maxGuests} guest${property.maxGuests > 1 ? 's' : ''}`}
+                        </Text>
 
-                      {/* Property Type & Bedrooms */}
-                      <Text style={styles.cardMeta} numberOfLines={1}>
-                        {property.propertyType}
-                        {property.bedrooms && ` • ${property.bedrooms} bed${property.bedrooms > 1 ? 's' : ''}`}
-                        {property.maxGuests && ` • ${property.maxGuests} guest${property.maxGuests > 1 ? 's' : ''}`}
-                      </Text>
+                        {/* Price */}
+                        <View style={styles.cardPriceRow}>
+                          <View style={styles.cardPriceContainer}>
+                            <Text style={[styles.cardPrice, { color: textColor }]}>
+                              {property.currency} {(isShortTerm ? property.nightlyRate : property.monthlyRent)?.toLocaleString()}
+                            </Text>
+                            <Text style={styles.cardPriceUnit}>
+                              {isShortTerm ? 'per night' : 'per month'}
+                            </Text>
+                          </View>
 
-                      {/* Price */}
-                      <View style={styles.cardPriceRow}>
-                        <View style={styles.cardPriceContainer}>
-                          <Text style={[styles.cardPrice, { color: textColor }]}>
-                            {property.currency} {(isShortTerm ? property.nightlyRate : property.monthlyRent)?.toLocaleString()}
-                          </Text>
-                          <Text style={styles.cardPriceUnit}>
-                            {isShortTerm ? 'per night' : 'per month'}
-                          </Text>
-                        </View>
-
-                        {/* Action Buttons */}
-                        <View style={styles.cardActions}>
-                          <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: borderColor }]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              console.log('Chat:', property.propertyId);
-                            }}
-                          >
-                            <Ionicons name="chatbubble-outline" size={16} color={textColor} />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: borderColor }]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              console.log('Favorite:', property.propertyId);
-                            }}
-                          >
-                            <Ionicons name="heart-outline" size={16} color={textColor} />
-                          </TouchableOpacity>
+                          {/* Action Buttons */}
+                          <View style={styles.cardActions}>
+                            <TouchableOpacity
+                              style={[styles.actionButton, { backgroundColor: borderColor }]}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                console.log('Chat:', property.propertyId);
+                              }}
+                            >
+                              <Ionicons name="chatbubble-outline" size={16} color={textColor} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.actionButton, { backgroundColor: borderColor }]}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                console.log('Favorite:', property.propertyId);
+                              }}
+                            >
+                              <Ionicons name="heart-outline" size={16} color={textColor} />
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="funnel-outline" size={64} color="#ddd" />
+                <Text style={[styles.emptyTitle, { color: textColor }]}>No matches found</Text>
+                <Text style={styles.emptyText}>
+                  Try adjusting your filters to see more results
+                </Text>
+                <TouchableOpacity
+                  style={[styles.exploreButton, { backgroundColor: tintColor }]}
+                  onPress={() => setFilters({})}
+                >
+                  <Text style={styles.exploreButtonText}>Clear Filters</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              </View>
+            )}
           </>
         ) : (
           <View style={styles.emptyContainer}>
@@ -296,6 +566,15 @@ export default function SearchScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApply={handleApplyFilters}
+        currentFilters={filters}
+        isShortTerm={isShortTerm}
+      />
     </SafeAreaView>
   );
 }
@@ -304,32 +583,121 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  topSection: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  backText: {
+    fontSize: 17,
+    fontWeight: '500',
+  },
+  locationHeader: {
+    marginBottom: 16,
+  },
+  locationTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  locationSubtitle: {
+    fontSize: 15,
+    color: '#717171',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  locationDropdownWrapper: {
+    position: 'relative',
+    flex: 1,
+    maxWidth: 150,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  locationChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  filtersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  filtersButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  filterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  filterBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    minWidth: 180,
+    maxWidth: 250,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  scrollableDropdown: {
+    maxHeight: 300,
+  },
+  dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  backButton: {
-    padding: 4,
-  },
-  headerCenter: {
-    flex: 1,
-    marginHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#717171',
-  },
-  filterButton: {
-    padding: 4,
+  dropdownItemText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   content: {
     flex: 1,
@@ -347,16 +715,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  resultsHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  resultsCount: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   propertyList: {
     paddingHorizontal: 16,
+    paddingTop: 8,
     gap: 12,
   },
   searchCard: {

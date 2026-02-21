@@ -4,7 +4,6 @@ import { RentalType } from '@/hooks/useRentalType';
 import type { FlattenedLocation } from '@/lib/location/types';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -21,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import CalendarDatePicker from '../property/CalendarDatePicker';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -51,15 +51,11 @@ export default function SearchModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<FlattenedLocation | null>(null);
   
-  // Date states - default to today for check-in/move-in, 1 week later for check-out
-  const today = new Date();
-  const oneWeekLater = new Date(today);
-  oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-  
-  const [checkInDate, setCheckInDate] = useState<Date | null>(today);
-  const [checkOutDate, setCheckOutDate] = useState<Date | null>(oneWeekLater);
-  const [moveInDate, setMoveInDate] = useState<Date | null>(today);
-  const [showDatePicker, setShowDatePicker] = useState<'checkIn' | 'checkOut' | 'moveIn' | null>(null);
+  // Date states - store as ISO strings for consistency with CalendarDatePicker
+  const [checkInDate, setCheckInDate] = useState<string>('');
+  const [checkOutDate, setCheckOutDate] = useState<string>('');
+  const [moveInDate, setMoveInDate] = useState<string>('');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -120,7 +116,7 @@ export default function SearchModal({
 
   const handleLocationSelect = (location: FlattenedLocation) => {
     setSelectedLocation(location);
-    setSearchQuery(location.displayName);
+    setSearchQuery(toTitleCase(location.displayName));
     setActiveSection('dates');
   };
 
@@ -130,10 +126,10 @@ export default function SearchModal({
     };
 
     if (isShortTerm) {
-      if (checkInDate) params.checkInDate = checkInDate.toISOString().split('T')[0];
-      if (checkOutDate) params.checkOutDate = checkOutDate.toISOString().split('T')[0];
+      if (checkInDate) params.checkInDate = new Date(checkInDate).toISOString().split('T')[0];
+      if (checkOutDate) params.checkOutDate = new Date(checkOutDate).toISOString().split('T')[0];
     } else {
-      if (moveInDate) params.moveInDate = moveInDate.toISOString().split('T')[0];
+      if (moveInDate) params.moveInDate = new Date(moveInDate).toISOString().split('T')[0];
     }
 
     // Call the onSearch callback
@@ -155,11 +151,19 @@ export default function SearchModal({
     }
 
     if (isShortTerm) {
-      if (checkInDate) searchParams.checkInDate = checkInDate.toISOString().split('T')[0];
-      if (checkOutDate) searchParams.checkOutDate = checkOutDate.toISOString().split('T')[0];
+      if (checkInDate) searchParams.checkInDate = new Date(checkInDate).toISOString().split('T')[0];
+      if (checkOutDate) searchParams.checkOutDate = new Date(checkOutDate).toISOString().split('T')[0];
     } else {
-      if (moveInDate) searchParams.moveInDate = moveInDate.toISOString().split('T')[0];
+      if (moveInDate) searchParams.moveInDate = new Date(moveInDate).toISOString().split('T')[0];
     }
+
+    // Clear search state
+    setSearchQuery('');
+    setSelectedLocation(null);
+    setCheckInDate('');
+    setCheckOutDate('');
+    setMoveInDate('');
+    setActiveSection('location');
 
     // Close modal and navigate
     onClose();
@@ -169,13 +173,9 @@ export default function SearchModal({
     });
   };
 
-  const getMinDate = () => new Date();
-
-  const getMinCheckOutDate = () => {
-    if (!checkInDate) return new Date();
-    const minDate = new Date(checkInDate);
-    minDate.setDate(minDate.getDate() + 1);
-    return minDate;
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return 'Select date';
+    return formatDateShort(dateStr);
   };
 
   return (
@@ -412,15 +412,11 @@ export default function SearchModal({
                     {((isShortTerm && (checkInDate || checkOutDate)) || (!isShortTerm && moveInDate)) && (
                       <TouchableOpacity 
                         onPress={() => {
-                          const today = new Date();
-                          const oneWeekLater = new Date(today);
-                          oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-                          
                           if (isShortTerm) {
-                            setCheckInDate(today);
-                            setCheckOutDate(oneWeekLater);
+                            setCheckInDate('');
+                            setCheckOutDate('');
                           } else {
-                            setMoveInDate(today);
+                            setMoveInDate('');
                           }
                         }}
                         style={styles.clearSectionButton}
@@ -432,66 +428,34 @@ export default function SearchModal({
                   
                   {isShortTerm ? (
                     <>
-                      {/* Check-in Date */}
+                      {/* Date Range Selector */}
                       <View style={styles.dateSection}>
                         <Text style={[styles.dateLabel, { color: textColor }]}>
-                          Check-in date
+                          Select dates
                         </Text>
                         <TouchableOpacity
                           style={[
                             styles.dateButton,
                             { backgroundColor: cardBg, borderColor },
-                            checkInDate && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
+                            (checkInDate && checkOutDate) && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
                           ]}
-                          onPress={() => {
-                            console.log('Check-in date button pressed');
-                            setShowDatePicker('checkIn');
-                          }}
+                          onPress={() => setShowCalendar(true)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.dateIconContainer, { backgroundColor: `${tintColor}15` }]}>
                             <Ionicons name="calendar" size={22} color={tintColor} />
                           </View>
-                          <Text style={[styles.dateButtonText, { color: checkInDate ? textColor : subtleText }]}>
-                            {checkInDate ? formatDateShort(checkInDate.toISOString()) : 'Select date'}
-                          </Text>
-                          {checkInDate && (
-                            <Ionicons name="checkmark-circle" size={22} color={tintColor} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Check-out Date */}
-                      <View style={styles.dateSection}>
-                        <Text style={[styles.dateLabel, { color: textColor }]}>
-                          Check-out date
-                        </Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.dateButton,
-                            { backgroundColor: cardBg, borderColor },
-                            checkOutDate && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
-                          ]}
-                          onPress={() => {
-                            console.log('Check-out date button pressed');
-                            setShowDatePicker('checkOut');
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[
-                            styles.dateIconContainer, 
-                            { backgroundColor: `${tintColor}15` }
-                          ]}>
-                            <Ionicons 
-                              name="calendar" 
-                              size={22} 
-                              color={tintColor} 
-                            />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.dateButtonText, { color: checkInDate ? textColor : subtleText }]}>
+                              {checkInDate ? formatDateDisplay(checkInDate) : 'Check-in'}
+                            </Text>
+                            {checkOutDate && (
+                              <Text style={[styles.dateButtonSubtext, { color: subtleText }]}>
+                                to {formatDateDisplay(checkOutDate)}
+                              </Text>
+                            )}
                           </View>
-                          <Text style={[styles.dateButtonText, { color: checkOutDate ? textColor : subtleText }]}>
-                            {checkOutDate ? formatDateShort(checkOutDate.toISOString()) : 'Select date'}
-                          </Text>
-                          {checkOutDate && (
+                          {(checkInDate && checkOutDate) && (
                             <Ionicons name="checkmark-circle" size={22} color={tintColor} />
                           )}
                         </TouchableOpacity>
@@ -525,17 +489,14 @@ export default function SearchModal({
                             { backgroundColor: cardBg, borderColor },
                             moveInDate && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
                           ]}
-                          onPress={() => {
-                            console.log('Move-in date button pressed');
-                            setShowDatePicker('moveIn');
-                          }}
+                          onPress={() => setShowCalendar(true)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.dateIconContainer, { backgroundColor: `${tintColor}15` }]}>
                             <Ionicons name="calendar" size={22} color={tintColor} />
                           </View>
                           <Text style={[styles.dateButtonText, { color: moveInDate ? textColor : subtleText }]}>
-                            {moveInDate ? formatDateShort(moveInDate.toISOString()) : 'Select date (optional)'}
+                            {moveInDate ? formatDateDisplay(moveInDate) : 'Select date (optional)'}
                           </Text>
                           {moveInDate && (
                             <Ionicons name="checkmark-circle" size={22} color={tintColor} />
@@ -563,94 +524,39 @@ export default function SearchModal({
               )}
             </ScrollView>
 
-            {/* Date Picker */}
-            {showDatePicker && Platform.OS === 'ios' && (
-              <Modal transparent animationType="slide" visible={true}>
-                <View style={styles.datePickerModal}>
-                  <TouchableOpacity 
-                    style={styles.datePickerOverlay} 
-                    activeOpacity={1}
-                    onPress={() => {
-                      console.log('Date picker overlay pressed');
-                      setShowDatePicker(null);
-                    }}
-                  />
-                  <View style={[styles.datePickerContainer, { backgroundColor }]}>
-                    <View style={[styles.datePickerHeader, { borderBottomColor: datePickerBorder }]}>
-                      <TouchableOpacity onPress={() => {
-                        console.log('Done button pressed');
-                        setShowDatePicker(null);
-                      }}>
-                        <Text style={[styles.datePickerButton, { color: tintColor }]}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <DateTimePicker
-                      value={
-                        showDatePicker === 'checkIn'
-                          ? checkInDate || new Date()
-                          : showDatePicker === 'checkOut'
-                          ? checkOutDate || getMinCheckOutDate()
-                          : moveInDate || new Date()
-                      }
-                      mode="date"
-                      display="spinner"
-                      minimumDate={
-                        showDatePicker === 'checkOut' ? getMinCheckOutDate() : getMinDate()
-                      }
-                      onChange={(event, selectedDate) => {
-                        console.log('Date picker onChange:', event.type, selectedDate);
-                        if (event.type === 'set' && selectedDate) {
-                          if (showDatePicker === 'checkIn') {
-                            setCheckInDate(selectedDate);
-                            // Auto-update checkout to be 1 week after check-in
-                            const newCheckOut = new Date(selectedDate);
-                            newCheckOut.setDate(newCheckOut.getDate() + 7);
-                            setCheckOutDate(newCheckOut);
-                          } else if (showDatePicker === 'checkOut') {
-                            setCheckOutDate(selectedDate);
-                          } else if (showDatePicker === 'moveIn') {
-                            setMoveInDate(selectedDate);
-                          }
-                        }
-                      }}
-                    />
-                  </View>
-                </View>
-              </Modal>
-            )}
-
-            {showDatePicker && Platform.OS === 'android' && (
-              <DateTimePicker
-                value={
-                  showDatePicker === 'checkIn'
-                    ? checkInDate || new Date()
-                    : showDatePicker === 'checkOut'
-                    ? checkOutDate || getMinCheckOutDate()
-                    : moveInDate || new Date()
-                }
-                mode="date"
-                display="default"
-                minimumDate={
-                  showDatePicker === 'checkOut' ? getMinCheckOutDate() : getMinDate()
-                }
-                onChange={(event, selectedDate) => {
-                  console.log('Android date picker onChange:', event.type, selectedDate);
-                  const pickerType = showDatePicker; // Store the value before clearing
-                  setShowDatePicker(null);
-                  if (event.type === 'set' && selectedDate) {
-                    if (pickerType === 'checkIn') {
-                      setCheckInDate(selectedDate);
-                      // Auto-update checkout to be 1 week after check-in
-                      const newCheckOut = new Date(selectedDate);
-                      newCheckOut.setDate(newCheckOut.getDate() + 7);
-                      setCheckOutDate(newCheckOut);
-                    } else if (pickerType === 'checkOut') {
-                      setCheckOutDate(selectedDate);
-                    } else if (pickerType === 'moveIn') {
-                      setMoveInDate(selectedDate);
-                    }
-                  }
-                }}
+            {/* Calendar Modal */}
+            {isShortTerm ? (
+              <CalendarDatePicker
+                visible={showCalendar}
+                onClose={() => setShowCalendar(false)}
+                checkInDate={checkInDate}
+                checkOutDate={checkOutDate}
+                onCheckInChange={setCheckInDate}
+                onCheckOutChange={setCheckOutDate}
+                blockedDates={[]}
+                textColor={textColor}
+                tintColor={tintColor}
+                backgroundColor={backgroundColor}
+                borderColor={borderColor}
+                secondaryText={subtleText}
+                mode="range"
+              />
+            ) : (
+              <CalendarDatePicker
+                visible={showCalendar}
+                onClose={() => setShowCalendar(false)}
+                checkInDate={moveInDate}
+                checkOutDate=""
+                onCheckInChange={setMoveInDate}
+                onCheckOutChange={() => {}}
+                blockedDates={[]}
+                textColor={textColor}
+                tintColor={tintColor}
+                backgroundColor={backgroundColor}
+                borderColor={borderColor}
+                secondaryText={subtleText}
+                mode="single"
+                singleDateLabel="Move-in date"
               />
             )}
           </View>
@@ -902,6 +808,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     flex: 1,
+  },
+  dateButtonSubtext: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 2,
   },
   helperText: {
     fontSize: 13,

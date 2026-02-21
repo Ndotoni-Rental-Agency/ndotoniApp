@@ -4,6 +4,7 @@ import PropertyHost from '@/components/property/PropertyHost';
 import PropertyLocation from '@/components/property/PropertyLocation';
 import PropertyMediaGallery from '@/components/property/PropertyMediaGallery';
 import PropertyRules from '@/components/property/PropertyRules';
+import ReservationModal from '@/components/property/ReservationModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
 import ShortTermPropertyHeader from '@/components/property/ShortTermPropertyHeader';
 import ShortTermPropertyPricing from '@/components/property/ShortTermPropertyPricing';
@@ -13,7 +14,7 @@ import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -28,6 +29,8 @@ export default function ShortTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const propertyId = params.id as string;
+  
+  const [showReservationModal, setShowReservationModal] = useState(false);
   
   // Use the short-term property detail hook
   const { property, loading: isLoading, error, retry } = useShortTermPropertyDetail(propertyId);
@@ -242,11 +245,25 @@ export default function ShortTermPropertyDetailsScreen() {
             </View>
             <TouchableOpacity
               style={[styles.bookButton, { backgroundColor: tintColor }]}
-              onPress={() => console.log('Book now')}
+              onPress={() => setShowReservationModal(true)}
             >
               <Text style={styles.bookButtonText}>Reserve</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Reservation Modal */}
+          {property && (
+            <ReservationModal
+              visible={showReservationModal}
+              onClose={() => setShowReservationModal(false)}
+              propertyId={property.propertyId}
+              propertyTitle={property.title}
+              pricePerNight={property.nightlyRate}
+              currency={property.currency}
+              minimumStay={property.minimumStay ?? 1}
+              propertyImage={property.thumbnail || property.images?.[0]}
+            />
+          )}
         </View>
       </SafeAreaView>
     </SafeAreaView>
