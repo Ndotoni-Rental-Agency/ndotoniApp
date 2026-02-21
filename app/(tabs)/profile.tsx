@@ -7,10 +7,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useUpdateUser } from '@/hooks/useUpdateUser';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { getMediaUploadUrl } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
@@ -22,9 +26,10 @@ export default function ProfileScreen() {
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
   
-  const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { user, isAuthenticated, isLoading, signOut, refreshUser } = useAuth();
   const { themeMode, setThemeMode, isDark } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { updateUserProfile, isUpdating } = useUpdateUser();
   
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -32,6 +37,7 @@ export default function ProfileScreen() {
   const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const toggleTheme = async () => {
     const newMode = isDark ? 'light' : 'dark';
@@ -56,6 +62,74 @@ export default function ProfileScreen() {
         }
       ]
     );
+  };
+
+  const handleProfilePictureUpload = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant photo library permissions to upload a profile picture.');
+        return;
+      }
+
+      // Pick image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+
+      setUploadingPhoto(true);
+
+      const asset = result.assets[0];
+      const filename = asset.uri.split('/').pop() || 'profile.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      // Get upload URL
+      const urlData = await GraphQLClient.executeAuthenticated<{ getMediaUploadUrl: any }>(
+        getMediaUploadUrl,
+        { fileName: filename, contentType: type }
+      );
+
+      if (!urlData.getMediaUploadUrl?.uploadUrl) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadUrl, fileUrl } = urlData.getMediaUploadUrl;
+
+      // Upload to S3
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': type },
+      });
+
+      // Update user profile
+      const updateResult = await updateUserProfile({ profileImage: fileUrl });
+
+      if (updateResult.success) {
+        Alert.alert('Success', 'Profile picture updated successfully');
+        // Refresh user data
+        if (refreshUser) {
+          await refreshUser();
+        }
+      } else {
+        throw new Error(updateResult.message);
+      }
+    } catch (error) {
+      console.error('[Profile] Error uploading profile picture:', error);
+      Alert.alert('Error', 'Failed to upload profile picture');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   if (isLoading) {
@@ -208,9 +282,29 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <View style={[styles.avatar, { backgroundColor: tintColor }]}>
-            <Text style={styles.avatarText}>{getInitials()}</Text>
-          </View>
+          <TouchableOpacity 
+            style={[styles.avatarContainer]}
+            onPress={handleProfilePictureUpload}
+            disabled={uploadingPhoto}
+          >
+            {user?.profileImage ? (
+              <Image 
+                source={{ uri: user.profileImage }} 
+                style={styles.avatarImage}
+              />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: tintColor }]}>
+                <Text style={styles.avatarText}>{getInitials()}</Text>
+              </View>
+            )}
+            <View style={[styles.cameraButton, { backgroundColor: tintColor }]}>
+              {uploadingPhoto ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="camera" size={16} color="#fff" />
+              )}
+            </View>
+          </TouchableOpacity>
           <Text style={[styles.name, { color: textColor }]}>
             {user?.firstName} {user?.lastName}
           </Text>
@@ -398,18 +492,38 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 20,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   avatarText: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  cameraButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   name: {
     fontSize: 24,
