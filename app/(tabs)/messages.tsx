@@ -6,12 +6,159 @@ import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useChatDeletion } from '@/hooks/useChatDeletion';
 import { useConversationSearch } from '@/hooks/useConversationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, PanResponder, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface SwipeableConversationCardProps {
+  conversation: any;
+  onPress: () => void;
+  onDelete: () => void;
+  backgroundColor: string;
+  textColor: string;
+  secondaryText: string;
+  tintColor: string;
+  formatTime: (timestamp: string) => string;
+}
+
+function SwipeableConversationCard({
+  conversation,
+  onPress,
+  onDelete,
+  backgroundColor,
+  textColor,
+  secondaryText,
+  tintColor,
+  formatTime,
+}: SwipeableConversationCardProps) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const lastOffset = useRef(0);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderGrant: () => {
+        translateX.setOffset(lastOffset.current);
+        translateX.setValue(0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow swiping left (negative values)
+        if (gestureState.dx < 0) {
+          translateX.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        translateX.flattenOffset();
+        
+        // If swiped more than 80px, show delete button
+        if (gestureState.dx < -80) {
+          Animated.spring(translateX, {
+            toValue: -80,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 8,
+          }).start();
+          lastOffset.current = -80;
+        } else {
+          // Otherwise, snap back
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 8,
+          }).start();
+          lastOffset.current = 0;
+        }
+      },
+    })
+  ).current;
+
+  const handleDelete = () => {
+    // Animate out before deleting
+    Animated.timing(translateX, {
+      toValue: -400,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      onDelete();
+      // Reset position after delete
+      lastOffset.current = 0;
+      translateX.setValue(0);
+    });
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      {/* Delete Button Background */}
+      <View style={styles.deleteBackground}>
+        <TouchableOpacity
+          style={styles.deleteActionButton}
+          onPress={handleDelete}
+        >
+          <Ionicons name="trash-outline" size={24} color="#fff" />
+          <Text style={styles.deleteActionText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable Card */}
+      <Animated.View
+        style={{
+          transform: [{ translateX }],
+        }}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          style={[styles.messageCard, { backgroundColor }]}
+          onPress={onPress}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.avatar, { backgroundColor: tintColor }]}>
+            {conversation.otherPartyImage ? (
+              <Text style={styles.avatarText}>
+                {conversation.otherPartyName.charAt(0).toUpperCase()}
+              </Text>
+            ) : (
+              <Ionicons name="person" size={28} color="#fff" />
+            )}
+          </View>
+          <View style={styles.messageInfo}>
+            <View style={styles.messageHeader}>
+              <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
+                {conversation.otherPartyName}
+              </Text>
+              <Text style={[styles.messageTime, { color: secondaryText }]}>
+                {formatTime(conversation.lastMessageTime)}
+              </Text>
+            </View>
+            {conversation.propertyTitle && (
+              <View style={styles.propertyTitleRow}>
+                <Ionicons name="home-outline" size={14} color={tintColor} />
+                <Text style={[styles.propertyTitle, { color: secondaryText }]} numberOfLines={1}>
+                  {conversation.propertyTitle}
+                </Text>
+              </View>
+            )}
+            <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
+              {conversation.lastMessage}
+            </Text>
+            {conversation.unreadCount > 0 && (
+              <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
+                <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -24,6 +171,7 @@ export default function MessagesScreen() {
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { conversations, loadConversations, loadingConversations } = useChat();
+  const { deleteConversation, isDeletingConversation } = useChatDeletion();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -44,6 +192,27 @@ export default function MessagesScreen() {
     setRefreshing(true);
     await loadConversations();
     setRefreshing(false);
+  };
+
+  const handleDeleteConversation = (conversationId: string, conversationName: string) => {
+    Alert.alert(
+      'Delete Conversation',
+      `Are you sure you want to delete this conversation with ${conversationName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteConversation(conversationId);
+            if (success) {
+              // Reload conversations after deletion
+              await loadConversations();
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatTime = (timestamp: string) => {
@@ -251,53 +420,25 @@ export default function MessagesScreen() {
         {!loadingConversations && filteredConversations.length > 0 && (
           <View style={styles.listContainer}>
             {filteredConversations.map((conversation) => (
-              <TouchableOpacity 
-                key={conversation.id} 
-                style={[styles.messageCard, { backgroundColor: cardBg, borderColor }]}
+              <SwipeableConversationCard
+                key={conversation.id}
+                conversation={conversation}
                 onPress={() => {
                   console.log('[Messages] Opening conversation:', {
                     id: conversation.id,
                     hasHash: conversation.id.includes('#'),
                     propertyTitle: conversation.propertyTitle
                   });
-                  // URL-encode the conversation ID to handle the # character
                   const encodedId = encodeURIComponent(conversation.id);
                   router.push(`/conversation/${encodedId}`);
                 }}
-              >
-                <View style={[styles.avatar, { backgroundColor: tintColor }]}>
-                  {conversation.otherPartyImage ? (
-                    <Text style={styles.avatarText}>
-                      {conversation.otherPartyName.charAt(0).toUpperCase()}
-                    </Text>
-                  ) : (
-                    <Ionicons name="person" size={24} color="#fff" />
-                  )}
-                </View>
-                <View style={styles.messageInfo}>
-                  <View style={styles.messageHeader}>
-                    <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
-                      {conversation.otherPartyName}
-                    </Text>
-                    <Text style={[styles.messageTime, { color: secondaryText }]}>
-                      {formatTime(conversation.lastMessageTime)}
-                    </Text>
-                  </View>
-                  {conversation.propertyTitle && (
-                    <Text style={[styles.propertyTitle, { color: secondaryText }]} numberOfLines={1}>
-                      {conversation.propertyTitle}
-                    </Text>
-                  )}
-                  <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
-                    {conversation.lastMessage}
-                  </Text>
-                  {conversation.unreadCount > 0 && (
-                    <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
-                      <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
+                onDelete={() => handleDeleteConversation(conversation.id, conversation.otherPartyName)}
+                backgroundColor={cardBg}
+                textColor={textColor}
+                secondaryText={secondaryText}
+                tintColor={tintColor}
+                formatTime={formatTime}
+              />
             ))}
           </View>
         )}
@@ -440,23 +581,56 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingVertical: 8,
   },
-  messageCard: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+  swipeableContainer: {
+    marginHorizontal: 20,
+    marginVertical: 8,
+    overflow: 'hidden',
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  deleteBackground: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 100,
+    backgroundColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    borderRadius: 16,
+  },
+  deleteActionButton: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteActionText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  messageCard: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
   avatarText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
   },
   messageInfo: {
@@ -467,34 +641,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   senderName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: 8,
   },
   messageTime: {
     fontSize: 13,
+    fontWeight: '500',
+  },
+  propertyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
   },
   propertyTitle: {
     fontSize: 13,
     fontStyle: 'italic',
-    marginBottom: 2,
+    flex: 1,
   },
   messagePreview: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 21,
   },
   unreadBadge: {
     position: 'absolute',
     top: 0,
     right: 0,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
   },
   unreadText: {
     color: '#fff',
