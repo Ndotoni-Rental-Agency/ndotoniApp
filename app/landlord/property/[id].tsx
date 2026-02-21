@@ -80,8 +80,28 @@ export default function EditLongTermPropertyScreen() {
   const [virtualTour, setVirtualTour] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   
+  const [originalMedia, setOriginalMedia] = useState<{
+    images: string[];
+    videos: string[];
+    floorPlan: string;
+    virtualTour: string;
+  }>({ images: [], videos: [], floorPlan: '', virtualTour: '' });
+  
   const [originalData, setOriginalData] = useState(formData);
   const [sectionSaving, setSectionSaving] = useState<Record<string, boolean>>({});
+  const [expandedSection, setExpandedSection] = useState<string | null>('Basic Information');
+  
+  const handleToggleSection = (sectionTitle: string) => {
+    setExpandedSection(prev => prev === sectionTitle ? null : sectionTitle);
+  };
+  
+  const hasMediaChanges = () => {
+    const imagesChanged = JSON.stringify(selectedImages.sort()) !== JSON.stringify(originalMedia.images.sort());
+    const videosChanged = JSON.stringify(selectedVideos.sort()) !== JSON.stringify(originalMedia.videos.sort());
+    const floorPlanChanged = floorPlan !== originalMedia.floorPlan;
+    const virtualTourChanged = virtualTour !== originalMedia.virtualTour;
+    return imagesChanged || videosChanged || floorPlanChanged || virtualTourChanged;
+  };
   
   const hasSectionChanges = (fields: (keyof typeof formData)[]) => {
     return fields.some(field => {
@@ -229,6 +249,13 @@ export default function EditLongTermPropertyScreen() {
       setSelectedVideos(videos);
       setFloorPlan(property.media?.floorPlan || '');
       setVirtualTour(property.media?.virtualTour || '');
+      
+      setOriginalMedia({
+        images,
+        videos,
+        floorPlan: property.media?.floorPlan || '',
+        virtualTour: property.media?.virtualTour || '',
+      });
     }
   }, [property]);
 
@@ -298,7 +325,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Basic Information" 
           icon="information-circle" 
-          defaultExpanded
+          expanded={expandedSection === 'Basic Information'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Basic Information', ['title', 'description', 'propertyType'])}
           onCancel={() => resetSection(['title', 'description', 'propertyType'])}
           hasChanges={hasSectionChanges(['title', 'description', 'propertyType'])}
@@ -318,7 +346,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Location & Address" 
           icon="location" 
-          defaultExpanded
+          expanded={expandedSection === 'Location & Address'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Location & Address', ['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'])}
           onCancel={() => resetSection(['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'])}
           hasChanges={hasSectionChanges(['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'])}
@@ -342,7 +371,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Pricing & Fees" 
           icon="cash" 
-          defaultExpanded
+          expanded={expandedSection === 'Pricing & Fees'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Pricing & Fees', ['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
           onCancel={() => resetSection(['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
           hasChanges={hasSectionChanges(['monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
@@ -364,6 +394,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Property Details" 
           icon="home"
+          expanded={expandedSection === 'Property Details'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Property Details', ['bedrooms', 'bathrooms', 'squareMeters', 'floors', 'parkingSpaces', 'furnished'])}
           onCancel={() => resetSection(['bedrooms', 'bathrooms', 'squareMeters', 'floors', 'parkingSpaces', 'furnished'])}
           hasChanges={hasSectionChanges(['bedrooms', 'bathrooms', 'squareMeters', 'floors', 'parkingSpaces', 'furnished'])}
@@ -443,7 +475,8 @@ export default function EditLongTermPropertyScreen() {
             <Switch
               value={formData.furnished}
               onValueChange={(value) => updateField('furnished', value)}
-              trackColor={{ false: borderColor, true: tintColor }}
+              trackColor={{ false: '#d1d5db', true: tintColor }}
+              ios_backgroundColor="#d1d5db"
               thumbColor="#fff"
             />
           </View>
@@ -452,6 +485,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Availability & Booking" 
           icon="calendar"
+          expanded={expandedSection === 'Availability & Booking'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Availability & Booking', ['available', 'availableFrom', 'minimumLeaseTerm', 'maximumLeaseTerm'])}
           onCancel={() => resetSection(['available', 'availableFrom', 'minimumLeaseTerm', 'maximumLeaseTerm'])}
           hasChanges={hasSectionChanges(['available', 'availableFrom', 'minimumLeaseTerm', 'maximumLeaseTerm'])}
@@ -467,7 +502,8 @@ export default function EditLongTermPropertyScreen() {
             <Switch
               value={formData.available}
               onValueChange={(value) => updateField('available', value)}
-              trackColor={{ false: borderColor, true: tintColor }}
+              trackColor={{ false: '#d1d5db', true: tintColor }}
+              ios_backgroundColor="#d1d5db"
               thumbColor="#fff"
             />
           </View>
@@ -516,6 +552,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Amenities & Features" 
           icon="checkmark-done"
+          expanded={expandedSection === 'Amenities & Features'}
+          onToggle={handleToggleSection}
           onSave={() => saveSection('Amenities & Features', ['amenities'])}
           onCancel={() => resetSection(['amenities'])}
           hasChanges={hasSectionChanges(['amenities'])}
@@ -534,6 +572,10 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Photos & Media" 
           icon="images"
+          expanded={expandedSection === 'Photos & Media'}
+          onToggle={handleToggleSection}
+          hasChanges={hasMediaChanges()}
+          isSaving={sectionSaving['Photos & Media']}
           onSave={async () => {
             setSectionSaving(prev => ({ ...prev, 'Photos & Media': true }));
             try {
@@ -580,6 +622,8 @@ export default function EditLongTermPropertyScreen() {
         <CollapsibleSection 
           title="Landlord Contact" 
           icon="person"
+          expanded={expandedSection === 'Landlord Contact'}
+          onToggle={handleToggleSection}
         >
           <View style={styles.section}>
             <Text style={[styles.label, { color: placeholderColor }]}>

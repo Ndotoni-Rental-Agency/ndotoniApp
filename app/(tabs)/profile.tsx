@@ -267,7 +267,7 @@ export default function ProfileScreen() {
     { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/explore' },
     { id: 'favorites', label: 'Favorites', icon: 'heart' },
     { id: 'bookings', label: 'My Bookings', icon: 'calendar' },
-    { id: 'messages', label: 'Messages', icon: 'chatbubbles', badge: '2', route: '/(tabs)/messages' },
+    { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/messages' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
     { id: 'help', label: 'Help & Support', icon: 'help-circle' },
   ];
@@ -309,7 +309,10 @@ export default function ProfileScreen() {
             {user?.firstName} {user?.lastName}
           </Text>
           <Text style={[styles.email, { color: secondaryText }]}>{user?.email}</Text>
-          <TouchableOpacity style={[styles.editButton, { borderColor: tintColor }]}>
+          <TouchableOpacity 
+            style={[styles.editButton, { borderColor: tintColor }]}
+            onPress={() => router.push('/profile/edit')}
+          >
             <Text style={[styles.editButtonText, { color: tintColor }]}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
@@ -331,14 +334,6 @@ export default function ProfileScreen() {
                   <Ionicons name={item.icon as any} size={24} color={tintColor} />
                 </View>
                 <Text style={[styles.menuLabel, { color: textColor }]}>{item.label}</Text>
-              </View>
-              <View style={styles.menuItemRight}>
-                {item.badge && (
-                  <View style={[styles.badge, { backgroundColor: tintColor }]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                )}
-                <Ionicons name="chevron-forward" size={20} color={secondaryText} />
               </View>
             </TouchableOpacity>
           ))}

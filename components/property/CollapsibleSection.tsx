@@ -12,6 +12,8 @@ interface CollapsibleSectionProps {
   icon?: string;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onToggle?: (title: string) => void;
   onSave?: () => void | Promise<void>;
   onCancel?: () => void;
   hasChanges?: boolean;
@@ -23,25 +25,41 @@ export default function CollapsibleSection({
   icon,
   children,
   defaultExpanded = false,
+  expanded: controlledExpanded,
+  onToggle,
   onSave,
   onCancel,
   hasChanges = false,
   isSaving = false,
 }: CollapsibleSectionProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f9fafb', dark: '#111827' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#374151' }, 'background');
 
+  // Use controlled state if provided, otherwise use internal state
+  const expanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+
   const toggleExpanded = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(!expanded);
+    if (onToggle) {
+      onToggle(title);
+    } else {
+      setInternalExpanded(!internalExpanded);
+    }
   };
 
   const handleSave = async () => {
     if (onSave) {
       await onSave();
+      // Collapse the section after successful save
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      if (onToggle) {
+        onToggle(title);
+      } else {
+        setInternalExpanded(false);
+      }
     }
   };
 

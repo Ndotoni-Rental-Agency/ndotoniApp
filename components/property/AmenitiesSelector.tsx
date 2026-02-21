@@ -1,7 +1,7 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface AmenitiesSelectorProps {
   selectedAmenities: string[];
@@ -59,10 +59,13 @@ export default function AmenitiesSelector({
   propertyType = 'long-term',
 }: AmenitiesSelectorProps) {
   const [showModal, setShowModal] = useState(false);
+  const [customAmenity, setCustomAmenity] = useState('');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const inputBg = useThemeColor({ light: '#f9fafb', dark: '#111827' }, 'background');
+  const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
   const backgroundColor = useThemeColor({}, 'background');
 
   const amenities = propertyType === 'short-term' ? SHORT_TERM_AMENITIES : LONG_TERM_AMENITIES;
@@ -73,6 +76,35 @@ export default function AmenitiesSelector({
     } else {
       onAmenitiesChange([...selectedAmenities, amenityId]);
     }
+  };
+
+  const addCustomAmenity = () => {
+    const trimmed = customAmenity.trim();
+    if (!trimmed) {
+      Alert.alert('Error', 'Please enter an amenity name');
+      return;
+    }
+    
+    // Check if it already exists (case-insensitive)
+    const exists = selectedAmenities.some(
+      a => a.toLowerCase() === trimmed.toLowerCase()
+    );
+    
+    if (exists) {
+      Alert.alert('Error', 'This amenity is already added');
+      return;
+    }
+    
+    onAmenitiesChange([...selectedAmenities, trimmed]);
+    setCustomAmenity('');
+  };
+
+  const removeCustomAmenity = (amenity: string) => {
+    onAmenitiesChange(selectedAmenities.filter(id => id !== amenity));
+  };
+
+  const isCustomAmenity = (amenityId: string) => {
+    return !amenities.some(a => a.id === amenityId);
   };
 
   return (
@@ -96,11 +128,23 @@ export default function AmenitiesSelector({
         <View style={styles.selectedContainer}>
           {selectedAmenities.map(amenityId => {
             const amenity = amenities.find(a => a.id === amenityId);
-            if (!amenity) return null;
+            const isCustom = isCustomAmenity(amenityId);
+            
             return (
               <View key={amenityId} style={[styles.chip, { backgroundColor: `${tintColor}20`, borderColor: tintColor }]}>
-                <Ionicons name={amenity.icon as any} size={14} color={tintColor} />
-                <Text style={[styles.chipText, { color: tintColor }]}>{amenity.label}</Text>
+                <Ionicons 
+                  name={amenity?.icon as any || 'add-circle'} 
+                  size={14} 
+                  color={tintColor} 
+                />
+                <Text style={[styles.chipText, { color: tintColor }]}>
+                  {amenity?.label || amenityId}
+                </Text>
+                {isCustom && (
+                  <TouchableOpacity onPress={() => removeCustomAmenity(amenityId)}>
+                    <Ionicons name="close-circle" size={16} color={tintColor} />
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
@@ -117,6 +161,30 @@ export default function AmenitiesSelector({
           </View>
 
           <ScrollView style={styles.modalContent}>
+            {/* Custom Amenity Input */}
+            <View style={[styles.customSection, { backgroundColor: cardBg, borderColor }]}>
+              <Text style={[styles.customTitle, { color: textColor }]}>Add Custom Amenity</Text>
+              <View style={styles.customInputContainer}>
+                <TextInput
+                  style={[styles.customInput, { backgroundColor: inputBg, borderColor, color: textColor }]}
+                  placeholder="e.g., Rooftop Terrace"
+                  placeholderTextColor={placeholderColor}
+                  value={customAmenity}
+                  onChangeText={setCustomAmenity}
+                  onSubmitEditing={addCustomAmenity}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, { backgroundColor: tintColor }]}
+                  onPress={addCustomAmenity}
+                >
+                  <Ionicons name="add" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Standard Amenities */}
+            <Text style={[styles.sectionTitle, { color: textColor }]}>Standard Amenities</Text>
             {amenities.map(amenity => {
               const isSelected = selectedAmenities.includes(amenity.id);
               return (
@@ -223,5 +291,40 @@ const styles = StyleSheet.create({
   amenityLabel: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  customSection: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  customTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  customInputContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  customInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 16,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
   },
 });

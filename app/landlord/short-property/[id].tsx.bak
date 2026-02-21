@@ -106,24 +106,11 @@ export default function EditShortTermPropertyScreen() {
   
   // Track original data for each section
   const [originalData, setOriginalData] = useState(formData);
-  const [originalMedia, setOriginalMedia] = useState<{
-    images: string[];
-    videos: string[];
-    thumbnail: string;
-  }>({ images: [], videos: [], thumbnail: '' });
-  
   const [sectionSaving, setSectionSaving] = useState<Record<string, boolean>>({});
   const [expandedSection, setExpandedSection] = useState<string | null>('Basic Information');
   
   const handleToggleSection = (sectionTitle: string) => {
     setExpandedSection(prev => prev === sectionTitle ? null : sectionTitle);
-  };
-  
-  const hasMediaChanges = () => {
-    const imagesChanged = JSON.stringify(selectedImages.sort()) !== JSON.stringify(originalMedia.images.sort());
-    const videosChanged = JSON.stringify(selectedVideos.sort()) !== JSON.stringify(originalMedia.videos.sort());
-    const thumbnailChanged = thumbnail !== originalMedia.thumbnail;
-    return imagesChanged || videosChanged || thumbnailChanged;
   };
   
   // Check if section has changes
@@ -447,8 +434,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Guest Capacity" 
           icon="people"
-          expanded={expandedSection === 'Guest Capacity'}
-          onToggle={handleToggleSection}
           onSave={() => saveSection('Guest Capacity', ['maxGuests', 'maxAdults', 'maxChildren', 'maxInfants'])}
           onCancel={() => resetSection(['maxGuests', 'maxAdults', 'maxChildren', 'maxInfants'])}
           hasChanges={hasSectionChanges(['maxGuests', 'maxAdults', 'maxChildren', 'maxInfants'])}
@@ -509,8 +494,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Booking Rules" 
           icon="calendar"
-          expanded={expandedSection === 'Booking Rules'}
-          onToggle={handleToggleSection}
           onSave={() => saveSection('Booking Rules', ['minimumStay', 'maximumStay', 'advanceBookingDays', 'instantBookEnabled'])}
           onCancel={() => resetSection(['minimumStay', 'maximumStay', 'advanceBookingDays', 'instantBookEnabled'])}
           hasChanges={hasSectionChanges(['minimumStay', 'maximumStay', 'advanceBookingDays', 'instantBookEnabled'])}
@@ -567,8 +550,7 @@ export default function EditShortTermPropertyScreen() {
             <Switch
               value={formData.instantBookEnabled}
               onValueChange={(value) => setFormData({ ...formData, instantBookEnabled: value })}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
+              trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
@@ -578,8 +560,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Check-in & Check-out" 
           icon="time"
-          expanded={expandedSection === 'Check-in & Check-out'}
-          onToggle={handleToggleSection}
           onSave={() => saveSection('Check-in & Check-out', ['checkInTime', 'checkOutTime', 'checkInInstructions'])}
           onCancel={() => resetSection(['checkInTime', 'checkOutTime', 'checkInInstructions'])}
           hasChanges={hasSectionChanges(['checkInTime', 'checkOutTime', 'checkInInstructions'])}
@@ -635,8 +615,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Policies & Rules" 
           icon="document-text"
-          expanded={expandedSection === 'Policies & Rules'}
-          onToggle={handleToggleSection}
           onSave={() => saveSection('Policies & Rules', ['cancellationPolicy', 'allowsPets', 'allowsSmoking', 'allowsChildren', 'allowsInfants'])}
           onCancel={() => resetSection(['cancellationPolicy', 'allowsPets', 'allowsSmoking', 'allowsChildren', 'allowsInfants'])}
           hasChanges={hasSectionChanges(['cancellationPolicy', 'allowsPets', 'allowsSmoking', 'allowsChildren', 'allowsInfants'])}
@@ -674,8 +652,7 @@ export default function EditShortTermPropertyScreen() {
             <Switch
               value={formData.allowsPets}
               onValueChange={(value) => setFormData({ ...formData, allowsPets: value })}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
+              trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
@@ -685,8 +662,7 @@ export default function EditShortTermPropertyScreen() {
             <Switch
               value={formData.allowsSmoking}
               onValueChange={(value) => setFormData({ ...formData, allowsSmoking: value })}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
+              trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
@@ -696,8 +672,7 @@ export default function EditShortTermPropertyScreen() {
             <Switch
               value={formData.allowsChildren}
               onValueChange={(value) => setFormData({ ...formData, allowsChildren: value })}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
+              trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
@@ -707,8 +682,7 @@ export default function EditShortTermPropertyScreen() {
             <Switch
               value={formData.allowsInfants}
               onValueChange={(value) => setFormData({ ...formData, allowsInfants: value })}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
+              trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
@@ -718,8 +692,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Amenities & Features" 
           icon="checkmark-done"
-          expanded={expandedSection === 'Amenities & Features'}
-          onToggle={handleToggleSection}
           onSave={() => saveSection('Amenities & Features', ['amenities'])}
           onCancel={() => resetSection(['amenities'])}
           hasChanges={hasSectionChanges(['amenities'])}
@@ -739,8 +711,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Photos & Media" 
           icon="images"
-          expanded={expandedSection === 'Photos & Media'}
-          onToggle={handleToggleSection}
           onSave={async () => {
             setSectionSaving(prev => ({ ...prev, 'Photos & Media': true }));
             try {
@@ -783,8 +753,6 @@ export default function EditShortTermPropertyScreen() {
         <CollapsibleSection 
           title="Host Contact" 
           icon="person"
-          expanded={expandedSection === 'Host Contact'}
-          onToggle={handleToggleSection}
         >
           <View style={styles.section}>
             <Text style={[styles.label, { color: placeholderColor }]}>
