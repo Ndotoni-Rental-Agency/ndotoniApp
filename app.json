@@ -15,7 +15,9 @@
       },
       "bundleIdentifier": "com.anonymous.ndotoniApp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to help you set property coordinates on the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to help you set property coordinates on the map."
       }
     },
     "android": {
@@ -32,7 +34,11 @@
           "apiKey": "AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w"
         }
       },
-      "package": "com.anonymous.ndotoniApp"
+      "package": "com.anonymous.ndotoniApp",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -52,7 +58,14 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to help set property coordinates on the map.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to help set property coordinates on the map."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

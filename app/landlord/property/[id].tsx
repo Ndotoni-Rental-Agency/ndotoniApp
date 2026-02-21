@@ -1,10 +1,10 @@
-import LocationSelector from '@/components/location/LocationSelector';
-import MediaSelector from '@/components/media/MediaSelector';
 import AmenitiesSelector from '@/components/property/AmenitiesSelector';
 import CollapsibleSection from '@/components/property/CollapsibleSection';
-import CoordinatesPicker from '@/components/property/CoordinatesPicker';
-import CurrencyPicker from '@/components/property/CurrencyPicker';
-import PropertyTypePicker from '@/components/property/PropertyTypePicker';
+import BasicInfoSection from '@/components/property/sections/BasicInfoSection';
+import ContactSection from '@/components/property/sections/ContactSection';
+import LocationSection from '@/components/property/sections/LocationSection';
+import MediaSection from '@/components/property/sections/MediaSection';
+import PricingSection from '@/components/property/sections/PricingSection';
 import { usePropertyDetail } from '@/hooks/propertyDetails/usePropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUpdateProperty } from '@/hooks/useUpdateProperty';
@@ -13,15 +13,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,45 +41,32 @@ export default function EditLongTermPropertyScreen() {
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const [formData, setFormData] = useState({
-    // Basic Info
     title: '',
     description: '',
     propertyType: 'HOUSE',
     status: 'AVAILABLE',
-    
-    // Location
     region: '',
     district: '',
     ward: '',
     street: '',
     postalCode: '',
     coordinates: null as { latitude: number; longitude: number } | null,
-    
-    // Pricing
     currency: 'TZS',
     monthlyRent: '',
     deposit: '',
     serviceCharge: '',
     utilitiesIncluded: false,
-    
-    // Specifications
     bedrooms: '',
     bathrooms: '',
     squareMeters: '',
     floors: '',
     parkingSpaces: '',
     furnished: false,
-    
-    // Availability
     available: true,
     availableFrom: '',
     minimumLeaseTerm: '',
     maximumLeaseTerm: '',
-    
-    // Amenities
     amenities: [] as string[],
-    
-    // Landlord Contact
     landlordFirstName: '',
     landlordLastName: '',
     landlordWhatsapp: '',
@@ -92,11 +79,9 @@ export default function EditLongTermPropertyScreen() {
   const [virtualTour, setVirtualTour] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   
-  // Track original data for each section
   const [originalData, setOriginalData] = useState(formData);
   const [sectionSaving, setSectionSaving] = useState<Record<string, boolean>>({});
   
-  // Check if section has changes
   const hasSectionChanges = (fields: (keyof typeof formData)[]) => {
     return fields.some(field => {
       const current = formData[field];
@@ -111,30 +96,27 @@ export default function EditLongTermPropertyScreen() {
     });
   };
   
-  // Reset section to original values
   const resetSection = (fields: (keyof typeof formData)[]) => {
-    const resetData = { ...formData };
-    fields.forEach(field => {
-      resetData[field] = originalData[field];
+    setFormData(prev => {
+      const resetData = { ...prev };
+      fields.forEach(field => {
+        (resetData as any)[field] = originalData[field];
+      });
+      return resetData;
     });
-    setFormData(resetData);
   };
   
-  // Save specific section
   const saveSection = async (sectionName: string, fields: (keyof typeof formData)[]) => {
     setSectionSaving(prev => ({ ...prev, [sectionName]: true }));
     
     try {
-      // Build the update input with only the changed fields
       const input: UpdatePropertyInput = {};
       
-      // Map form fields to UpdatePropertyInput structure
       if (fields.includes('title')) input.title = formData.title;
       if (fields.includes('description')) input.description = formData.description;
       if (fields.includes('propertyType')) input.propertyType = formData.propertyType as any;
       if (fields.includes('status')) input.status = formData.status as any;
       
-      // Address fields
       if (fields.some(f => ['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'].includes(f as string))) {
         input.address = {
           region: formData.region,
@@ -146,7 +128,6 @@ export default function EditLongTermPropertyScreen() {
         };
       }
       
-      // Pricing fields
       if (fields.some(f => ['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'].includes(f as string))) {
         input.pricing = {
           currency: formData.currency,
@@ -157,7 +138,6 @@ export default function EditLongTermPropertyScreen() {
         };
       }
       
-      // Specifications fields
       if (fields.some(f => ['bedrooms', 'bathrooms', 'squareMeters', 'floors', 'parkingSpaces', 'furnished'].includes(f as string))) {
         input.specifications = {
           bedrooms: parseInt(formData.bedrooms) || undefined,
@@ -169,7 +149,6 @@ export default function EditLongTermPropertyScreen() {
         };
       }
       
-      // Availability fields
       if (fields.some(f => ['available', 'availableFrom', 'minimumLeaseTerm', 'maximumLeaseTerm'].includes(f as string))) {
         input.availability = {
           available: formData.available,
@@ -179,27 +158,19 @@ export default function EditLongTermPropertyScreen() {
         };
       }
       
-      // Amenities
       if (fields.includes('amenities')) {
         input.amenities = formData.amenities;
       }
       
-      // Landlord contact
-      if (fields.some(f => ['landlordFirstName', 'landlordLastName', 'landlordWhatsapp'].includes(f as string))) {
-        input.landlord = {
-          firstName: formData.landlordFirstName,
-          lastName: formData.landlordLastName,
-          whatsappNumber: formData.landlordWhatsapp,
-        };
-      }
+      // Note: Landlord contact info cannot be updated via UpdatePropertyInput
+      // It's managed separately or requires a different mutation
       
       const result = await updateLongTermProperty(propertyId, input);
       
       if (result.success) {
-        // Update original data after successful save
         const updatedOriginal = { ...originalData };
         fields.forEach(field => {
-          updatedOriginal[field] = formData[field];
+          (updatedOriginal as any)[field] = formData[field];
         });
         setOriginalData(updatedOriginal);
         
@@ -217,45 +188,32 @@ export default function EditLongTermPropertyScreen() {
   useEffect(() => {
     if (property) {
       const initialData = {
-        // Basic Info
         title: property.title || '',
         description: property.description || '',
         propertyType: property.propertyType || 'HOUSE',
         status: property.status || 'AVAILABLE',
-        
-        // Location
         region: property.address?.region || '',
         district: property.address?.district || '',
         ward: property.address?.ward || '',
         street: property.address?.street || '',
         postalCode: property.address?.postalCode || '',
         coordinates: property.address?.coordinates || null,
-        
-        // Pricing
         currency: property.pricing?.currency || 'TZS',
         monthlyRent: property.pricing?.monthlyRent?.toString() || '',
         deposit: property.pricing?.deposit?.toString() || '',
         serviceCharge: property.pricing?.serviceCharge?.toString() || '',
         utilitiesIncluded: property.pricing?.utilitiesIncluded ?? false,
-        
-        // Specifications
         bedrooms: property.specifications?.bedrooms?.toString() || '',
         bathrooms: property.specifications?.bathrooms?.toString() || '',
         squareMeters: property.specifications?.squareMeters?.toString() || '',
         floors: property.specifications?.floors?.toString() || '',
         parkingSpaces: property.specifications?.parkingSpaces?.toString() || '',
         furnished: property.specifications?.furnished ?? false,
-        
-        // Availability
         available: property.availability?.available ?? true,
         availableFrom: property.availability?.availableFrom || '',
         minimumLeaseTerm: property.availability?.minimumLeaseTerm?.toString() || '',
         maximumLeaseTerm: property.availability?.maximumLeaseTerm?.toString() || '',
-        
-        // Amenities
         amenities: property.amenities?.filter((a): a is string => a !== null) || [],
-        
-        // Landlord Contact
         landlordFirstName: property.landlord?.firstName || '',
         landlordLastName: property.landlord?.lastName || '',
         landlordWhatsapp: property.landlord?.whatsappNumber || '',
@@ -295,6 +253,10 @@ export default function EditLongTermPropertyScreen() {
     );
   };
 
+  const updateField = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -325,7 +287,6 @@ export default function EditLongTermPropertyScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
           <Ionicons name="arrow-back" size={24} color={textColor} />
@@ -341,7 +302,6 @@ export default function EditLongTermPropertyScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Basic Information */}
         <CollapsibleSection 
           title="Basic Information" 
           icon="information-circle" 
@@ -351,68 +311,18 @@ export default function EditLongTermPropertyScreen() {
           hasChanges={hasSectionChanges(['title', 'description', 'propertyType', 'status'])}
           isSaving={sectionSaving['Basic Information']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Title *</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 2 cozy bedrooms near city center"
-              placeholderTextColor={placeholderColor}
-              value={formData.title}
-              onChangeText={(text) => setFormData({ ...formData, title: text })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Description *</Text>
-            <TextInput
-              style={[styles.textArea, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="Describe your property..."
-              placeholderTextColor={placeholderColor}
-              value={formData.description}
-              onChangeText={(text) => setFormData({ ...formData, description: text })}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Type *</Text>
-            <PropertyTypePicker
-              value={formData.propertyType}
-              onChange={(type) => setFormData({ ...formData, propertyType: type })}
-              propertyCategory="long-term"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Status</Text>
-            <View style={styles.statusButtons}>
-              {['AVAILABLE', 'DRAFT', 'MAINTENANCE', 'RENTED'].map((status) => (
-                <TouchableOpacity
-                  key={status}
-                  style={[
-                    styles.statusButton,
-                    { borderColor },
-                    formData.status === status && { backgroundColor: tintColor, borderColor: tintColor },
-                  ]}
-                  onPress={() => setFormData({ ...formData, status })}
-                >
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      { color: textColor },
-                      formData.status === status && { color: '#fff' },
-                    ]}
-                  >
-                    {status}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <BasicInfoSection
+            formData={{
+              title: formData.title,
+              description: formData.description,
+              propertyType: formData.propertyType,
+              status: formData.status,
+            }}
+            onUpdate={updateField}
+            propertyCategory="long-term"
+          />
         </CollapsibleSection>
 
-        {/* Location & Address */}
         <CollapsibleSection 
           title="Location & Address" 
           icon="location" 
@@ -422,38 +332,21 @@ export default function EditLongTermPropertyScreen() {
           hasChanges={hasSectionChanges(['region', 'district', 'ward', 'street', 'postalCode', 'coordinates'])}
           isSaving={sectionSaving['Location & Address']}
         >
-          <LocationSelector
-            value={{
+          <LocationSection
+            formData={{
               region: formData.region,
               district: formData.district,
               ward: formData.ward,
               street: formData.street,
+              postalCode: formData.postalCode,
+              coordinates: formData.coordinates,
             }}
-            onChange={(location) => setFormData({ ...formData, ...location })}
-            required
+            onUpdate={updateField}
+            onLocationChange={(location) => setFormData(prev => ({ ...prev, ...location }))}
+            showCityCountry={false}
           />
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Postal Code</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 12345"
-              placeholderTextColor={placeholderColor}
-              value={formData.postalCode}
-              onChangeText={(text) => setFormData({ ...formData, postalCode: text })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>GPS Coordinates</Text>
-            <CoordinatesPicker
-              value={formData.coordinates}
-              onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
-            />
-          </View>
         </CollapsibleSection>
 
-        {/* Pricing & Fees */}
         <CollapsibleSection 
           title="Pricing & Fees" 
           icon="cash" 
@@ -463,67 +356,19 @@ export default function EditLongTermPropertyScreen() {
           hasChanges={hasSectionChanges(['currency', 'monthlyRent', 'deposit', 'serviceCharge', 'utilitiesIncluded'])}
           isSaving={sectionSaving['Pricing & Fees']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Currency *</Text>
-            <CurrencyPicker
-              value={formData.currency}
-              onChange={(currency) => setFormData({ ...formData, currency })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Monthly Rent *</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 500000"
-              placeholderTextColor={placeholderColor}
-              value={formData.monthlyRent}
-              onChangeText={(text) => setFormData({ ...formData, monthlyRent: text })}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Security Deposit</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 1000000"
-              placeholderTextColor={placeholderColor}
-              value={formData.deposit}
-              onChangeText={(text) => setFormData({ ...formData, deposit: text })}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Service Charge</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 50000"
-              placeholderTextColor={placeholderColor}
-              value={formData.serviceCharge}
-              onChangeText={(text) => setFormData({ ...formData, serviceCharge: text })}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={[styles.section, styles.switchRow]}>
-            <View style={styles.switchLabel}>
-              <Text style={[styles.label, { color: textColor }]}>Utilities Included</Text>
-              <Text style={[styles.switchSubtext, { color: placeholderColor }]}>
-                Water, electricity, internet, etc.
-              </Text>
-            </View>
-            <Switch
-              value={formData.utilitiesIncluded}
-              onValueChange={(value) => setFormData({ ...formData, utilitiesIncluded: value })}
-              trackColor={{ false: borderColor, true: tintColor }}
-              thumbColor="#fff"
-            />
-          </View>
+          <PricingSection
+            formData={{
+              currency: formData.currency,
+              monthlyRent: formData.monthlyRent,
+              deposit: formData.deposit,
+              serviceCharge: formData.serviceCharge,
+              utilitiesIncluded: formData.utilitiesIncluded,
+            }}
+            onUpdate={updateField}
+            propertyCategory="long-term"
+          />
         </CollapsibleSection>
 
-        {/* Property Details */}
         <CollapsibleSection 
           title="Property Details" 
           icon="home"
@@ -538,7 +383,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.bedrooms}
-                onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
+                onChangeText={(text) => updateField('bedrooms', text)}
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={placeholderColor}
@@ -550,7 +395,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.bathrooms}
-                onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
+                onChangeText={(text) => updateField('bathrooms', text)}
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={placeholderColor}
@@ -564,7 +409,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.squareMeters}
-                onChangeText={(text) => setFormData({ ...formData, squareMeters: text })}
+                onChangeText={(text) => updateField('squareMeters', text)}
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={placeholderColor}
@@ -576,7 +421,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.floors}
-                onChangeText={(text) => setFormData({ ...formData, floors: text })}
+                onChangeText={(text) => updateField('floors', text)}
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={placeholderColor}
@@ -589,7 +434,7 @@ export default function EditLongTermPropertyScreen() {
             <TextInput
               style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
               value={formData.parkingSpaces}
-              onChangeText={(text) => setFormData({ ...formData, parkingSpaces: text })}
+              onChangeText={(text) => updateField('parkingSpaces', text)}
               keyboardType="numeric"
               placeholder="0"
               placeholderTextColor={placeholderColor}
@@ -605,14 +450,13 @@ export default function EditLongTermPropertyScreen() {
             </View>
             <Switch
               value={formData.furnished}
-              onValueChange={(value) => setFormData({ ...formData, furnished: value })}
+              onValueChange={(value) => updateField('furnished', value)}
               trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
           </View>
         </CollapsibleSection>
 
-        {/* Availability & Booking */}
         <CollapsibleSection 
           title="Availability & Booking" 
           icon="calendar"
@@ -630,7 +474,7 @@ export default function EditLongTermPropertyScreen() {
             </View>
             <Switch
               value={formData.available}
-              onValueChange={(value) => setFormData({ ...formData, available: value })}
+              onValueChange={(value) => updateField('available', value)}
               trackColor={{ false: borderColor, true: tintColor }}
               thumbColor="#fff"
             />
@@ -643,7 +487,7 @@ export default function EditLongTermPropertyScreen() {
               placeholder="YYYY-MM-DD"
               placeholderTextColor={placeholderColor}
               value={formData.availableFrom}
-              onChangeText={(text) => setFormData({ ...formData, availableFrom: text })}
+              onChangeText={(text) => updateField('availableFrom', text)}
             />
             <Text style={[styles.helperText, { color: placeholderColor }]}>
               When the property will be available
@@ -656,7 +500,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.minimumLeaseTerm}
-                onChangeText={(text) => setFormData({ ...formData, minimumLeaseTerm: text })}
+                onChangeText={(text) => updateField('minimumLeaseTerm', text)}
                 keyboardType="numeric"
                 placeholder="1"
                 placeholderTextColor={placeholderColor}
@@ -668,7 +512,7 @@ export default function EditLongTermPropertyScreen() {
               <TextInput
                 style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
                 value={formData.maximumLeaseTerm}
-                onChangeText={(text) => setFormData({ ...formData, maximumLeaseTerm: text })}
+                onChangeText={(text) => updateField('maximumLeaseTerm', text)}
                 keyboardType="numeric"
                 placeholder="12"
                 placeholderTextColor={placeholderColor}
@@ -677,7 +521,6 @@ export default function EditLongTermPropertyScreen() {
           </View>
         </CollapsibleSection>
 
-        {/* Amenities */}
         <CollapsibleSection 
           title="Amenities & Features" 
           icon="checkmark-done"
@@ -690,18 +533,16 @@ export default function EditLongTermPropertyScreen() {
             <Text style={[styles.label, { color: textColor }]}>Select Amenities</Text>
             <AmenitiesSelector
               selectedAmenities={formData.amenities}
-              onAmenitiesChange={(amenities) => setFormData({ ...formData, amenities })}
+              onAmenitiesChange={(amenities) => updateField('amenities', amenities)}
               propertyType="long-term"
             />
           </View>
         </CollapsibleSection>
 
-        {/* Media */}
         <CollapsibleSection 
           title="Photos & Media" 
           icon="images"
           onSave={async () => {
-            // Handle media separately since it's not in formData
             setSectionSaving(prev => ({ ...prev, 'Photos & Media': true }));
             try {
               await new Promise(resolve => setTimeout(resolve, 1000));
@@ -713,7 +554,6 @@ export default function EditLongTermPropertyScreen() {
             }
           }}
           onCancel={() => {
-            // Reset media to original
             const images = property?.media?.images || [];
             const videos = property?.media?.videos || [];
             setSelectedMedia([...images, ...videos]);
@@ -730,90 +570,41 @@ export default function EditLongTermPropertyScreen() {
           }
           isSaving={sectionSaving['Photos & Media']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Photos & Videos</Text>
-            <MediaSelector
-              selectedMedia={selectedMedia}
-              onMediaChange={(mediaUrls, images, videos) => {
-                setSelectedMedia(mediaUrls);
-                setSelectedImages(images);
-                setSelectedVideos(videos);
-              }}
-              maxSelection={10}
-              onAuthRequired={() => {}}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Floor Plan URL</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="https://..."
-              placeholderTextColor={placeholderColor}
-              value={floorPlan}
-              onChangeText={setFloorPlan}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Virtual Tour URL</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="https://..."
-              placeholderTextColor={placeholderColor}
-              value={virtualTour}
-              onChangeText={setVirtualTour}
-            />
-          </View>
+          <MediaSection
+            selectedMedia={selectedMedia}
+            onMediaChange={(mediaUrls, images, videos) => {
+              setSelectedMedia(mediaUrls);
+              setSelectedImages(images);
+              setSelectedVideos(videos);
+            }}
+            floorPlan={floorPlan}
+            virtualTour={virtualTour}
+            onFloorPlanChange={setFloorPlan}
+            onVirtualTourChange={setVirtualTour}
+            propertyCategory="long-term"
+          />
         </CollapsibleSection>
 
-        {/* Landlord Contact */}
         <CollapsibleSection 
           title="Landlord Contact" 
           icon="person"
-          onSave={() => saveSection('Landlord Contact', ['landlordFirstName', 'landlordLastName', 'landlordWhatsapp'])}
-          onCancel={() => resetSection(['landlordFirstName', 'landlordLastName', 'landlordWhatsapp'])}
-          hasChanges={hasSectionChanges(['landlordFirstName', 'landlordLastName', 'landlordWhatsapp'])}
-          isSaving={sectionSaving['Landlord Contact']}
         >
-          <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>First Name</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.landlordFirstName}
-                onChangeText={(text) => setFormData({ ...formData, landlordFirstName: text })}
-                placeholder="John"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Last Name</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.landlordLastName}
-                onChangeText={(text) => setFormData({ ...formData, landlordLastName: text })}
-                placeholder="Doe"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-          </View>
-
           <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>WhatsApp Number</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              value={formData.landlordWhatsapp}
-              onChangeText={(text) => setFormData({ ...formData, landlordWhatsapp: text })}
-              placeholder="+255..."
-              placeholderTextColor={placeholderColor}
-              keyboardType="phone-pad"
-            />
+            <Text style={[styles.label, { color: placeholderColor }]}>
+              Note: Landlord contact information is managed separately and cannot be edited here.
+            </Text>
           </View>
+          <ContactSection
+            formData={{
+              firstName: formData.landlordFirstName,
+              lastName: formData.landlordLastName,
+              whatsapp: formData.landlordWhatsapp,
+            }}
+            onUpdate={() => {}} // Read-only
+            contactType="landlord"
+          />
         </CollapsibleSection>
 
-        {/* Delete Button */}
         <View style={styles.section}>
           <TouchableOpacity
             style={[styles.deleteButton, { borderColor: '#ef4444' }]}
@@ -901,15 +692,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
   },
-  textArea: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
   row: {
     flexDirection: 'row',
     gap: 12,
@@ -928,21 +710,6 @@ const styles = StyleSheet.create({
   switchSubtext: {
     fontSize: 12,
     marginTop: 4,
-  },
-  statusButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statusButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1.5,
-  },
-  statusButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   helperText: {
     fontSize: 12,

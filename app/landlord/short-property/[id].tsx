@@ -1,10 +1,10 @@
-import LocationSelector from '@/components/location/LocationSelector';
-import MediaSelector from '@/components/media/MediaSelector';
 import AmenitiesSelector from '@/components/property/AmenitiesSelector';
 import CollapsibleSection from '@/components/property/CollapsibleSection';
-import CoordinatesPicker from '@/components/property/CoordinatesPicker';
-import CurrencyPicker from '@/components/property/CurrencyPicker';
-import PropertyTypePicker from '@/components/property/PropertyTypePicker';
+import BasicInfoSection from '@/components/property/sections/BasicInfoSection';
+import ContactSection from '@/components/property/sections/ContactSection';
+import LocationSection from '@/components/property/sections/LocationSection';
+import MediaSection from '@/components/property/sections/MediaSection';
+import PricingSection from '@/components/property/sections/PricingSection';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUpdateProperty } from '@/hooks/useUpdateProperty';
@@ -13,15 +13,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -102,7 +102,6 @@ export default function EditShortTermPropertyScreen() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false);
   
   // Track original data for each section
   const [originalData, setOriginalData] = useState(formData);
@@ -125,11 +124,13 @@ export default function EditShortTermPropertyScreen() {
   
   // Reset section to original values
   const resetSection = (fields: (keyof typeof formData)[]) => {
-    const resetData = { ...formData };
-    fields.forEach(field => {
-      resetData[field] = originalData[field];
+    setFormData(prev => {
+      const resetData = { ...prev };
+      fields.forEach(field => {
+        (resetData as any)[field] = originalData[field];
+      });
+      return resetData;
     });
-    setFormData(resetData);
   };
   
   // Save specific section
@@ -137,103 +138,70 @@ export default function EditShortTermPropertyScreen() {
     setSectionSaving(prev => ({ ...prev, [sectionName]: true }));
     
     try {
-      // Build the update input with only the changed fields
       const input: UpdateShortTermPropertyInput = {};
       
-      // Map form fields to UpdateShortTermPropertyInput structure
       if (fields.includes('title')) input.title = formData.title;
       if (fields.includes('description')) input.description = formData.description;
       if (fields.includes('propertyType')) input.propertyType = formData.propertyType as any;
       if (fields.includes('status')) input.status = formData.status as any;
       
-      // Address fields
       if (fields.some(f => ['region', 'district', 'ward', 'street', 'city', 'country', 'postalCode', 'coordinates'].includes(f as string))) {
-        input.address = {
-          region: formData.region,
-          district: formData.district,
-          ward: formData.ward,
-          street: formData.street,
-          city: formData.city,
-          country: formData.country,
-          postalCode: formData.postalCode || undefined,
-        };
+        if (fields.includes('region')) input.region = formData.region;
+        if (fields.includes('district')) input.district = formData.district;
         if (formData.coordinates) {
           input.coordinates = formData.coordinates;
         }
       }
       
-      // Pricing fields
       if (fields.some(f => ['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'].includes(f as string))) {
-        input.pricing = {
-          currency: formData.currency,
-          serviceFeePercentage: parseFloat(formData.serviceFeePercentage) || undefined,
-          taxPercentage: parseFloat(formData.taxPercentage) || undefined,
-        };
+        if (fields.includes('currency')) input.currency = formData.currency;
         if (fields.includes('nightlyRate')) input.nightlyRate = parseFloat(formData.nightlyRate) || 0;
         if (fields.includes('cleaningFee')) input.cleaningFee = parseFloat(formData.cleaningFee) || undefined;
+        if (fields.includes('serviceFeePercentage')) input.serviceFeePercentage = parseFloat(formData.serviceFeePercentage) || undefined;
+        if (fields.includes('taxPercentage')) input.taxPercentage = parseFloat(formData.taxPercentage) || undefined;
       }
       
-      // Guest capacity fields
       if (fields.some(f => ['maxGuests', 'maxAdults', 'maxChildren', 'maxInfants'].includes(f as string))) {
         if (fields.includes('maxGuests')) input.maxGuests = parseInt(formData.maxGuests) || 1;
-        input.guestCapacity = {
-          maxAdults: parseInt(formData.maxAdults) || undefined,
-          maxChildren: parseInt(formData.maxChildren) || undefined,
-          maxInfants: parseInt(formData.maxInfants) || undefined,
-        };
+        if (fields.includes('maxAdults')) input.maxAdults = parseInt(formData.maxAdults) || undefined;
+        if (fields.includes('maxChildren')) input.maxChildren = parseInt(formData.maxChildren) || undefined;
+        if (fields.includes('maxInfants')) input.maxInfants = parseInt(formData.maxInfants) || undefined;
       }
       
-      // Booking rules fields
       if (fields.some(f => ['minimumStay', 'maximumStay', 'advanceBookingDays', 'instantBookEnabled'].includes(f as string))) {
         if (fields.includes('minimumStay')) input.minimumStay = parseInt(formData.minimumStay) || 1;
+        if (fields.includes('maximumStay')) input.maximumStay = parseInt(formData.maximumStay) || undefined;
+        if (fields.includes('advanceBookingDays')) input.advanceBookingDays = parseInt(formData.advanceBookingDays) || undefined;
         if (fields.includes('instantBookEnabled')) input.instantBookEnabled = formData.instantBookEnabled;
-        input.bookingRules = {
-          maximumStay: parseInt(formData.maximumStay) || undefined,
-          advanceBookingDays: parseInt(formData.advanceBookingDays) || undefined,
-        };
       }
       
-      // Check-in/Check-out fields
       if (fields.some(f => ['checkInTime', 'checkOutTime', 'checkInInstructions'].includes(f as string))) {
-        input.checkIn = {
-          checkInTime: formData.checkInTime || undefined,
-          checkOutTime: formData.checkOutTime || undefined,
-          checkInInstructions: formData.checkInInstructions || undefined,
-        };
+        if (fields.includes('checkInTime')) input.checkInTime = formData.checkInTime || undefined;
+        if (fields.includes('checkOutTime')) input.checkOutTime = formData.checkOutTime || undefined;
+        if (fields.includes('checkInInstructions')) input.checkInInstructions = formData.checkInInstructions || undefined;
       }
       
-      // Policies fields
       if (fields.some(f => ['cancellationPolicy', 'allowsPets', 'allowsSmoking', 'allowsChildren', 'allowsInfants'].includes(f as string))) {
-        input.policies = {
-          cancellationPolicy: formData.cancellationPolicy as any,
-          allowsPets: formData.allowsPets,
-          allowsSmoking: formData.allowsSmoking,
-          allowsChildren: formData.allowsChildren,
-          allowsInfants: formData.allowsInfants,
-        };
+        if (fields.includes('cancellationPolicy')) input.cancellationPolicy = formData.cancellationPolicy as any;
+        if (fields.includes('allowsPets')) input.allowsPets = formData.allowsPets;
+        if (fields.includes('allowsSmoking')) input.allowsSmoking = formData.allowsSmoking;
+        if (fields.includes('allowsChildren')) input.allowsChildren = formData.allowsChildren;
+        if (fields.includes('allowsInfants')) input.allowsInfants = formData.allowsInfants;
       }
       
-      // Amenities
       if (fields.includes('amenities')) {
         input.amenities = formData.amenities;
       }
       
-      // Host contact
-      if (fields.some(f => ['hostFirstName', 'hostLastName', 'hostWhatsapp'].includes(f as string))) {
-        input.host = {
-          firstName: formData.hostFirstName,
-          lastName: formData.hostLastName,
-          whatsappNumber: formData.hostWhatsapp,
-        };
-      }
+      // Note: Host contact info cannot be updated via UpdateShortTermPropertyInput
+      // It's managed separately or requires a different mutation
       
       const result = await updateShortProperty(propertyId, input);
       
       if (result.success) {
-        // Update original data after successful save
         const updatedOriginal = { ...originalData };
         fields.forEach(field => {
-          updatedOriginal[field] = formData[field];
+          (updatedOriginal as any)[field] = formData[field];
         });
         setOriginalData(updatedOriginal);
         
@@ -258,45 +226,45 @@ export default function EditShortTermPropertyScreen() {
         status: property.status || 'AVAILABLE',
         
         // Location
-        region: property.address?.region || '',
-        district: property.address?.district || '',
-        ward: property.address?.ward || '',
+        region: property.region || '',
+        district: property.district || '',
+        ward: '', // Not in ShortTermProperty type
         street: property.address?.street || '',
         city: property.address?.city || '',
         country: property.address?.country || '',
         postalCode: property.address?.postalCode || '',
-        coordinates: property.address?.coordinates || null,
+        coordinates: property.coordinates || null,
         
         // Pricing
-        currency: property.pricing?.currency || 'TZS',
+        currency: property.currency || 'TZS',
         nightlyRate: property.nightlyRate?.toString() || '',
         cleaningFee: property.cleaningFee?.toString() || '',
-        serviceFeePercentage: property.pricing?.serviceFeePercentage?.toString() || '',
-        taxPercentage: property.pricing?.taxPercentage?.toString() || '',
+        serviceFeePercentage: property.serviceFeePercentage?.toString() || '',
+        taxPercentage: property.taxPercentage?.toString() || '',
         
         // Guest Capacity
         maxGuests: property.maxGuests?.toString() || '',
-        maxAdults: property.guestCapacity?.maxAdults?.toString() || '',
-        maxChildren: property.guestCapacity?.maxChildren?.toString() || '',
-        maxInfants: property.guestCapacity?.maxInfants?.toString() || '',
+        maxAdults: property.maxAdults?.toString() || '',
+        maxChildren: property.maxChildren?.toString() || '',
+        maxInfants: property.maxInfants?.toString() || '',
         
         // Booking Rules
         minimumStay: property.minimumStay?.toString() || '',
-        maximumStay: property.bookingRules?.maximumStay?.toString() || '',
-        advanceBookingDays: property.bookingRules?.advanceBookingDays?.toString() || '',
+        maximumStay: property.maximumStay?.toString() || '',
+        advanceBookingDays: property.advanceBookingDays?.toString() || '',
         instantBookEnabled: property.instantBookEnabled ?? false,
         
         // Check-in/Check-out
-        checkInTime: property.checkIn?.checkInTime || '',
-        checkOutTime: property.checkIn?.checkOutTime || '',
-        checkInInstructions: property.checkIn?.checkInInstructions || '',
+        checkInTime: property.checkInTime || '',
+        checkOutTime: property.checkOutTime || '',
+        checkInInstructions: property.checkInInstructions || '',
         
         // Policies
-        cancellationPolicy: property.policies?.cancellationPolicy || 'MODERATE',
-        allowsPets: property.policies?.allowsPets ?? false,
-        allowsSmoking: property.policies?.allowsSmoking ?? false,
-        allowsChildren: property.policies?.allowsChildren ?? true,
-        allowsInfants: property.policies?.allowsInfants ?? true,
+        cancellationPolicy: property.cancellationPolicy || 'MODERATE',
+        allowsPets: property.allowsPets ?? false,
+        allowsSmoking: property.allowsSmoking ?? false,
+        allowsChildren: property.allowsChildren ?? true,
+        allowsInfants: property.allowsInfants ?? true,
         
         // Amenities & Rules
         amenities: property.amenities?.filter((a): a is string => a !== null) || [],
@@ -312,8 +280,8 @@ export default function EditShortTermPropertyScreen() {
       setOriginalData(initialData);
 
       const images = property.images || [];
-      const videos = property.videos || [];
-      setSelectedMedia([...images, ...videos]);
+      const videos: string[] = []; // ShortTermProperty doesn't have videos field
+      setSelectedMedia([...images]);
       setSelectedImages(images);
       setSelectedVideos(videos);
       setThumbnail(property.thumbnail || '');
@@ -339,6 +307,10 @@ export default function EditShortTermPropertyScreen() {
         },
       ]
     );
+  };
+
+  const updateField = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   if (loading) {
@@ -377,12 +349,8 @@ export default function EditShortTermPropertyScreen() {
           <Ionicons name="arrow-back" size={24} color={textColor} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: textColor }]}>Edit Property</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton} disabled={isSaving}>
-          {isSaving ? (
-            <ActivityIndicator size="small" color={tintColor} />
-          ) : (
-            <Ionicons name="checkmark" size={24} color={tintColor} />
-          )}
+        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+          <Ionicons name="checkmark" size={24} color={tintColor} />
         </TouchableOpacity>
       </View>
 
@@ -397,65 +365,16 @@ export default function EditShortTermPropertyScreen() {
           hasChanges={hasSectionChanges(['title', 'description', 'propertyType', 'status'])}
           isSaving={sectionSaving['Basic Information']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Title *</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., Cozy beachfront villa"
-              placeholderTextColor={placeholderColor}
-              value={formData.title}
-              onChangeText={(text) => setFormData({ ...formData, title: text })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Description *</Text>
-            <TextInput
-              style={[styles.textArea, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="Describe your property..."
-              placeholderTextColor={placeholderColor}
-              value={formData.description}
-              onChangeText={(text) => setFormData({ ...formData, description: text })}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Type *</Text>
-            <PropertyTypePicker
-              value={formData.propertyType}
-              onChange={(type) => setFormData({ ...formData, propertyType: type })}
-              propertyCategory="short-term"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Status</Text>
-            <View style={styles.statusButtons}>
-              {['AVAILABLE', 'DRAFT', 'MAINTENANCE', 'BOOKED'].map((status) => (
-                <TouchableOpacity
-                  key={status}
-                  style={[
-                    styles.statusButton,
-                    { borderColor },
-                    formData.status === status && { backgroundColor: tintColor, borderColor: tintColor },
-                  ]}
-                  onPress={() => setFormData({ ...formData, status })}
-                >
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      { color: textColor },
-                      formData.status === status && { color: '#fff' },
-                    ]}
-                  >
-                    {status}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <BasicInfoSection
+            formData={{
+              title: formData.title,
+              description: formData.description,
+              propertyType: formData.propertyType,
+              status: formData.status,
+            }}
+            onUpdate={updateField}
+            propertyCategory="short-term"
+          />
         </CollapsibleSection>
 
         {/* Location & Address */}
@@ -468,59 +387,21 @@ export default function EditShortTermPropertyScreen() {
           hasChanges={hasSectionChanges(['region', 'district', 'ward', 'street', 'city', 'country', 'postalCode', 'coordinates'])}
           isSaving={sectionSaving['Location & Address']}
         >
-          <LocationSelector
-            value={{
+          <LocationSection
+            formData={{
               region: formData.region,
               district: formData.district,
               ward: formData.ward,
               street: formData.street,
+              city: formData.city,
+              country: formData.country,
+              postalCode: formData.postalCode,
+              coordinates: formData.coordinates,
             }}
-            onChange={(location) => setFormData({ ...formData, ...location })}
-            required
+            onUpdate={updateField}
+            onLocationChange={(location: any) => setFormData(prev => ({ ...prev, ...location }))}
+            showCityCountry={true}
           />
-
-          <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>City</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                placeholder="e.g., Dar es Salaam"
-                placeholderTextColor={placeholderColor}
-                value={formData.city}
-                onChangeText={(text) => setFormData({ ...formData, city: text })}
-              />
-            </View>
-
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Country</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                placeholder="e.g., Tanzania"
-                placeholderTextColor={placeholderColor}
-                value={formData.country}
-                onChangeText={(text) => setFormData({ ...formData, country: text })}
-              />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Postal Code</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 12345"
-              placeholderTextColor={placeholderColor}
-              value={formData.postalCode}
-              onChangeText={(text) => setFormData({ ...formData, postalCode: text })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>GPS Coordinates</Text>
-            <CoordinatesPicker
-              value={formData.coordinates}
-              onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
-            />
-          </View>
         </CollapsibleSection>
 
         {/* Pricing & Fees */}
@@ -533,63 +414,17 @@ export default function EditShortTermPropertyScreen() {
           hasChanges={hasSectionChanges(['currency', 'nightlyRate', 'cleaningFee', 'serviceFeePercentage', 'taxPercentage'])}
           isSaving={sectionSaving['Pricing & Fees']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Currency *</Text>
-            <CurrencyPicker
-              value={formData.currency}
-              onChange={(currency) => setFormData({ ...formData, currency })}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Nightly Rate *</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 50000"
-              placeholderTextColor={placeholderColor}
-              value={formData.nightlyRate}
-              onChangeText={(text) => setFormData({ ...formData, nightlyRate: text })}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Cleaning Fee</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="e.g., 20000"
-              placeholderTextColor={placeholderColor}
-              value={formData.cleaningFee}
-              onChangeText={(text) => setFormData({ ...formData, cleaningFee: text })}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Service Fee (%)</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.serviceFeePercentage}
-                onChangeText={(text) => setFormData({ ...formData, serviceFeePercentage: text })}
-                keyboardType="numeric"
-                placeholder="10"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Tax (%)</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.taxPercentage}
-                onChangeText={(text) => setFormData({ ...formData, taxPercentage: text })}
-                keyboardType="numeric"
-                placeholder="18"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-          </View>
+          <PricingSection
+            formData={{
+              currency: formData.currency,
+              nightlyRate: formData.nightlyRate,
+              cleaningFee: formData.cleaningFee,
+              serviceFeePercentage: formData.serviceFeePercentage,
+              taxPercentage: formData.taxPercentage,
+            }}
+            onUpdate={updateField}
+            propertyCategory="short-term"
+          />
         </CollapsibleSection>
 
         {/* Guest Capacity */}
@@ -878,92 +713,50 @@ export default function EditShortTermPropertyScreen() {
           }}
           onCancel={() => {
             const images = property?.images || [];
-            const videos = property?.videos || [];
-            setSelectedMedia([...images, ...videos]);
+            const videos: string[] = [];
+            setSelectedMedia([...images]);
             setSelectedImages(images);
             setSelectedVideos(videos);
             setThumbnail(property?.thumbnail || '');
           }}
           hasChanges={
             JSON.stringify(selectedImages) !== JSON.stringify(property?.images || []) ||
-            JSON.stringify(selectedVideos) !== JSON.stringify(property?.videos || []) ||
             thumbnail !== (property?.thumbnail || '')
           }
           isSaving={sectionSaving['Photos & Media']}
         >
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Property Photos & Videos</Text>
-            <MediaSelector
-              selectedMedia={selectedMedia}
-              onMediaChange={(mediaUrls, images, videos) => {
-                setSelectedMedia(mediaUrls);
-                setSelectedImages(images);
-                setSelectedVideos(videos);
-              }}
-              maxSelection={10}
-              onAuthRequired={() => {}}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>Thumbnail URL</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              placeholder="https://..."
-              placeholderTextColor={placeholderColor}
-              value={thumbnail}
-              onChangeText={setThumbnail}
-            />
-            <Text style={[styles.helperText, { color: placeholderColor }]}>
-              Main image shown in listings
-            </Text>
-          </View>
+          <MediaSection
+            selectedMedia={selectedMedia}
+            onMediaChange={(mediaUrls: string[], images: string[], videos: string[]) => {
+              setSelectedMedia(mediaUrls);
+              setSelectedImages(images);
+              setSelectedVideos(videos);
+            }}
+            thumbnail={thumbnail}
+            onThumbnailChange={setThumbnail}
+            propertyCategory="short-term"
+          />
         </CollapsibleSection>
 
         {/* Host Contact */}
         <CollapsibleSection 
           title="Host Contact" 
           icon="person"
-          onSave={() => saveSection('Host Contact', ['hostFirstName', 'hostLastName', 'hostWhatsapp'])}
-          onCancel={() => resetSection(['hostFirstName', 'hostLastName', 'hostWhatsapp'])}
-          hasChanges={hasSectionChanges(['hostFirstName', 'hostLastName', 'hostWhatsapp'])}
-          isSaving={sectionSaving['Host Contact']}
         >
-          <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>First Name</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.hostFirstName}
-                onChangeText={(text) => setFormData({ ...formData, hostFirstName: text })}
-                placeholder="John"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>Last Name</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-                value={formData.hostLastName}
-                onChangeText={(text) => setFormData({ ...formData, hostLastName: text })}
-                placeholder="Doe"
-                placeholderTextColor={placeholderColor}
-              />
-            </View>
-          </View>
-
           <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>WhatsApp Number</Text>
-            <TextInput
-              style={[styles.input, { color: textColor, backgroundColor: cardBg, borderColor }]}
-              value={formData.hostWhatsapp}
-              onChangeText={(text) => setFormData({ ...formData, hostWhatsapp: text })}
-              placeholder="+255..."
-              placeholderTextColor={placeholderColor}
-              keyboardType="phone-pad"
-            />
+            <Text style={[styles.label, { color: placeholderColor }]}>
+              Note: Host contact information is managed separately and cannot be edited here.
+            </Text>
           </View>
+          <ContactSection
+            formData={{
+              firstName: formData.hostFirstName,
+              lastName: formData.hostLastName,
+              whatsapp: formData.hostWhatsapp,
+            }}
+            onUpdate={() => {}} // Read-only
+            contactType="host"
+          />
         </CollapsibleSection>
 
         {/* Delete Button */}
