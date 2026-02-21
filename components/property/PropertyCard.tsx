@@ -147,7 +147,7 @@ export default function PropertyCard({
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   imageContainer: {
     position: 'relative',
@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: CARD_WIDTH * 1.1,
+    height: CARD_WIDTH * 0.95,
     borderRadius: 12,
   },
   imagePlaceholder: {
     width: '100%',
-    height: CARD_WIDTH * 1.1,
+    height: CARD_WIDTH * 0.95,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

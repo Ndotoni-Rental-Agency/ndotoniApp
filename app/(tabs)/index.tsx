@@ -57,8 +57,10 @@ export default function HomeScreen() {
   const getPropertiesByCategory = () => {
     if (!appData) return [];
     
+    console.log('[HomePage] App Data:', JSON.stringify(appData, null, 2));
+    
     // Both rental types use the same structure now
-    return [
+    const sections = [
       {
         title: rentalType === RentalType.LONG_TERM ? 'Best Prices' : 'Best Nightly Rates',
         properties: appData.categorizedProperties.lowestPrice?.properties || [],
@@ -84,6 +86,10 @@ export default function HomeScreen() {
         hasMore: hasMoreForCategory('MORE'),
       },
     ];
+    
+    console.log('[HomePage] Sections:', sections.map(s => ({ title: s.title, count: s.properties.length })));
+    
+    return sections;
   };
 
   const categorizedProperties = getPropertiesByCategory();
@@ -207,48 +213,55 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Continuous Property Grid - Airbnb Style */}
-            <View style={styles.propertyGrid}>
-              {categorizedProperties.map((section) => 
-                section.properties.map((property: any) => (
-                  <PropertyCard
-                    key={property.propertyId}
-                    propertyId={property.propertyId}
-                    title={property.title}
-                    location={property.district || property.region}
-                    price={rentalType === RentalType.LONG_TERM ? property.monthlyRent : property.nightlyRate}
-                    currency={property.currency}
-                    rating={property.averageRating}
-                    thumbnail={property.thumbnail}
-                    bedrooms={property.bedrooms || property.maxGuests}
-                    priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
-                    onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
-                  />
-                ))
-              )}
-            </View>
+            {/* Property Sections with Headers */}
+            {categorizedProperties.map((section, sectionIndex) => 
+              section.properties.length > 0 && (
+                <View key={sectionIndex} style={styles.section}>
+                  {/* Section Header */}
+                  <View style={styles.sectionHeader}>
+                    <Text style={[styles.sectionTitle, { color: textColor }]}>
+                      {section.title}
+                    </Text>
+                  </View>
 
-            {/* Load More Button */}
-            {categorizedProperties.some(s => s.hasMore) && (
-              <TouchableOpacity
-                style={[styles.loadMoreButton, { backgroundColor: tintColor }]}
-                onPress={() => {
-                  const sectionsWithMore = categorizedProperties.filter(s => s.hasMore && s.properties.length > 0);
-                  if (sectionsWithMore.length > 0) {
-                    handleLoadMore(sectionsWithMore[0].category);
-                  }
-                }}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <>
-                    <Text style={styles.loadMoreText}>Show more</Text>
-                    <Ionicons name="chevron-down" size={20} color="#fff" />
-                  </>
-                )}
-              </TouchableOpacity>
+                  {/* Property Grid */}
+                  <View style={styles.propertyGrid}>
+                    {section.properties.map((property: any) => (
+                      <PropertyCard
+                        key={property.propertyId}
+                        propertyId={property.propertyId}
+                        title={property.title}
+                        location={property.district || property.region}
+                        price={rentalType === RentalType.LONG_TERM ? property.monthlyRent : property.nightlyRate}
+                        currency={property.currency}
+                        rating={property.averageRating}
+                        thumbnail={property.thumbnail}
+                        bedrooms={property.bedrooms || property.maxGuests}
+                        priceUnit={rentalType === RentalType.LONG_TERM ? 'month' : 'night'}
+                        onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
+                      />
+                    ))}
+                  </View>
+
+                  {/* Load More Button for Section */}
+                  {section.hasMore && (
+                    <TouchableOpacity
+                      style={[styles.loadMoreButton, { backgroundColor: tintColor }]}
+                      onPress={() => handleLoadMore(section.category)}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <>
+                          <Text style={styles.loadMoreText}>Show more</Text>
+                          <Ionicons name="chevron-down" size={20} color="#fff" />
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )
             )}
 
             {/* Bottom Loading Indicator */}
@@ -300,6 +313,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 24,
     paddingTop: 16,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   propertyGrid: {
     flexDirection: 'row',
