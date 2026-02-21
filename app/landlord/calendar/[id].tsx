@@ -23,6 +23,7 @@ export default function PropertyCalendarScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const propertyId = params.id as string;
+  const propertyType = params.type as 'long-term' | 'short-term' | undefined;
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -109,27 +110,24 @@ export default function PropertyCalendarScreen() {
       try {
         setPropertyLoading(true);
         
-        // Try long-term property first
-        try {
+        const isLongTerm = propertyType === 'long-term';
+        
+        if (isLongTerm) {
           const response = await GraphQLClient.executeAuthenticated<any>(getProperty, {
             propertyId,
           });
           
           if (response.getProperty) {
             setProperty({ ...response.getProperty, isLongTerm: true });
-            return;
           }
-        } catch (error) {
-          console.log('[Calendar] Not a long-term property, trying short-term');
-        }
-        
-        // Try short-term property
-        const response = await GraphQLClient.executeAuthenticated<any>(getShortTermProperty, {
-          propertyId,
-        });
-        
-        if (response.getShortTermProperty) {
-          setProperty({ ...response.getShortTermProperty, isLongTerm: false });
+        } else {
+          const response = await GraphQLClient.executeAuthenticated<any>(getShortTermProperty, {
+            propertyId,
+          });
+          
+          if (response.getShortTermProperty) {
+            setProperty({ ...response.getShortTermProperty, isLongTerm: false });
+          }
         }
       } catch (error) {
         console.error('[Calendar] Error fetching property:', error);
@@ -139,7 +137,7 @@ export default function PropertyCalendarScreen() {
     };
 
     fetchProperty();
-  }, [propertyId]);
+  }, [propertyId, propertyType]);
 
   const handlePreviousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));

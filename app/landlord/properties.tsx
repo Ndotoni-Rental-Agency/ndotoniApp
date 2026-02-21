@@ -2,20 +2,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLandlordProperties } from '@/hooks/useLandlordProperties';
 import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
+import { useDeleteProperty } from '@/hooks/useProperty';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    FlatList,
-    Image,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -49,6 +50,9 @@ export default function LandlordPropertiesScreen() {
     error: shortTermError,
     refetch: refetchShortTerm,
   } = useLandlordShortTermProperties(true);
+
+  // Delete property hook
+  const { deletePropertyById, isDeleting } = useDeleteProperty();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -226,7 +230,7 @@ export default function LandlordPropertiesScreen() {
           <TouchableOpacity
             style={[styles.actionButton, { borderColor }]}
             onPress={() => {
-              router.push(`/landlord/calendar/${property.propertyId}` as any);
+              router.push(`/landlord/calendar/${property.propertyId}?type=${isLongTerm ? 'long-term' : 'short-term'}` as any);
             }}
           >
             <Ionicons name="calendar-outline" size={16} color={textColor} />
@@ -257,15 +261,26 @@ export default function LandlordPropertiesScreen() {
                   {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                      Alert.alert('Delete', 'Property deletion functionality coming soon!');
+                    onPress: async () => {
+                      const result = await deletePropertyById(property.propertyId);
+                      if (result.success) {
+                        Alert.alert('Success', 'Property deleted successfully');
+                        handleRefresh();
+                      } else {
+                        Alert.alert('Error', result.message || 'Failed to delete property');
+                      }
                     },
                   },
                 ]
               );
             }}
+            disabled={isDeleting}
           >
-            <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Delete</Text>
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#ef4444" />
+            ) : (
+              <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Delete</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

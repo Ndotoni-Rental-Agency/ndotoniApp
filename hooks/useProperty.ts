@@ -3,11 +3,12 @@
 // Collection of hooks for property-related functionality
 // =============================================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { PropertyCard, CreatePropertyDraftInput } from '@/lib/API';
-import { getPropertiesByLocation, getMe } from '@/lib/graphql/queries';
-import { toggleFavorite as toggleFavoriteMutation, createPropertyDraft, deleteProperty } from '@/lib/graphql/mutations';
 import { useAuth } from '@/contexts/AuthContext';
+import { CreatePropertyDraftInput, PropertyCard } from '@/lib/API';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { createPropertyDraft, deleteProperty, toggleFavorite as toggleFavoriteMutation } from '@/lib/graphql/mutations';
+import { getMe, getPropertiesByLocation } from '@/lib/graphql/queries';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Define PropertyFilters interface here since it's frontend-specific
 interface PropertyFilters {
@@ -228,9 +229,9 @@ export function usePropertySearch() {
 // LOCATION-BASED PROPERTY SEARCH (for search page)
 // =============================================================================
 
-import { getDistrictSearchFeedPage, getRegionSearchFeed } from '@/lib/property-cache';
-import { featureFlags } from '@/lib/feature-flags';
 import { cachedGraphQL } from '@/lib/cache';
+import { featureFlags } from '@/lib/feature-flags';
+import { getDistrictSearchFeedPage, getRegionSearchFeed } from '@/lib/property-cache';
 
 export function usePropertiesByLocation(
   region: string, 
@@ -572,12 +573,12 @@ export function useDeleteProperty() {
 
     try {
       console.log('📤 [useDeleteProperty] Deleting property with ID:', propertyId);
-      const response = await cachedGraphQL.queryAuthenticated({
-        query: deleteProperty,
-        variables: { propertyId },
-      });
+      const response = await GraphQLClient.executeAuthenticated(
+        deleteProperty,
+        { propertyId }
+      );
 
-      const result = response.data?.deleteProperty;
+      const result = response?.deleteProperty;
       if (result?.success) {
         return {
           success: true,
