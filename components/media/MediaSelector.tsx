@@ -2,18 +2,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
+import { getMediaLibrary } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface MediaSelectorProps {
@@ -39,6 +40,83 @@ export default function MediaSelector({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [videoThumbnails, setVideoThumbnails] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<'upload' | 'library'>('upload');
+  const [libraryMedia, setLibraryMedia] = useState<string[]>([]);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+
+  // Fetch media library when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchMediaLibrary();
+    }
+  }, [user]);
+
+  const fetchMediaLibrary = async () => {
+    if (!user) return;
+
+    setLoadingLibrary(true);
+    try {
+      console.log('[MediaSelector] Fetching media library...');
+      
+      const response = await GraphQLClient.executeAuthenticated(getMediaLibrary, {});
+
+      console.log('[MediaSelector] Raw response:', response);
+
+      // The response might be directly the data or wrapped
+      const mediaLibraryData = response?.getMediaLibrary || response;
+      
+      console.log('[MediaSelector] Media library data:', mediaLibraryData);
+
+      if (mediaLibraryData?.media) {
+        const images = mediaLibraryData.media.images || [];
+        const videos = mediaLibraryData.media.videos || [];
+        const allMedia = [...images, ...videos].filter(Boolean); // Remove any null/undefined
+        
+        console.log('[MediaSelector] Extracted media:', {
+          images: images.length,
+          videos: videos.length,
+          total: allMedia.length,
+          sample: allMedia.slice(0, 3)
+        });
+        
+        setLibraryMedia(allMedia);
+      } else {
+        console.log('[MediaSelector] No media found in response structure:', {
+          hasGetMediaLibrary: !!response?.getMediaLibrary,
+          hasMedia: !!mediaLibraryData?.media,
+          keys: Object.keys(mediaLibraryData || {})
+        });
+        setLibraryMedia([]);
+      }
+    } catch (error) {
+      console.error('[MediaSelector] Error fetching media library:', error);
+      setLibraryMedia([]);
+    } finally {
+      setLoadingLibrary(false);
+    }
+  };
+
+  const toggleLibraryMedia = (url: string) => {
+    if (selectedMedia.includes(url)) {
+      // Remove from selection
+      removeMedia(url);
+    } else {
+      // Add to selection
+      if (selectedMedia.length >= maxSelection) {
+        Alert.alert('Limit Reached', `You can select up to ${maxSelection} media items`);
+        return;
+      }
+
+      const newSelectedMedia = [...selectedMedia, url];
+      const images = newSelectedMedia.filter(url => 
+        url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)
+      );
+      const videos = newSelectedMedia.filter(url => 
+        url.match(/\.(mp4|mov|avi|webm)(\?|$)/i)
+      );
+      onMediaChange(newSelectedMedia, images, videos);
+    }
+  };
 
   const checkAuthentication = () => {
     if (!user) {
@@ -289,36 +367,144 @@ export default function MediaSelector({
 
   return (
     <View style={styles.container}>
-      {/* Upload Buttons */}
-      <View style={styles.buttonRow}>
+      {/* Tabs */}
+      <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.uploadButton, { backgroundColor: tintColor }]}
-          onPress={pickImage}
-          disabled={uploading}
+          style={[
+            styles.tab,
+            activeTab === 'upload' && [styles.activeTab, { borderBottomColor: tintColor }],
+          ]}
+          onPress={() => setActiveTab('upload')}
         >
-          <Ionicons name="images" size={20} color="#fff" />
-          <Text style={styles.uploadButtonText}>Choose Media</Text>
+          <Ionicons 
+            name="cloud-upload" 
+            size={18} 
+            color={activeTab === 'upload' ? tintColor : placeholderColor} 
+          />
+          <Text
+            style={[
+              styles.tabText,
+              { color: activeTab === 'upload' ? tintColor : placeholderColor },
+            ]}
+          >
+            Upload New
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.uploadButton, { backgroundColor: tintColor }]}
-          onPress={takePhoto}
-          disabled={uploading}
+          style={[
+            styles.tab,
+            activeTab === 'library' && [styles.activeTab, { borderBottomColor: tintColor }],
+          ]}
+          onPress={() => setActiveTab('library')}
         >
-          <Ionicons name="camera" size={20} color="#fff" />
-          <Text style={styles.uploadButtonText}>Take Photo</Text>
+          <Ionicons 
+            name="images" 
+            size={18} 
+            color={activeTab === 'library' ? tintColor : placeholderColor} 
+          />
+          <Text
+            style={[
+              styles.tabText,
+              { color: activeTab === 'library' ? tintColor : placeholderColor },
+            ]}
+          >
+            My Library
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Upload Progress */}
-      {uploading && (
-        <View style={[styles.uploadingBox, { backgroundColor: inputBg, borderColor }]}>
-          <ActivityIndicator size="small" color={tintColor} />
-          <Text style={[styles.uploadingText, { color: textColor }]}>
-            {uploadProgress 
-              ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
-              : 'Uploading...'}
-          </Text>
+      {/* Upload Tab */}
+      {activeTab === 'upload' && (
+        <>
+          {/* Upload Buttons */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.uploadButton, { backgroundColor: tintColor }]}
+              onPress={pickImage}
+              disabled={uploading}
+            >
+              <Ionicons name="images" size={20} color="#fff" />
+              <Text style={styles.uploadButtonText}>Choose Media</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.uploadButton, { backgroundColor: tintColor }]}
+              onPress={takePhoto}
+              disabled={uploading}
+            >
+              <Ionicons name="camera" size={20} color="#fff" />
+              <Text style={styles.uploadButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Upload Progress */}
+          {uploading && (
+            <View style={[styles.uploadingBox, { backgroundColor: inputBg, borderColor }]}>
+              <ActivityIndicator size="small" color={tintColor} />
+              <Text style={[styles.uploadingText, { color: textColor }]}>
+                {uploadProgress 
+                  ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
+                  : 'Uploading...'}
+              </Text>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Library Tab */}
+      {activeTab === 'library' && (
+        <View style={styles.libraryContainer}>
+          {loadingLibrary ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={tintColor} />
+              <Text style={[styles.loadingText, { color: placeholderColor }]}>
+                Loading your media library...
+              </Text>
+            </View>
+          ) : libraryMedia.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="images-outline" size={48} color={placeholderColor} />
+              <Text style={[styles.emptyText, { color: placeholderColor }]}>
+                No media in your library yet
+              </Text>
+              <Text style={[styles.emptySubtext, { color: placeholderColor }]}>
+                Upload media from other properties to build your library
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.libraryGrid} showsVerticalScrollIndicator={false}>
+              <View style={styles.gridContainer}>
+                {libraryMedia.map((url, index) => {
+                  const isVideo = url.match(/\.(mp4|mov|avi|webm)(\?|$)/i);
+                  const isSelected = selectedMedia.includes(url);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.libraryItem,
+                        isSelected && [styles.selectedLibraryItem, { borderColor: tintColor }],
+                      ]}
+                      onPress={() => toggleLibraryMedia(url)}
+                    >
+                      <Image source={{ uri: url }} style={styles.libraryImage} />
+                      {isVideo && (
+                        <View style={styles.playIconOverlay}>
+                          <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
+                        </View>
+                      )}
+                      {isSelected && (
+                        <View style={[styles.selectedBadge, { backgroundColor: tintColor }]}>
+                          <Ionicons name="checkmark" size={16} color="#fff" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          )}
         </View>
       )}
 
@@ -377,6 +563,26 @@ const styles = StyleSheet.create({
   container: {
     gap: 16,
   },
+  tabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
@@ -405,6 +611,65 @@ const styles = StyleSheet.create({
   },
   uploadingText: {
     fontSize: 14,
+  },
+  libraryContainer: {
+    minHeight: 200,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  emptySubtext: {
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  libraryGrid: {
+    maxHeight: 400,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  libraryItem: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedLibraryItem: {
+    borderWidth: 3,
+  },
+  libraryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  selectedBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mediaGrid: {
     gap: 12,
