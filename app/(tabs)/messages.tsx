@@ -447,7 +447,7 @@ export default function MessagesScreen() {
             {/* Search Bar */}
             {conversations.length > 0 && (
               <View style={styles.searchContainer}>
-                <View style={[styles.searchBar, { backgroundColor: cardBg }]}>
+                <View style={[styles.searchBar, { backgroundColor: useThemeColor({ light: '#f3f4f6', dark: cardBg }, 'background') }]}>
                   <Ionicons name="search" size={18} color={secondaryText} />
                   <TextInput
                     style={[styles.searchInput, { color: textColor }]}
