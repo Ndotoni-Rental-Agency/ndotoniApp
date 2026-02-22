@@ -11,7 +11,7 @@ import { useConversationSearch } from '@/hooks/useConversationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, PanResponder, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, PanResponder, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SwipeableConversationCardProps {
@@ -23,6 +23,8 @@ interface SwipeableConversationCardProps {
   secondaryText: string;
   tintColor: string;
   formatTime: (timestamp: string) => string;
+  onSwipeStart?: () => void;
+  onSwipeEnd?: () => void;
 }
 
 function SwipeableConversationCard({
@@ -34,101 +36,137 @@ function SwipeableConversationCard({
   secondaryText,
   tintColor,
   formatTime,
+  onSwipeStart,
+  onSwipeEnd,
 }: SwipeableConversationCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
-  const lastOffset = useRef(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 10;
+        // Only capture horizontal swipes, let vertical scrolling pass through
+        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold for faster response
+        return isHorizontal && isSignificant;
       },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        // Aggressively capture horizontal swipes to prevent scroll
+        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold
+        
+        if (isHorizontal && isSignificant) {
+          // Immediately disable scroll when horizontal swipe detected
+          onSwipeStart?.();
+          return true;
+        }
+        return false;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
       onPanResponderGrant: () => {
-        translateX.setOffset(lastOffset.current);
-        translateX.setValue(0);
+        translateX.stopAnimation();
       },
       onPanResponderMove: (_, gestureState) => {
-        // Only allow swiping left (negative values)
+        // Only allow swiping left
         if (gestureState.dx < 0) {
-          translateX.setValue(gestureState.dx);
+          // Cap at -80
+          const newValue = Math.max(gestureState.dx, -80);
+          translateX.setValue(newValue);
+        } else if (isOpen) {
+          // Allow closing by swiping right
+          const newValue = Math.min(gestureState.dx - 80, 0);
+          translateX.setValue(newValue);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        translateX.flattenOffset();
+        // Re-enable scroll immediately
+        onSwipeEnd?.();
         
-        // If swiped more than 80px, show delete button
-        if (gestureState.dx < -80) {
+        // Determine if we should open or close
+        if (gestureState.dx < -40 || (isOpen && gestureState.dx < 20)) {
+          // Open
           Animated.spring(translateX, {
             toValue: -80,
             useNativeDriver: true,
-            tension: 50,
-            friction: 8,
+            bounciness: 0,
+            speed: 20,
           }).start();
-          lastOffset.current = -80;
+          setIsOpen(true);
         } else {
-          // Otherwise, snap back
+          // Close
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
-            tension: 50,
-            friction: 8,
+            bounciness: 0,
+            speed: 20,
           }).start();
-          lastOffset.current = 0;
+          setIsOpen(false);
         }
+      },
+      onPanResponderTerminate: () => {
+        // Re-enable scroll if gesture is terminated
+        onSwipeEnd?.();
       },
     })
   ).current;
 
   const handleDelete = () => {
-    // Animate out before deleting
+    // Close first, then delete
     Animated.timing(translateX, {
       toValue: -400,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start(() => {
       onDelete();
-      // Reset position after delete
-      lastOffset.current = 0;
       translateX.setValue(0);
+      setIsOpen(false);
     });
   };
 
   return (
     <View style={styles.swipeableContainer}>
-      {/* Delete Button Background */}
+      {/* Delete Button - Always visible behind */}
       <View style={styles.deleteBackground}>
         <TouchableOpacity
-          style={styles.deleteActionButton}
+          style={styles.deleteButton}
           onPress={handleDelete}
+          activeOpacity={0.9}
         >
-          <Ionicons name="trash-outline" size={24} color="#fff" />
-          <Text style={styles.deleteActionText}>Delete</Text>
+          <Ionicons name="trash" size={21} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Swipeable Card */}
       <Animated.View
-        style={{
-          transform: [{ translateX }],
-        }}
+        style={[
+          styles.cardWrapper,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
         {...panResponder.panHandlers}
       >
         <TouchableOpacity
           style={[styles.messageCard, { backgroundColor }]}
           onPress={onPress}
-          activeOpacity={0.7}
+          activeOpacity={0.95}
         >
+          {/* Avatar */}
           <View style={[styles.avatar, { backgroundColor: tintColor }]}>
             {conversation.otherPartyImage ? (
               <Text style={styles.avatarText}>
                 {conversation.otherPartyName.charAt(0).toUpperCase()}
               </Text>
             ) : (
-              <Ionicons name="person" size={28} color="#fff" />
+              <Ionicons name="person" size={26} color="#fff" />
             )}
           </View>
-          <View style={styles.messageInfo}>
+
+          {/* Message Content */}
+          <View style={styles.messageContent}>
             <View style={styles.messageHeader}>
               <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
                 {conversation.otherPartyName}
@@ -137,23 +175,30 @@ function SwipeableConversationCard({
                 {formatTime(conversation.lastMessageTime)}
               </Text>
             </View>
+
             {conversation.propertyTitle && (
-              <View style={styles.propertyTitleRow}>
-                <Ionicons name="home-outline" size={14} color={tintColor} />
+              <View style={styles.propertyRow}>
+                <Ionicons name="home" size={13} color={secondaryText} />
                 <Text style={[styles.propertyTitle, { color: secondaryText }]} numberOfLines={1}>
                   {conversation.propertyTitle}
                 </Text>
               </View>
             )}
-            <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
-              {conversation.lastMessage}
-            </Text>
-            {conversation.unreadCount > 0 && (
-              <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
-                <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
-              </View>
-            )}
+
+            <View style={styles.previewRow}>
+              <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
+                {conversation.lastMessage}
+              </Text>
+              {conversation.unreadCount > 0 && (
+                <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
+                  <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
+                </View>
+              )}
+            </View>
           </View>
+
+          {/* Chevron */}
+          <Ionicons name="chevron-forward" size={20} color={secondaryText} style={styles.chevron} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -181,6 +226,7 @@ export default function MessagesScreen() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   // Use conversation search hook
   const { filteredConversations } = useConversationSearch({
@@ -365,8 +411,90 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
+      <FlatList
+        data={filteredConversations}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <SwipeableConversationCard
+            conversation={item}
+            onPress={() => {
+              console.log('[Messages] Opening conversation:', {
+                id: item.id,
+                hasHash: item.id.includes('#'),
+                propertyTitle: item.propertyTitle
+              });
+              const encodedId = encodeURIComponent(item.id);
+              router.push(`/conversation/${encodedId}`);
+            }}
+            onDelete={() => handleDeleteConversation(item.id, item.otherPartyName)}
+            onSwipeStart={() => setScrollEnabled(false)}
+            onSwipeEnd={() => setScrollEnabled(true)}
+            backgroundColor={cardBg}
+            textColor={textColor}
+            secondaryText={secondaryText}
+            tintColor={tintColor}
+            formatTime={formatTime}
+          />
+        )}
+        scrollEnabled={scrollEnabled}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: textColor }]}>Messages</Text>
+            </View>
+
+            {/* Search Bar */}
+            {conversations.length > 0 && (
+              <View style={styles.searchContainer}>
+                <View style={[styles.searchBar, { backgroundColor: cardBg }]}>
+                  <Ionicons name="search" size={18} color={secondaryText} />
+                  <TextInput
+                    style={[styles.searchInput, { color: textColor }]}
+                    placeholder="Search"
+                    placeholderTextColor={secondaryText}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={18} color={secondaryText} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          !loadingConversations ? (
+            conversations.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubbles-outline" size={64} color={secondaryText} />
+                <Text style={[styles.emptyTitle, { color: textColor }]}>
+                  No Messages
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
+                  Start a conversation with property owners
+                </Text>
+              </View>
+            ) : searchQuery.length > 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={64} color={secondaryText} />
+                <Text style={[styles.emptyTitle, { color: textColor }]}>
+                  No Results
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
+                  Try a different search term
+                </Text>
+              </View>
+            ) : null
+          ) : (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={tintColor} />
+            </View>
+          )
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -374,101 +502,10 @@ export default function MessagesScreen() {
             tintColor={tintColor}
           />
         }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>Messages</Text>
-          <Text style={[styles.subtitle, { color: secondaryText }]}>
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-          </Text>
-        </View>
-
-        {/* Search Bar */}
-        {conversations.length > 0 && (
-          <View style={styles.searchContainer}>
-            <View style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]}>
-              <Ionicons name="search" size={20} color={secondaryText} />
-              <TextInput
-                style={[styles.searchInput, { color: textColor }]}
-                placeholder="Search by name or property..."
-                placeholderTextColor={secondaryText}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color={secondaryText} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Error State - Removed since ChatContext handles errors internally */}
-
-        {/* Loading State */}
-        {loadingConversations && !refreshing && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={tintColor} />
-            <Text style={[styles.loadingText, { color: secondaryText }]}>
-              Loading conversations...
-            </Text>
-          </View>
-        )}
-
-        {/* Messages List */}
-        {!loadingConversations && filteredConversations.length > 0 && (
-          <View style={styles.listContainer}>
-            {filteredConversations.map((conversation) => (
-              <SwipeableConversationCard
-                key={conversation.id}
-                conversation={conversation}
-                onPress={() => {
-                  console.log('[Messages] Opening conversation:', {
-                    id: conversation.id,
-                    hasHash: conversation.id.includes('#'),
-                    propertyTitle: conversation.propertyTitle
-                  });
-                  const encodedId = encodeURIComponent(conversation.id);
-                  router.push(`/conversation/${encodedId}`);
-                }}
-                onDelete={() => handleDeleteConversation(conversation.id, conversation.otherPartyName)}
-                backgroundColor={cardBg}
-                textColor={textColor}
-                secondaryText={secondaryText}
-                tintColor={tintColor}
-                formatTime={formatTime}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Empty State */}
-        {!loadingConversations && conversations.length === 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons name="chatbubbles-outline" size={64} color={secondaryText} />
-            <Text style={[styles.emptyTitle, { color: textColor }]}>
-              No messages yet
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
-              Start a conversation with property owners
-            </Text>
-          </View>
-        )}
-
-        {/* No Search Results */}
-        {!loadingConversations && conversations.length > 0 && filteredConversations.length === 0 && searchQuery.length > 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={64} color={secondaryText} />
-            <Text style={[styles.emptyTitle, { color: textColor }]}>
-              No results found
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
-              Try searching with a different name or property
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: borderColor }]} />}
+      />
     </SafeAreaView>
   );
 }
@@ -477,10 +514,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  listContent: {
+    flexGrow: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 60,
   },
   unauthContainer: {
     flex: 1,
@@ -549,140 +590,133 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   searchContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingVertical: 8,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     padding: 0,
   },
-  listContainer: {
-    paddingVertical: 8,
+  separator: {
+    height: 0.5,
+    marginLeft: 90,
   },
   swipeableContainer: {
-    marginHorizontal: 20,
-    marginVertical: 8,
-    overflow: 'hidden',
+    position: 'relative',
+    height: 88,
   },
   deleteBackground: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: 100,
-    backgroundColor: '#ef4444',
+    width: 80,
+    backgroundColor: '#ff3b30',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 16,
   },
-  deleteActionButton: {
-    width: '100%',
+  deleteButton: {
+    width: 80,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  deleteActionText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
+  cardWrapper: {
+    flex: 1,
   },
   messageCard: {
     flexDirection: 'row',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    height: 88,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   avatarText: {
     color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
   },
-  messageInfo: {
+  messageContent: {
     flex: 1,
-    position: 'relative',
+    justifyContent: 'center',
   },
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
   },
   senderName: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     flex: 1,
     marginRight: 8,
   },
   messageTime: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 15,
   },
-  propertyTitleRow: {
+  propertyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    gap: 4,
+    marginBottom: 2,
   },
   propertyTitle: {
-    fontSize: 13,
-    fontStyle: 'italic',
+    fontSize: 14,
     flex: 1,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   messagePreview: {
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 20,
+    flex: 1,
   },
   unreadBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   unreadText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
+  },
+  chevron: {
+    marginLeft: 8,
+    opacity: 0.3,
   },
   emptyState: {
     alignItems: 'center',
@@ -691,17 +725,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    marginTop: 12,
+    lineHeight: 22,
   },
 });

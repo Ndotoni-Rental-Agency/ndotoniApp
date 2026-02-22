@@ -40,12 +40,15 @@ export default function ConversationScreen() {
     sendingMessage,
     conversations,
     loadingConversations,
+    loadConversations,
   } = useChat();
 
   const { deleteMessage: deleteChatMessage, isDeletingMessage } = useChatDeletion();
 
   const [messageText, setMessageText] = useState('');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
 
   // Decode the conversation ID from the URL parameter
@@ -120,6 +123,58 @@ export default function ConversationScreen() {
     );
   };
 
+  const handleDeleteSelectedMessages = () => {
+    const count = selectedMessages.size;
+    Alert.alert(
+      'Delete Messages',
+      `Are you sure you want to delete ${count} message${count > 1 ? 's' : ''}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            // Delete all selected messages
+            const deletePromises = Array.from(selectedMessages).map(id => 
+              deleteChatMessage(id)
+            );
+            
+            await Promise.all(deletePromises);
+            
+            // Reload messages and conversations list
+            if (decodedId) {
+              await loadMessages(decodedId);
+              await loadConversations(); // Update the conversations list
+            }
+            
+            setSelectionMode(false);
+            setSelectedMessages(new Set());
+          },
+        },
+      ]
+    );
+  };
+
+  const toggleMessageSelection = (messageId: string) => {
+    const newSelection = new Set(selectedMessages);
+    if (newSelection.has(messageId)) {
+      newSelection.delete(messageId);
+    } else {
+      newSelection.add(messageId);
+    }
+    setSelectedMessages(newSelection);
+    
+    // Exit selection mode if no messages selected
+    if (newSelection.size === 0) {
+      setSelectionMode(false);
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedMessages(new Set());
+  };
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { 
@@ -131,63 +186,96 @@ export default function ConversationScreen() {
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isMyMessage = item.isMine;
+    const isSelected = selectedMessages.has(item.id);
+    const showCheckbox = selectionMode;
 
     return (
-      <TouchableOpacity
-        onLongPress={() => {
-          if (isMyMessage) {
-            setSelectedMessageId(item.id);
-            handleDeleteMessage(item.id);
-          }
-        }}
-        activeOpacity={0.7}
+      <View
         style={[
-          styles.messageContainer,
-          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+          styles.messageWrapper,
+          isMyMessage ? styles.myMessageWrapper : styles.theirMessageWrapper,
         ]}
       >
-        <View
+        <TouchableOpacity
+          onPress={() => {
+            if (selectionMode) {
+              toggleMessageSelection(item.id);
+            }
+          }}
+          onLongPress={() => {
+            if (!selectionMode) {
+              setSelectionMode(true);
+              setSelectedMessages(new Set([item.id]));
+            }
+          }}
+          activeOpacity={0.7}
           style={[
-            styles.messageBubble,
-            {
-              backgroundColor: isMyMessage ? myMessageBg : theirMessageBg,
-            },
-            isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
+            styles.messageContainer,
+            isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
           ]}
         >
-          {!isMyMessage && (
-            <Text style={[styles.senderName, { color: tintColor }]}>
-              {item.senderName}
-            </Text>
-          )}
-          <Text
-            style={[
-              styles.messageText,
-              { color: isMyMessage ? '#fff' : textColor },
-            ]}
-          >
-            {item.content}
-          </Text>
-          <View style={styles.messageFooter}>
-            <Text
+          <View style={styles.messageRow}>
+            {/* Selection Checkbox - For all messages */}
+            {showCheckbox && (
+              <View style={styles.checkboxContainer}>
+                <View style={[
+                  styles.checkbox,
+                  { 
+                    borderColor: isSelected ? tintColor : '#d1d5db',
+                    backgroundColor: isSelected ? tintColor : 'transparent',
+                  }
+                ]}>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={18} color="#fff" />
+                  )}
+                </View>
+              </View>
+            )}
+
+            <View
               style={[
-                styles.messageTime,
-                { color: isMyMessage ? 'rgba(255,255,255,0.8)' : secondaryText },
+                styles.messageBubble,
+                {
+                  backgroundColor: isMyMessage ? myMessageBg : theirMessageBg,
+                },
+                isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
               ]}
             >
-              {formatTime(item.timestamp)}
-            </Text>
-            {isMyMessage && (
-              <Ionicons 
-                name="checkmark-done" 
-                size={14} 
-                color="rgba(255,255,255,0.8)" 
-                style={styles.readIcon}
-              />
-            )}
+              {!isMyMessage && (
+                <Text style={[styles.senderName, { color: tintColor }]}>
+                  {item.senderName}
+                </Text>
+              )}
+              <Text
+                style={[
+                  styles.messageText,
+                  { color: isMyMessage ? '#fff' : textColor },
+                ]}
+              >
+                {item.content}
+              </Text>
+              <View style={styles.messageFooter}>
+                <Text
+                  style={[
+                    styles.messageTime,
+                    { color: isMyMessage ? 'rgba(255,255,255,0.8)' : secondaryText },
+                  ]}
+                >
+                  {formatTime(item.timestamp)}
+                </Text>
+                {isMyMessage && (
+                  <Ionicons 
+                    name="checkmark-done" 
+                    size={14} 
+                    color="rgba(255,255,255,0.8)" 
+                    style={styles.readIcon}
+                  />
+                )}
+              </View>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -195,19 +283,45 @@ export default function ConversationScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={textColor} />
-        </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
-            {conversation?.otherPartyName || 'Chat'}
-          </Text>
-          {conversation?.propertyTitle && (
-            <Text style={[styles.headerSubtitle, { color: secondaryText }]} numberOfLines={1}>
-              {conversation.propertyTitle}
-            </Text>
-          )}
-        </View>
+        {selectionMode ? (
+          <>
+            <TouchableOpacity onPress={exitSelectionMode} style={styles.backButton}>
+              <Text style={[styles.cancelText, { color: tintColor }]}>Cancel</Text>
+            </TouchableOpacity>
+            <View style={styles.headerInfo}>
+              <Text style={[styles.headerTitle, { color: textColor }]}>
+                {selectedMessages.size} Selected
+              </Text>
+            </View>
+            <TouchableOpacity 
+              onPress={handleDeleteSelectedMessages}
+              disabled={selectedMessages.size === 0}
+              style={styles.deleteButton}
+            >
+              <Ionicons 
+                name="trash" 
+                size={24} 
+                color={selectedMessages.size > 0 ? '#ff3b30' : secondaryText} 
+              />
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={textColor} />
+            </TouchableOpacity>
+            <View style={styles.headerInfo}>
+              <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
+                {conversation?.otherPartyName || 'Chat'}
+              </Text>
+              {conversation?.propertyTitle && (
+                <Text style={[styles.headerSubtitle, { color: secondaryText }]} numberOfLines={1}>
+                  {conversation.propertyTitle}
+                </Text>
+              )}
+            </View>
+          </>
+        )}
       </View>
 
       {/* Messages List */}
@@ -292,6 +406,14 @@ const styles = StyleSheet.create({
     marginRight: 12,
     padding: 4,
   },
+  cancelText: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    padding: 4,
+    marginLeft: 12,
+  },
   headerInfo: {
     flex: 1,
   },
@@ -313,15 +435,44 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     flexGrow: 1,
   },
-  messageContainer: {
+  messageWrapper: {
     marginBottom: 16,
     maxWidth: '75%',
+  },
+  myMessageWrapper: {
+    alignSelf: 'flex-end',
+  },
+  theirMessageWrapper: {
+    alignSelf: 'flex-start',
+  },
+  messageContainer: {
+    maxWidth: '100%',
   },
   myMessageContainer: {
     alignSelf: 'flex-end',
   },
   theirMessageContainer: {
     alignSelf: 'flex-start',
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  messageRowNoCheckbox: {
+    flexDirection: 'column',
+  },
+  checkboxContainer: {
+    justifyContent: 'center',
+    paddingRight: 4,
+  },
+  checkbox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   messageBubble: {
     paddingHorizontal: 16,
