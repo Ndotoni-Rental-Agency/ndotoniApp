@@ -50,8 +50,8 @@ export default function LongTermPropertyDetailsScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
+  const headerBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
   // Set up audio mode for video playback with sound

@@ -21,8 +21,8 @@ export default function PropertyMapView({
   title = 'Property Location',
   radius = 600,
 }: PropertyMapViewProps) {
-  const backgroundColor = useThemeColor({ light: '#f3f4f6', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#374151' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#f3f4f6', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#2c2c2e' }, 'background');
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -39,7 +39,7 @@ export default function PropertyMapView({
     };
   }, [latitude, longitude]);
 
-  const circleColor = isDark ? '#065f46' : '#1f2937';
+  const circleColor = isDark ? '#065f46' : '#1c1c1e';
 
   return (
     <View style={styles.container}>

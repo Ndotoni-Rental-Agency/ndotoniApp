@@ -62,15 +62,15 @@ export default function SearchModal({
   const tintColor = useThemeColor({}, 'tint');
 
   // Dark mode colors
-  const cardBg = useThemeColor({ light: '#f9fafb', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#374151' }, 'background');
-  const pillBg = useThemeColor({ light: '#fff', dark: '#374151' }, 'background');
+  const cardBg = useThemeColor({ light: '#f9fafb', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#2c2c2e' }, 'background');
+  const pillBg = useThemeColor({ light: '#fff', dark: '#2c2c2e' }, 'background');
   const pillBorder = useThemeColor({ light: '#e5e7eb', dark: '#4b5563' }, 'background');
-  const closeButtonBg = useThemeColor({ light: '#fff', dark: '#374151' }, 'background');
+  const closeButtonBg = useThemeColor({ light: '#fff', dark: '#2c2c2e' }, 'background');
   const closeIconColor = useThemeColor({ light: '#6b7280', dark: '#9ca3af' }, 'text');
   const selectedBorder = tintColor;
-  const footerBorder = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
-  const datePickerBorder = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
+  const footerBorder = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
+  const datePickerBorder = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
   const subtleText = useThemeColor({ light: '#6b7280', dark: '#9ca3af' }, 'text');
 
   // Animation values

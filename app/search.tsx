@@ -8,14 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -35,8 +35,8 @@ export default function SearchScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const headerBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#374151' }, 'background');
+  const headerBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
 
   // Parse search parameters
   const rentalType = (params.rentalType as string) === 'short-term' ? RentalType.SHORT_TERM : RentalType.LONG_TERM;
@@ -237,8 +237,17 @@ export default function SearchScreen() {
   }, [properties, filters, isShortTerm]);
 
   const getSearchTitle = () => {
-    const locationText = location || selectedDistrict || selectedRegion || 'Properties';
-    return toTitleCase(locationText);
+    // Priority: selectedDistrict > selectedRegion > location > 'Properties'
+    if (selectedDistrict) {
+      return toTitleCase(selectedDistrict);
+    }
+    if (selectedRegion) {
+      return toTitleCase(selectedRegion);
+    }
+    if (location) {
+      return toTitleCase(location);
+    }
+    return 'Properties';
   };
 
   const getSearchSubtitle = () => {
@@ -252,11 +261,6 @@ export default function SearchScreen() {
       return `Move in: ${formatDateShort(moveInDate)}`;
     }
     return isShortTerm ? 'Short-term stays' : 'Long-term rentals';
-  };
-
-  const getResultsCount = () => {
-    const count = filteredProperties.length;
-    return `${count} ${count === 1 ? 'property' : 'properties'}`;
   };
 
   if (isLoading) {
@@ -301,7 +305,7 @@ export default function SearchScreen() {
               {getSearchTitle()}
             </Text>
             <Text style={styles.locationSubtitle}>
-              {getSearchSubtitle()} • {getResultsCount()}
+              {getSearchSubtitle()}
             </Text>
           </View>
 

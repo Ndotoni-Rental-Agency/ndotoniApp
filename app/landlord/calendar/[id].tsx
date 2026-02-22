@@ -8,14 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,8 +28,8 @@ export default function PropertyCalendarScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
@@ -150,6 +150,18 @@ export default function PropertyCalendarScreen() {
   const handleBlockDates = async () => {
     if (!startDate || !endDate) {
       Alert.alert('Error', 'Please select both start and end dates');
+      return;
+    }
+
+    // Validate that dates are not more than 1 year in the future
+    const today = new Date();
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(today.getFullYear() + 1);
+    
+    const selectedEndDate = new Date(endDate);
+    
+    if (selectedEndDate > oneYearFromNow) {
+      Alert.alert('Error', 'You cannot block dates more than 1 year in advance');
       return;
     }
 

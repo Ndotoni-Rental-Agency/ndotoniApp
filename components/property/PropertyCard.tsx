@@ -41,7 +41,7 @@ export default function PropertyCard({
   const router = useRouter();
   const textColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({}, 'background');
-  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1f2937' }, 'background');
+  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
 
   const formatPrice = (amount: number) => {
     return amount.toLocaleString('en-US');

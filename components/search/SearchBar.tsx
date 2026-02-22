@@ -22,10 +22,10 @@ export default function SearchBar({
   checkOutDate,
   moveInDate,
 }: SearchBarProps) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const cardBg = backgroundColor;
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const iconColor = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
   const tintColor = useThemeColor({}, 'tint');
   

@@ -35,8 +35,8 @@ export default function CollapsibleSection({
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#f9fafb', dark: '#111827' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#374151' }, 'background');
+  const cardBg = useThemeColor({ light: '#f9fafb', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#2c2c2e' }, 'background');
 
   // Use controlled state if provided, otherwise use internal state
   const expanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;

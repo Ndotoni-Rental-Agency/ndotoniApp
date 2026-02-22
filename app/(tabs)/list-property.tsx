@@ -11,17 +11,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -50,8 +50,8 @@ export default function ListPropertyScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const inputBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const inputBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const [formData, setFormData] = useState({
@@ -152,9 +152,17 @@ export default function ListPropertyScreen() {
         Alert.alert('Error', 'Please enter a valid monthly rent');
         return;
       }
+      if (parseFloat(formData.monthlyRent) > 2000000) {
+        Alert.alert('Error', 'Monthly rent cannot exceed TZS 2,000,000');
+        return;
+      }
     } else {
       if (!formData.nightlyRate || parseFloat(formData.nightlyRate) <= 0) {
         Alert.alert('Error', 'Please enter a valid nightly rate');
+        return;
+      }
+      if (parseFloat(formData.nightlyRate) > 2000000) {
+        Alert.alert('Error', 'Nightly rate cannot exceed TZS 2,000,000');
         return;
       }
     }

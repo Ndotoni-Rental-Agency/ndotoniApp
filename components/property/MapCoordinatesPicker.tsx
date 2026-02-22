@@ -34,8 +34,8 @@ export default function MapCoordinatesPicker({
 
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#374151' }, 'background');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   // Geocode address to get approximate coordinates
