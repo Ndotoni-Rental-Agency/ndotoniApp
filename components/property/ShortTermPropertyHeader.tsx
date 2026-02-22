@@ -6,6 +6,7 @@ interface ShortTermPropertyHeaderProps {
   title: string;
   district: string;
   region: string;
+  propertyType?: string;
   averageRating?: number | null;
   totalReviews?: number;
   textColor: string;
@@ -17,6 +18,7 @@ export default function ShortTermPropertyHeader({
   title,
   district,
   region,
+  propertyType,
   averageRating,
   totalReviews,
   textColor,
@@ -33,9 +35,20 @@ export default function ShortTermPropertyHeader({
       .join(' ');
   };
 
+  // Format property type for display
+  const formatPropertyType = (type?: string) => {
+    if (!type) return null;
+    return type.charAt(0) + type.slice(1).toLowerCase();
+  };
+
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: textColor }]}>{title}</Text>
+      {propertyType && (
+        <View style={[styles.typeBadge, { backgroundColor: tintColor }]}>
+          <Text style={styles.typeBadgeText}>{formatPropertyType(propertyType)}</Text>
+        </View>
+      )}
       <View style={styles.locationRow}>
         <Ionicons name="location" size={18} color={tintColor} />
         <Text style={[styles.locationText, { color: textColor }]}>
@@ -71,6 +84,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 12,
     lineHeight: 34,
+  },
+  typeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  typeBadgeText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   locationRow: {
     flexDirection: 'row',

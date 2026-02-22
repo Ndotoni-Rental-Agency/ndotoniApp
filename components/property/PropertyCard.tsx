@@ -18,6 +18,7 @@ interface PropertyCardProps {
   thumbnail?: string;
   bedrooms?: number;
   priceUnit: 'night' | 'month';
+  propertyType?: string;
   onPress?: () => void;
   onFavoritePress?: () => void;
   isFavorited?: boolean;
@@ -34,6 +35,7 @@ export default function PropertyCard({
   thumbnail,
   bedrooms,
   priceUnit,
+  propertyType,
   onPress,
   onFavoritePress,
   isFavorited = false,
@@ -79,6 +81,12 @@ export default function PropertyCard({
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  // Format property type for display
+  const formatPropertyType = (type?: string) => {
+    if (!type) return null;
+    return type.charAt(0) + type.slice(1).toLowerCase();
   };
 
   return (
@@ -127,11 +135,21 @@ export default function PropertyCard({
             </View>
           )}
         </View>
-        {safeBedrooms > 0 && (
-          <Text style={styles.bedrooms}>
-            {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
-          </Text>
-        )}
+        <View style={styles.detailsRow}>
+          {propertyType && (
+            <Text style={styles.propertyType}>
+              {formatPropertyType(propertyType)}
+            </Text>
+          )}
+          {propertyType && safeBedrooms > 0 && (
+            <Text style={styles.separator}>•</Text>
+          )}
+          {safeBedrooms > 0 && (
+            <Text style={styles.bedrooms}>
+              {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
+            </Text>
+          )}
+        </View>
         <View style={styles.priceContainer}>
           <Text style={[styles.price, { color: textColor }]}>
             {formatCurrency(safeCurrency)} {formatPrice(safePrice)}
@@ -208,11 +226,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  propertyType: {
+    fontSize: 14,
+    color: '#717171',
+    fontWeight: '500',
+  },
+  separator: {
+    fontSize: 14,
+    color: '#717171',
+    marginHorizontal: 6,
+  },
   bedrooms: {
     fontSize: 14,
     color: '#717171',
     fontWeight: '400',
-    marginBottom: 4,
   },
   priceContainer: {
     flexDirection: 'row',

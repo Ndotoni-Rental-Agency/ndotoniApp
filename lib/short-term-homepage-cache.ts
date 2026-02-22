@@ -101,7 +101,12 @@ export async function fetchShortTermHomepageCache(): Promise<ShortTermHomepageCa
     console.log('[ShortTermHomepageCache] Fetching from:', url);
     console.log('[ShortTermHomepageCache] Environment:', { CLOUDFRONT_DOMAIN, STAGE });
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'max-age=60',
+      },
+    });
 
     if (!response.ok) {
       console.error('[ShortTermHomepageCache] Failed to fetch cache:', {

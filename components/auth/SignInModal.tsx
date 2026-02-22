@@ -66,9 +66,13 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       
       // Check if user needs email verification
       if (error.name === 'UserNotConfirmedException') {
+        const message = error.codeResent 
+          ? 'Your account needs to be verified. A new verification code has been sent to your email.'
+          : 'Your account needs to be verified. Please check your email for the verification code.';
+        
         Alert.alert(
           'Email Not Verified',
-          'Your account needs to be verified. Please check your email for the verification code.',
+          message,
           [
             {
               text: 'Verify Now',

@@ -1,6 +1,6 @@
 /**
- * Error handling utilities for React Native
- * Extracts error messages from different error formats (GraphQL, Cognito, etc.)
+ * Error utility functions for authentication
+ * Adapted from ndotoniWeb for React Native
  */
 
 /**
@@ -42,9 +42,6 @@ export function extractErrorMessage(error: unknown, fallbackMessage: string = 'A
       if (name === 'UserUnAuthenticatedError' || name === 'UserUnAuthenticatedException') {
         return 'Authentication session expired. Please try again.';
       }
-      if (name === 'LimitExceededException') {
-        return 'Too many attempts. Please wait a few minutes before trying again.';
-      }
       
       // Return the message if available
       if (message) {
@@ -74,8 +71,11 @@ export function extractErrorMessage(error: unknown, fallbackMessage: string = 'A
  * Checks if an error indicates the user needs email verification
  */
 export function isUserNotConfirmedError(error: unknown): boolean {
+  const name = (error as any)?.name;
   const message = extractErrorMessage(error).toLowerCase();
-  return message.includes('user is not confirmed') || 
+  
+  return name === 'UserNotConfirmedException' ||
+         message.includes('user is not confirmed') || 
          message.includes('not confirmed') ||
          message.includes('usernotconfirmedexception');
 }
@@ -84,8 +84,11 @@ export function isUserNotConfirmedError(error: unknown): boolean {
  * Checks if an error indicates the user already exists
  */
 export function isUserAlreadyExistsError(error: unknown): boolean {
+  const name = (error as any)?.name;
   const message = extractErrorMessage(error).toLowerCase();
-  return message.includes('user already exists') || 
+  
+  return name === 'UsernameExistsException' ||
+         message.includes('user already exists') || 
          message.includes('usernameexistsexception') ||
          message.includes('an account with the given email already exists');
 }
@@ -98,7 +101,6 @@ export function isRateLimitError(error: unknown): boolean {
   return message.includes('attempt limit exceeded') || 
          message.includes('too many requests') ||
          message.includes('rate limit') ||
-         message.includes('limitexceeded') ||
          message.includes('try after some time');
 }
 

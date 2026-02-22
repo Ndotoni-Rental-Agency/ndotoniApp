@@ -4,20 +4,25 @@
  * Provides authentication state and methods using AWS Amplify + Custom Backend
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  updateUser as updateUserMutation, 
-  submitLandlordApplication as submitLandlordApplicationMutation
+import {
+    ApplicationResponse,
+    UserProfile,
+    UserType
+} from '@/lib/API';
+import HybridAuthService from '@/lib/auth/hybrid-auth-service';
+import { GraphQLClient } from '@/lib/graphql-client';
+import {
+    submitLandlordApplication as submitLandlordApplicationMutation,
+    updateUser as updateUserMutation
 } from '@/lib/graphql/mutations';
 import { getMe } from '@/lib/graphql/queries';
-import { 
-  UserProfile, 
-  UserType, 
-  ApplicationResponse
-} from '@/lib/API';
-import { GraphQLClient } from '@/lib/graphql-client';
-import HybridAuthService from '@/lib/auth/hybrid-auth-service';
+import {
+    extractErrorMessage,
+    isUserAlreadyExistsError,
+    isUserNotConfirmedError
+} from '@/lib/utils/errorUtils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 // Type alias for convenience
 type User = UserProfile;
@@ -72,14 +77,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Storage keys
 const USER_KEY = '@ndotoni:user';
-
-// Helper to extract error messages
-const extractErrorMessage = (error: any, defaultMessage: string): string => {
-  if (typeof error === 'string') return error;
-  if (error?.message) return error.message;
-  if (error?.errors?.[0]?.message) return error.errors[0].message;
-  return defaultMessage;
-};
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -193,7 +190,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Fetch user profile from backend
       await refreshUserFromBackend();
-    } catch (error) {
+    } catch (error: any) {
+      // Check if user is not confirmed
+      if (isUserNotConfirmedError(error)) {
+        // Automatically resend verification code
+        try {
+          await HybridAuthService.resendCode(email);
+          // Attach a flag to indicate code was resent
+          error.codeResent = true;
+        } catch (resendError) {
+          console.error('[AuthContext] Failed to resend verification code:', resendError);
+          error.codeResent = false;
+        }
+      }
       // Re-throw the original error to preserve its structure
       throw error;
     }
@@ -214,8 +223,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('[AuthContext] Sign up successful, requires verification');
       return { requiresVerification: true };
-    } catch (error) {
-      console.error('[AuthContext] signUp error:', (error as any)?.message || 'Unknown');
+    } catch (error: any) {
+      console.error('[AuthContext] signUp error:', error?.message || 'Unknown');
+      
+      // Check if user already exists but is not confirmed
+      if (isUserAlreadyExistsError(error)) {
+        try {
+          // Resend verification code
+          await HybridAuthService.resendCode(input.email);
+          // Attach a flag to indicate this is an existing unconfirmed user
+          error.existingUnconfirmed = true;
+          error.codeResent = true;
+        } catch (resendError) {
+          console.error('[AuthContext] Failed to resend verification code:', resendError);
+          error.existingUnconfirmed = true;
+          error.codeResent = false;
+        }
+      }
+      
       // Re-throw the original error to preserve its structure
       throw error;
     }

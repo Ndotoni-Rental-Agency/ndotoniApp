@@ -38,7 +38,7 @@ export default function PropertyAmenities({
       {amenities.length > maxVisible && (
         <TouchableOpacity style={[styles.showMoreButton, { borderColor: tintColor }]}>
           <Text style={[styles.showMoreText, { color: tintColor }]}>
-            Show all {amenities.length} amenities
+            Show all amenities
           </Text>
           <Ionicons name="chevron-forward" size={16} color={tintColor} />
         </TouchableOpacity>

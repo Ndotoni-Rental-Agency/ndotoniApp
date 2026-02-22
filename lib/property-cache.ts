@@ -135,21 +135,33 @@ function cleanObjectStrings<T>(obj: T): T {
 export async function getPropertyFromCache(propertyId: string): Promise<PropertyCacheData | null> {
   const url = `${CDN_URL}/properties/${propertyId}.json`;
   
+  console.log('[property-cache] 🌐 Fetching from CloudFront:', url);
+  console.log('[property-cache] 📍 CDN_URL:', CDN_URL);
+  console.log('[property-cache] 🆔 Property ID:', propertyId);
+  
   try {
     const response = await fetch(url, {
-      cache: 'default'
+      cache: 'no-store', // Don't cache in browser, always fetch fresh
+      headers: {
+        'Cache-Control': 'max-age=60', // Request 1 minute cache from CloudFront
+      },
     });
     
+    console.log('[property-cache] 📡 Response status:', response.status);
+    console.log('[property-cache] 📡 Response ok:', response.ok);
+    
     if (!response.ok) {
+      console.log('[property-cache] ❌ CloudFront cache miss (404)');
       return null;
     }
     
     const data = await response.json();
     const cleanedData = cleanObjectStrings(data);
     
+    console.log('[property-cache] ✅ CloudFront cache hit');
     return cleanedData;
   } catch (error) {
-    console.error('[property-cache] Error fetching from cache:', error);
+    console.error('[property-cache] ❌ Error fetching from cache:', error);
     return null;
   }
 }
@@ -180,7 +192,10 @@ export async function getDistrictSearchFeedPage(
   
   try {
     const response = await fetch(url, {
-      cache: 'default'
+      cache: 'no-store', // Don't cache in browser
+      headers: {
+        'Cache-Control': 'max-age=60', // Request 1 minute cache from CloudFront
+      },
     });
     
     if (!response.ok) {
@@ -209,7 +224,10 @@ export async function getRegionSearchFeed(
   
   try {
     const response = await fetch(url, {
-      cache: 'default'
+      cache: 'no-store', // Don't cache in browser
+      headers: {
+        'Cache-Control': 'max-age=60', // Request 1 minute cache from CloudFront
+      },
     });
     
     if (!response.ok) {

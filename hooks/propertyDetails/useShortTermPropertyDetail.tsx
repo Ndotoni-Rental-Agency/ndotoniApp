@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShortTermProperty } from '@/lib/API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 
 const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d2bstvyam1bm1f.cloudfront.net';
+const S3_FALLBACK_DOMAIN = 'https://ndotoni-media-storage-dev.s3.us-west-2.amazonaws.com';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 const CACHE_KEY_PREFIX = 'short-term-property-';
 
@@ -81,6 +82,8 @@ export function useShortTermPropertyDetail(propertyId?: string) {
       setLoading(true);
       setError(null);
 
+      console.log('[useShortTermPropertyDetail] 🔍 Fetching SHORT-TERM property:', propertyId);
+
       if (!propertyId) {
         setError('Property ID is required');
         setLoading(false);
@@ -90,6 +93,7 @@ export function useShortTermPropertyDetail(propertyId?: string) {
       // Check cache first
       const cachedProperty = await getCachedProperty(propertyId);
       if (cachedProperty) {
+        console.log('[useShortTermPropertyDetail] ✅ Got property from AsyncStorage cache');
         setProperty(cachedProperty);
         setLoading(false);
         
@@ -98,6 +102,8 @@ export function useShortTermPropertyDetail(propertyId?: string) {
         return;
       }
 
+      console.log('[useShortTermPropertyDetail] ⚠️ AsyncStorage cache miss, fetching from CloudFront...');
+      
       // Fetch from CloudFront
       await fetchFromCloudFront(propertyId, false);
 
@@ -130,49 +136,121 @@ export function useShortTermPropertyDetail(propertyId?: string) {
       console.log('[useShortTermPropertyDetail] 🆔 Property ID:', propertyId);
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-      cache: 'no-store', // Always fetch fresh data
-    });
-
-    if (!isBackground) {
-      console.log('[useShortTermPropertyDetail] 📡 Response status:', response.status);
-      console.log('[useShortTermPropertyDetail] 📡 Response ok:', response.ok);
-    }
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        setError('Property not found');
-      } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return;
-    }
-
-    const data = await response.json();
-
-    // Check if property was deleted
-    if (data.deleted) {
-      setError('This property is no longer available');
-      return;
-    }
-
-    const propertyData = data as ShortTermProperty;
-    
-    // Update state and cache
-    setProperty(propertyData);
-    setCachedProperty(propertyId, propertyData);
-    setRetryCount(0);
-
-    if (!isBackground) {
-      console.log('[useShortTermPropertyDetail] ✅ Property loaded:', {
-        propertyId: propertyData.propertyId,
-        title: propertyData.title,
-        status: propertyData.status,
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        cache: 'no-store', // Always fetch fresh data
       });
+
+      if (!isBackground) {
+        console.log('[useShortTermPropertyDetail] 📡 Response status:', response.status);
+        console.log('[useShortTermPropertyDetail] 📡 Response ok:', response.ok);
+      }
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('[useShortTermPropertyDetail] ❌ CloudFront 404 - property not in CloudFront cache');
+          
+          // Try S3 fallback
+          if (!isBackground) {
+            console.log('[useShortTermPropertyDetail] 🔄 Trying S3 fallback...');
+            await fetchFromS3Fallback(propertyId);
+            return;
+          }
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return;
+      }
+
+      const data = await response.json();
+
+      // Check if property was deleted
+      if (data.deleted) {
+        setError('This property is no longer available');
+        setLoading(false);
+        
+        // Navigate back after 2 seconds
+        setTimeout(() => {
+          router.back();
+        }, 2000);
+        return;
+      }
+
+      const propertyData = data as ShortTermProperty;
+      
+      // Update state and cache
+      setProperty(propertyData);
+      setCachedProperty(propertyId, propertyData);
+      setRetryCount(0);
+
+      if (!isBackground) {
+        console.log('[useShortTermPropertyDetail] ✅ Property loaded from CloudFront:', {
+          propertyId: propertyData.propertyId,
+          title: propertyData.title,
+          status: propertyData.status,
+        });
+      }
+    } catch (error) {
+      console.error('[useShortTermPropertyDetail] ❌ CloudFront fetch error:', error);
+      
+      // Try S3 fallback on error
+      if (!isBackground) {
+        console.log('[useShortTermPropertyDetail] 🔄 Trying S3 fallback after error...');
+        await fetchFromS3Fallback(propertyId);
+      }
+    }
+  };
+
+  const fetchFromS3Fallback = async (propertyId: string) => {
+    console.log('[useShortTermPropertyDetail] 🪣 Attempting S3 fallback via GraphQL...');
+    
+    try {
+      // Import GraphQL query dynamically to avoid circular dependencies
+      const { getShortTermProperty } = await import('@/lib/graphql/queries');
+      const { GraphQLClient } = await import('@/lib/graphql-client');
+      
+      console.log('[useShortTermPropertyDetail] 📡 Fetching via GraphQL API...');
+      
+      const data = await GraphQLClient.executePublic<{ getShortTermProperty: ShortTermProperty }>(
+        getShortTermProperty,
+        { propertyId }
+      );
+
+      if (data.getShortTermProperty) {
+        console.log('[useShortTermPropertyDetail] ✅ Property loaded from GraphQL fallback');
+        const propertyData = data.getShortTermProperty;
+        
+        // Update state and cache
+        setProperty(propertyData);
+        setCachedProperty(propertyId, propertyData);
+        setRetryCount(0);
+      } else {
+        setError('This property is no longer available');
+        setLoading(false);
+        
+        // Navigate back after 2 seconds
+        setTimeout(() => {
+          router.back();
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('[useShortTermPropertyDetail] ❌ S3 fallback failed:', error);
+      
+      if (error?.message?.includes('Property not found')) {
+        setError('This property is no longer available');
+        setLoading(false);
+        
+        // Navigate back after 2 seconds
+        setTimeout(() => {
+          router.back();
+        }, 2000);
+      } else {
+        throw error;
+      }
     }
   };
 

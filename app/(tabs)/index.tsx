@@ -380,11 +380,45 @@ export default function HomeScreen() {
                   {/* Property Grid */}
                   <View style={styles.propertyGrid}>
                     {displayProperties.map((property: any) => {
-                      // For property type view, determine rental type from the property itself
-                      const isPropertyTypView = section.category === 'PROPERTY_TYPE';
-                      const isLongTerm = property.monthlyRent !== undefined && property.monthlyRent !== null;
+                      // Determine rental type based on context
+                      let isLongTerm: boolean;
+                      
+                      if (section.category === 'PROPERTY_TYPE') {
+                        // For property type filter view, check the actual property data
+                        // A property is long-term ONLY if it has monthlyRent but NO nightlyRate
+                        const hasMonthlyRent = property.monthlyRent !== undefined && property.monthlyRent !== null && property.monthlyRent > 0;
+                        const hasNightlyRate = property.nightlyRate !== undefined && property.nightlyRate !== null && property.nightlyRate > 0;
+                        
+                        if (hasNightlyRate) {
+                          // Has nightly rate = short-term
+                          isLongTerm = false;
+                        } else if (hasMonthlyRent) {
+                          // Has monthly rent but no nightly rate = long-term
+                          isLongTerm = true;
+                        } else {
+                          // Fallback to rental type state
+                          isLongTerm = rentalType === RentalType.LONG_TERM;
+                        }
+                      } else {
+                        // For categorized views, use the current rental type tab
+                        isLongTerm = rentalType === RentalType.LONG_TERM;
+                      }
+                      
                       const price = isLongTerm ? property.monthlyRent : property.nightlyRate;
                       const priceUnit = isLongTerm ? 'month' : 'night';
+                      
+                      // Debug logging for problematic properties
+                      if (property.propertyId === 'TII1ITQAxoDu' || property.propertyId === 'Y-3yD0EF-f-c') {
+                        console.log(`[HomePage] Property ${property.propertyId} classification:`, {
+                          monthlyRent: property.monthlyRent,
+                          nightlyRate: property.nightlyRate,
+                          rentalType,
+                          sectionCategory: section.category,
+                          isLongTerm,
+                          priceUnit,
+                          price,
+                        });
+                      }
                       
                       return (
                         <PropertyCard
@@ -397,6 +431,7 @@ export default function HomeScreen() {
                           rating={property.averageRating}
                           thumbnail={property.thumbnail}
                           bedrooms={property.bedrooms || property.maxGuests}
+                          propertyType={property.propertyType}
                           priceUnit={priceUnit}
                           onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
                         />
@@ -414,7 +449,7 @@ export default function HomeScreen() {
                       <Text style={[styles.showAllText, { color: textColor }]}>
                         {isExpanded 
                           ? 'Show less' 
-                          : `Show all ${section.properties.length} ${section.categoryName}`}
+                          : `Show all ${section.categoryName}`}
                       </Text>
                       <Ionicons 
                         name={isExpanded ? "chevron-up" : "chevron-forward"} 

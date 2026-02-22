@@ -24,17 +24,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'My Properties',
-          tabBarIcon: ({ color, size }) => <Ionicons name="business" size={size || 28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="list-property"
         options={{
           title: 'Add Property',
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size || 28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'My Properties',
+          tabBarIcon: ({ color, size }) => <Ionicons name="business" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen

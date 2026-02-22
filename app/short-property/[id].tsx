@@ -17,12 +17,12 @@ import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -120,6 +120,7 @@ export default function ShortTermPropertyDetailsScreen() {
             title={property.title}
             district={property.district}
             region={property.region}
+            propertyType={property.propertyType}
             averageRating={property.averageRating}
             totalReviews={property.ratingSummary?.totalReviews}
             textColor={textColor}

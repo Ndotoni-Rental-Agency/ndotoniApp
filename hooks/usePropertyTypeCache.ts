@@ -37,7 +37,12 @@ export function usePropertyTypeCache(propertyType: PropertyType | null) {
       
       console.log('[PropertyTypeCache] Fetching from:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'max-age=60',
+        },
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch property type data: ${response.status}`);

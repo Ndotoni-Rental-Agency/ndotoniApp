@@ -73,11 +73,33 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
     } catch (error: any) {
       console.error('[SignUpModal] Sign up error:', error?.name || 'Unknown', '-', error?.message);
       
-      // Show user-friendly error message
-      Alert.alert(
-        'Sign Up Error', 
-        error?.message || 'An error occurred during sign up. Please try again.'
-      );
+      // Check if user already exists but is unconfirmed
+      if (error?.existingUnconfirmed) {
+        const message = error.codeResent
+          ? 'An account with this email already exists but is not verified. A new verification code has been sent to your email.'
+          : 'An account with this email already exists but is not verified. Please check your email for the verification code.';
+        
+        Alert.alert(
+          'Account Exists',
+          message,
+          [
+            {
+              text: 'Verify Now',
+              onPress: () => {
+                onNeedsVerification(email);
+                onClose();
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+      } else {
+        // Show user-friendly error message
+        Alert.alert(
+          'Sign Up Error', 
+          error?.message || 'An error occurred during sign up. Please try again.'
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

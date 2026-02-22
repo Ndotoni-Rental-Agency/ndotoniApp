@@ -122,8 +122,10 @@ export async function getHomepagePropertiesFromCache(): Promise<HomepageCacheDat
     console.log('[HomepageCache] Fetching from:', HOMEPAGE_CACHE_URL);
     
     const response = await fetch(HOMEPAGE_CACHE_URL, {
+      cache: 'no-store', // Don't cache in browser
       headers: {
         'Accept': 'application/json',
+        'Cache-Control': 'max-age=60', // Request 1 minute cache from CloudFront
       },
     });
     
@@ -190,7 +192,12 @@ export async function fetchLongTermHomepageCache(): Promise<LongTermHomepageCach
     
     console.log('[HomepageCache] Fetching long-term from:', url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'max-age=60',
+      },
+    });
 
     if (!response.ok) {
       console.error('[HomepageCache] Failed to fetch long-term cache:', {
@@ -243,7 +250,12 @@ export async function fetchShortTermHomepageCache(): Promise<ShortTermHomepageCa
     
     console.log('[HomepageCache] Fetching short-term from:', url);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'max-age=60',
+      },
+    });
 
     if (!response.ok) {
       console.error('[HomepageCache] Failed to fetch short-term cache:', {

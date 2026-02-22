@@ -749,7 +749,7 @@ type Query {
   getApplication(applicationId: ID!): Application @aws_cognito_user_pools
   getApplicationDocumentUploadUrl(applicationId: ID!, fileName: String!, fileType: String!): MediaUploadResponse! @aws_cognito_user_pools
   getApplicationStats(landlordId: ID!): ApplicationStats! @aws_cognito_user_pools
-  getBlockedDates(endDate: AWSDate, propertyId: ID!, startDate: AWSDate): BlockedDatesResponse! @aws_cognito_user_pools
+  getBlockedDates(endDate: AWSDate, propertyId: ID!, startDate: AWSDate): BlockedDatesResponse! @aws_api_key @aws_cognito_user_pools
   getBooking(bookingId: ID!): Booking @aws_cognito_user_pools
   getBookingPayments(bookingId: ID!): [Payment!]! @aws_cognito_user_pools
   getCategorizedProperties(limitPerCategory: Int): CategorizedPropertiesResponse! @aws_api_key @aws_cognito_user_pools
