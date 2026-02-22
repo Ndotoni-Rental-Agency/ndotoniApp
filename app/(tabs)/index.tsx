@@ -40,12 +40,12 @@ export default function HomeScreen() {
     rentalType === RentalType.LONG_TERM ? 'LONG_TERM' : 'SHORT_TERM'
   );
   
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1f2937' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000000' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const headerBg = backgroundColor;
-  const borderColor = useThemeColor({ light: '#ebebeb', dark: '#374151' }, 'background');
-  const categoryBg = useThemeColor({ light: '#f7f7f7', dark: '#111827' }, 'background');
+  const borderColor = useThemeColor({ light: '#ebebeb', dark: '#1c1c1e' }, 'background');
+  const categoryBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
 
   // Category filters - Airbnb style with rental types integrated
   const categories = [
