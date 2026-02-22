@@ -22,11 +22,11 @@ export default function SearchBar({
   checkOutDate,
   moveInDate,
 }: SearchBarProps) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1C1C1E' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const cardBg = backgroundColor;
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const iconColor = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const borderColor = useThemeColor({ light: '#DDDDDD', dark: '#2C2C2E' }, 'background');
+  const iconColor = useThemeColor({ light: '#222222', dark: '#9CA3AF' }, 'text');
   const tintColor = useThemeColor({}, 'tint');
   
   const isShortTerm = rentalType === RentalType.SHORT_TERM;
@@ -107,14 +107,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingLeft: 20,
     paddingRight: 8,
-    paddingVertical: 12,
-    borderRadius: 40,
+    paddingVertical: 14,
+    borderRadius: 50,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
   },
   searchContent: {
     flex: 1,
@@ -124,15 +124,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 14,
   },
   searchTextContainer: {
     flex: 1,
   },
   searchTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 4,
+    letterSpacing: -0.2,
   },
   searchMetaRow: {
     flexDirection: 'row',
@@ -149,11 +150,16 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   searchButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });

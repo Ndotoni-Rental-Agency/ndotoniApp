@@ -28,8 +28,12 @@ export default function PropertyPricing({
     return `${currencyStr} ${amount.toLocaleString()}`;
   };
 
-  // Ensure we have valid data
-  if (!monthlyRent || monthlyRent <= 0) {
+  // Ensure we have valid data - convert to numbers and validate
+  const validMonthlyRent = Number(monthlyRent) || 0;
+  const validDeposit = deposit ? Number(deposit) : null;
+  const validServiceCharge = serviceCharge ? Number(serviceCharge) : null;
+
+  if (!validMonthlyRent || validMonthlyRent <= 0) {
     return null;
   }
 
@@ -44,22 +48,22 @@ export default function PropertyPricing({
         {/* Main Rent */}
         <View style={styles.priceRow}>
           <Text style={[styles.label, { color: secondaryText }]}>Monthly Rent</Text>
-          <Text style={[styles.price, { color: tintColor }]}>{formatPrice(monthlyRent)}</Text>
+          <Text style={[styles.price, { color: tintColor }]}>{formatPrice(validMonthlyRent)}</Text>
         </View>
         
         {/* Deposit */}
-        {deposit && deposit > 0 && (
+        {validDeposit && validDeposit > 0 && (
           <View style={styles.priceRow}>
             <Text style={[styles.label, { color: secondaryText }]}>Security Deposit</Text>
-            <Text style={[styles.value, { color: textColor }]}>{formatPrice(deposit)}</Text>
+            <Text style={[styles.value, { color: textColor }]}>{formatPrice(validDeposit)}</Text>
           </View>
         )}
         
         {/* Service Charge */}
-        {serviceCharge && serviceCharge > 0 && (
+        {validServiceCharge && validServiceCharge > 0 && (
           <View style={styles.priceRow}>
             <Text style={[styles.label, { color: secondaryText }]}>Service Charge</Text>
-            <Text style={[styles.value, { color: textColor }]}>{formatPrice(serviceCharge)}</Text>
+            <Text style={[styles.value, { color: textColor }]}>{formatPrice(validServiceCharge)}</Text>
           </View>
         )}
         

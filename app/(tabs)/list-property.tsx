@@ -242,7 +242,6 @@ export default function ListPropertyScreen() {
       district: formData.district,
       nightlyRate: parseFloat(formData.nightlyRate),
       currency: 'TZS',
-      available: hasMedia, // Publish if has media, draft otherwise
       latitude: formData.coordinates?.latitude || 0.0,
       longitude: formData.coordinates?.longitude || 0.0,
     };

@@ -85,9 +85,9 @@ export default function PropertyCard({
     <TouchableOpacity 
       style={styles.card} 
       onPress={handlePress}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
-      {/* Property Image */}
+      {/* Property Image with Enhanced Shadow */}
       <View style={styles.imageContainer}>
         {thumbnail ? (
           <Image 
@@ -100,43 +100,44 @@ export default function PropertyCard({
             <Ionicons name="image-outline" size={48} color="#999" />
           </View>
         )}
+        {/* Favorite Icon with Better Backdrop */}
         <TouchableOpacity 
           style={styles.favoriteIcon}
           onPress={onFavoritePress}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
           <Ionicons 
             name={isFavorited ? "heart" : "heart-outline"} 
-            size={22} 
-            color={isFavorited ? "#ef4444" : "#fff"} 
+            size={24} 
+            color={isFavorited ? "#FF385C" : "#fff"} 
           />
         </TouchableOpacity>
       </View>
 
-      {/* Property Info */}
+      {/* Property Info with Better Spacing */}
       <View style={styles.info}>
         <View style={styles.header}>
           <Text style={[styles.location, { color: textColor }]} numberOfLines={1}>
             {normalizeLocation(safeLocation)}
           </Text>
-          {safeBedrooms > 0 && (
-            <Text style={styles.bedrooms}>
-              {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
-            </Text>
+          {safeRating > 0 && (
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={13} color="#FFB800" />
+              <Text style={[styles.ratingText, { color: textColor }]}>{safeRating.toFixed(1)}</Text>
+            </View>
           )}
         </View>
-        {safeRating > 0 && (
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={12} color="#fbbf24" />
-            <Text style={[styles.ratingText, { color: textColor }]}>{safeRating.toFixed(1)}</Text>
-          </View>
+        {safeBedrooms > 0 && (
+          <Text style={styles.bedrooms}>
+            {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
+          </Text>
         )}
         <View style={styles.priceContainer}>
           <Text style={[styles.price, { color: textColor }]}>
             {formatCurrency(safeCurrency)} {formatPrice(safePrice)}
           </Text>
           <Text style={styles.priceUnit}>
-            {' '}per {priceUnit}
+            {' '}/ {priceUnit}
           </Text>
         </View>
       </View>
@@ -147,78 +148,85 @@ export default function PropertyCard({
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   imageContainer: {
     position: 'relative',
-    marginBottom: 8,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   image: {
     width: '100%',
-    height: CARD_WIDTH * 0.95,
-    borderRadius: 12,
+    height: CARD_WIDTH * 1.05,
+    borderRadius: 16,
   },
   imagePlaceholder: {
     width: '100%',
-    height: CARD_WIDTH * 0.95,
-    borderRadius: 12,
+    height: CARD_WIDTH * 1.05,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   favoriteIcon: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    top: 14,
+    right: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   info: {
-    gap: 2,
-    paddingHorizontal: 2,
+    gap: 4,
+    paddingHorizontal: 4,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   location: {
     fontSize: 15,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
+    letterSpacing: -0.2,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
+    gap: 3,
   },
   ratingText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   bedrooms: {
     fontSize: 14,
     color: '#717171',
-    flexShrink: 0,
+    fontWeight: '400',
+    marginBottom: 4,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 4,
+    marginTop: 2,
   },
   price: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   priceUnit: {
     fontSize: 14,
     color: '#717171',
-    marginLeft: 2,
+    fontWeight: '400',
   },
 });

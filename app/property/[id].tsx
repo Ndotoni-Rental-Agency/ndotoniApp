@@ -19,15 +19,15 @@ import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -235,11 +235,11 @@ export default function LongTermPropertyDetailsScreen() {
           )}
 
           {/* Pricing Details */}
-          {property.pricing && (
+          {property.pricing && property.pricing.monthlyRent && (
             <>
               <PropertyPricing
                 monthlyRent={property.pricing.monthlyRent}
-                currency={property.pricing.currency}
+                currency={property.pricing.currency || 'TZS'}
                 deposit={property.pricing.deposit}
                 serviceCharge={property.pricing.serviceCharge}
                 utilitiesIncluded={property.pricing.utilitiesIncluded}
