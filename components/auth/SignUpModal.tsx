@@ -1,20 +1,20 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface SignUpModalProps {
   visible: boolean;
@@ -59,24 +59,16 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       console.log('[SignUpModal] Sign up result:', result);
       
       if (result.requiresVerification) {
-        Alert.alert(
-          'Success',
-          'Account created! Please check your email to verify your account.',
-          [
-            {
-              text: 'Verify Now',
-              onPress: () => {
-                onNeedsVerification(email);
-                onClose();
-              },
-            },
-          ]
-        );
+        // Clear form
         setEmail('');
         setPassword('');
         setFirstName('');
         setLastName('');
         setPhoneNumber('');
+        
+        // Immediately redirect to verification
+        onNeedsVerification(email);
+        onClose();
       }
     } catch (error: any) {
       console.error('[SignUpModal] Sign up error:', error?.name || 'Unknown', '-', error?.message);

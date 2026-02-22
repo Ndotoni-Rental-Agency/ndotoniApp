@@ -24,8 +24,14 @@ export default function PropertyPricing({
   secondaryText,
 }: PropertyPricingProps) {
   const formatPrice = (amount: number) => {
-    return `${currency} ${amount.toLocaleString()}`;
+    const currencyStr = currency || 'TZS';
+    return `${currencyStr} ${amount.toLocaleString()}`;
   };
+
+  // Ensure we have valid data
+  if (!monthlyRent || monthlyRent <= 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -58,7 +64,7 @@ export default function PropertyPricing({
         )}
         
         {/* Utilities */}
-        {utilitiesIncluded !== null && (
+        {utilitiesIncluded !== null && utilitiesIncluded !== undefined && (
           <View style={styles.priceRow}>
             <Text style={[styles.label, { color: secondaryText }]}>Utilities</Text>
             <View style={styles.utilityBadge}>

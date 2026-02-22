@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
+import { Image } from 'expo-image';
 import React, { useState } from 'react';
-import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -21,6 +22,7 @@ export default function PropertyMediaGallery({
   onFavorite,
 }: PropertyMediaGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
   const allMedia = [...images, ...videos];
 
   if (allMedia.length === 0) return null;
@@ -40,20 +42,36 @@ export default function PropertyMediaGallery({
           const isVideo = item.match(/\.(mp4|mov|avi|webm)(\?|$)/i);
           
           return isVideo ? (
-            <Video
-              source={{ uri: item }}
-              style={styles.media}
-              resizeMode={ResizeMode.CONTAIN}
-              useNativeControls
-              shouldPlay={index === selectedIndex}
-              isLooping
-              isMuted={false}
-            />
+            <View style={styles.videoContainer}>
+              <Video
+                source={{ uri: item }}
+                style={styles.media}
+                resizeMode={ResizeMode.CONTAIN}
+                useNativeControls
+                shouldPlay={index === selectedIndex}
+                isLooping
+                isMuted={isMuted}
+              />
+              {index === selectedIndex && (
+                <TouchableOpacity
+                  style={styles.muteButton}
+                  onPress={() => setIsMuted(!isMuted)}
+                >
+                  <Ionicons
+                    name={isMuted ? 'volume-mute' : 'volume-high'}
+                    size={24}
+                    color="#fff"
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           ) : (
             <Image
               source={{ uri: item }}
               style={styles.media}
-              resizeMode="cover"
+              contentFit="cover"
+              transition={300}
+              cachePolicy="memory-disk"
             />
           );
         }}
@@ -105,9 +123,30 @@ const styles = StyleSheet.create({
     height: 420,
     position: 'relative',
   },
+  videoContainer: {
+    width: SCREEN_WIDTH,
+    height: 420,
+    position: 'relative',
+  },
   media: {
     width: SCREEN_WIDTH,
     height: 420,
+  },
+  muteButton: {
+    position: 'absolute',
+    bottom: 80,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   overlayHeader: {
     position: 'absolute',

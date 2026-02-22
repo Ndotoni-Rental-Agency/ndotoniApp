@@ -319,7 +319,7 @@ export default function ProfileScreen() {
   const menuItems = [
     { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/explore' },
     { id: 'favorites', label: 'Favorites', icon: 'heart' },
-    { id: 'bookings', label: 'My Bookings', icon: 'calendar' },
+    { id: 'bookings', label: 'My Bookings', icon: 'calendar', route: '/bookings' },
     { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/messages' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
     { id: 'help', label: 'Help & Support', icon: 'help-circle' },

@@ -1,4 +1,5 @@
 import PropertyAmenities from '@/components/property/PropertyAmenities';
+import PropertyContactSection from '@/components/property/PropertyContactSection';
 import PropertyDescription from '@/components/property/PropertyDescription';
 import PropertyHost from '@/components/property/PropertyHost';
 import PropertyLocation from '@/components/property/PropertyLocation';
@@ -213,6 +214,19 @@ export default function ShortTermPropertyDetailsScreen() {
               <View style={[styles.divider, { backgroundColor: borderColor }]} />
             </>
           )}
+
+          {/* Contact Section */}
+          <PropertyContactSection
+            propertyId={property.propertyId}
+            propertyTitle={property.title}
+            hostWhatsappNumber={property.host?.whatsappNumber}
+            textColor={textColor}
+            tintColor={tintColor}
+            secondaryText={secondaryText}
+            backgroundColor={backgroundColor}
+            borderColor={borderColor}
+          />
+          <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
           {/* Map View */}
           {coordinates && (

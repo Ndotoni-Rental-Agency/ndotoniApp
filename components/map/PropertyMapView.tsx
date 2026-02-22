@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import React, { useMemo } from 'react';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface PropertyMapViewProps {
   latitude: number;
@@ -45,7 +45,7 @@ export default function PropertyMapView({
     <View style={styles.container}>
       <MapView
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
+        provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE}
         initialRegion={{
           latitude,
           longitude,
