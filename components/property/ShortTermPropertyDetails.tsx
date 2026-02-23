@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface ShortTermPropertyDetailsProps {
   maxGuests?: number | null;
@@ -55,17 +55,21 @@ export default function ShortTermPropertyDetails({
       
       {/* Main Details Grid */}
       {mainDetails.length > 0 && (
-        <View style={styles.grid}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           {mainDetails.map((detail, index) => (
             <View key={index} style={styles.detailCard}>
               <View style={[styles.iconCircle, { backgroundColor: `${tintColor}15` }]}>
-                <Ionicons name={detail.icon as any} size={26} color={tintColor} />
+                <Ionicons name={detail.icon as any} size={24} color={tintColor} />
               </View>
-              <Text style={[styles.label, { color: secondaryText }]}>{detail.label}</Text>
               <Text style={[styles.value, { color: textColor }]}>{detail.value}</Text>
+              <Text style={[styles.label, { color: secondaryText }]}>{detail.label}</Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
       )}
       
       {/* Stay Duration at Bottom */}
@@ -97,35 +101,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+  scrollContent: {
+    paddingRight: 20,
+    gap: 16,
   },
   detailCard: {
-    flex: 1,
-    minWidth: '22%',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
+    gap: 8,
+    minWidth: 80,
   },
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  value: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  value: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
   },
   stayDurationCard: {
     flexDirection: 'row',

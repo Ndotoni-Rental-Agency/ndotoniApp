@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 interface PropertySpecificationsProps {
   bedrooms?: number | null;
@@ -42,7 +42,11 @@ export default function PropertySpecifications({
         <Text style={[styles.title, { color: textColor }]}>Property Details</Text>
       </View>
       
-      <View style={styles.grid}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {specs.map((spec, index) => (
           <View key={index} style={styles.specItem}>
             <View style={[styles.iconCircle, { backgroundColor: `${tintColor}15` }]}>
@@ -62,7 +66,7 @@ export default function PropertySpecifications({
             <Text style={[styles.label, { color: textColor }]}>Furnished</Text>
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -82,14 +86,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 20,
+  scrollContent: {
+    paddingRight: 20,
+    gap: 16,
   },
   specItem: {
     alignItems: 'center',
-    width: '30%',
+    minWidth: 80,
     gap: 8,
   },
   iconCircle: {

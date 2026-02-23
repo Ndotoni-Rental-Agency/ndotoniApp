@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingContainer: {
-    height: 320,
+    minHeight: 280,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   placeholderContainer: {
-    height: 320,
+    minHeight: 280,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,

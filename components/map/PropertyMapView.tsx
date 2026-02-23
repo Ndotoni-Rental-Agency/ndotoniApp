@@ -79,7 +79,8 @@ export default function PropertyMapView({
 
 const styles = StyleSheet.create({
   container: {
-    height: 280,
+    minHeight: 250,
+    maxHeight: 350,
     overflow: 'hidden',
   },
   map: {

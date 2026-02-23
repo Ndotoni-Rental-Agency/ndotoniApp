@@ -131,6 +131,19 @@ export default function ShortTermPropertyDetailsScreen() {
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
+          {/* Contact Section */}
+          <PropertyContactSection
+            propertyId={property.propertyId}
+            propertyTitle={property.title}
+            hostWhatsappNumber={property.host?.whatsappNumber}
+            textColor={textColor}
+            tintColor={tintColor}
+            secondaryText={secondaryText}
+            backgroundColor={backgroundColor}
+            borderColor={borderColor}
+          />
+          <View style={[styles.divider, { backgroundColor: borderColor }]} />
+
           {/* Property Details */}
           <ShortTermPropertyDetails
             maxGuests={property.maxGuests}
@@ -215,19 +228,6 @@ export default function ShortTermPropertyDetailsScreen() {
               <View style={[styles.divider, { backgroundColor: borderColor }]} />
             </>
           )}
-
-          {/* Contact Section */}
-          <PropertyContactSection
-            propertyId={property.propertyId}
-            propertyTitle={property.title}
-            hostWhatsappNumber={property.host?.whatsappNumber}
-            textColor={textColor}
-            tintColor={tintColor}
-            secondaryText={secondaryText}
-            backgroundColor={backgroundColor}
-            borderColor={borderColor}
-          />
-          <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
           {/* Map View */}
           {coordinates && (

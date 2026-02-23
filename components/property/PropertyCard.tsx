@@ -2,10 +2,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
+import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface PropertyCardProps {
   propertyId: string;
@@ -41,6 +38,9 @@ export default function PropertyCard({
   isFavorited = false,
 }: PropertyCardProps) {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const CARD_WIDTH = (width - 48) / 2;
+  
   const textColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({}, 'background');
   const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
@@ -91,7 +91,7 @@ export default function PropertyCard({
 
   return (
     <TouchableOpacity 
-      style={styles.card} 
+      style={[styles.card, { width: CARD_WIDTH }]} 
       onPress={handlePress}
       activeOpacity={0.9}
     >
@@ -100,11 +100,11 @@ export default function PropertyCard({
         {thumbnail ? (
           <Image 
             source={{ uri: thumbnail }} 
-            style={styles.image}
+            style={[styles.image, { height: CARD_WIDTH * 1.05 }]}
             resizeMode="cover"
           />
         ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: cardBg }]}>
+          <View style={[styles.imagePlaceholder, { backgroundColor: cardBg, height: CARD_WIDTH * 1.05 }]}>
             <Ionicons name="image-outline" size={48} color="#999" />
           </View>
         )}
@@ -165,7 +165,6 @@ export default function PropertyCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
     marginBottom: 24,
   },
   imageContainer: {
@@ -179,12 +178,10 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: CARD_WIDTH * 1.05,
     borderRadius: 16,
   },
   imagePlaceholder: {
     width: '100%',
-    height: CARD_WIDTH * 1.05,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',

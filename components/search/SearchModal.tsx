@@ -9,7 +9,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,11 +17,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  useWindowDimensions,
+  View
 } from 'react-native';
 import CalendarDatePicker from '../property/CalendarDatePicker';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface SearchModalProps {
   visible: boolean;
@@ -47,6 +45,7 @@ export default function SearchModal({
   onRentalTypeChange,
 }: SearchModalProps) {
   const router = useRouter();
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const [activeSection, setActiveSection] = useState<'location' | 'dates'>('location');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<FlattenedLocation | null>(null);
@@ -198,6 +197,7 @@ export default function SearchModal({
         style={[
           styles.modalContainer,
           {
+            height: SCREEN_HEIGHT * 0.92,
             transform: [{ translateY: slideAnim }],
           },
         ]}
@@ -579,7 +579,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.92,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',

@@ -2,9 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface PropertyMediaGalleryProps {
   images: string[];
@@ -23,6 +21,8 @@ export default function PropertyMediaGallery({
 }: PropertyMediaGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const MEDIA_HEIGHT = Math.min(SCREEN_HEIGHT * 0.5, 420); // Max 420px or 50% of screen
   const allMedia = [...images, ...videos];
 
   if (allMedia.length === 0) return null;
@@ -42,10 +42,10 @@ export default function PropertyMediaGallery({
           const isVideo = item.match(/\.(mp4|mov|avi|webm)(\?|$)/i);
           
           return isVideo ? (
-            <View style={styles.videoContainer}>
+            <View style={[styles.videoContainer, { width: SCREEN_WIDTH, height: MEDIA_HEIGHT }]}>
               <Video
                 source={{ uri: item }}
-                style={styles.media}
+                style={[styles.media, { width: SCREEN_WIDTH, height: MEDIA_HEIGHT }]}
                 resizeMode={ResizeMode.CONTAIN}
                 useNativeControls
                 shouldPlay={index === selectedIndex}
@@ -68,7 +68,7 @@ export default function PropertyMediaGallery({
           ) : (
             <Image
               source={{ uri: item }}
-              style={styles.media}
+              style={[styles.media, { width: SCREEN_WIDTH, height: MEDIA_HEIGHT }]}
               contentFit="cover"
               transition={300}
               cachePolicy="memory-disk"
@@ -120,17 +120,13 @@ export default function PropertyMediaGallery({
 
 const styles = StyleSheet.create({
   container: {
-    height: 420,
     position: 'relative',
   },
   videoContainer: {
-    width: SCREEN_WIDTH,
-    height: 420,
     position: 'relative',
   },
   media: {
-    width: SCREEN_WIDTH,
-    height: 420,
+    // Width and height set dynamically
   },
   muteButton: {
     position: 'absolute',
