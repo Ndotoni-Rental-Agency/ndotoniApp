@@ -127,8 +127,8 @@ export default function HomeScreen() {
         hasMore: hasMoreForCategory('MOST_VIEWED'),
       },
       {
-        title: rentalType === RentalType.LONG_TERM ? 'More Properties' : 'Featured Stays',
-        categoryName: 'featured',
+        title: rentalType === RentalType.LONG_TERM ? 'Premium Properties' : 'Luxury Stays',
+        categoryName: 'premium',
         properties: appData.categorizedProperties.more?.properties || [],
         category: 'MORE' as const,
         hasMore: hasMoreForCategory('MORE'),

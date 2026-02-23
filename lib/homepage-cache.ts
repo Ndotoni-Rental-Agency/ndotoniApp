@@ -212,17 +212,21 @@ export async function fetchLongTermHomepageCache(): Promise<LongTermHomepageCach
     console.log('[HomepageCache] Long-term cache hit', {
       generatedAt: data.generatedAt,
       lowestPriceCount: data.lowestPrice?.length || 0,
-      nearbyCount: data.nearby?.length || 0,
+      recentCount: data.recent?.length || 0,
+      featuredCount: data.featured?.length || 0,
+      highestPriceCount: data.highestPrice?.length || 0,
     });
 
-    // Ensure all expected properties exist
+    // Map backend structure to expected structure
+    // Backend returns: lowestPrice, highestPrice, featured, recent
+    // Frontend expects: lowestPrice, nearby, mostViewed, more
     return {
       lowestPrice: data.lowestPrice || [],
-      nearby: data.nearby || [],
-      mostViewed: data.mostViewed || [],
-      recentlyViewed: data.recentlyViewed || [],
-      favorites: data.favorites || [],
-      more: data.more || [],
+      nearby: data.recent || [],  // Map 'recent' to 'nearby'
+      mostViewed: data.featured || [],  // Map 'featured' to 'mostViewed'
+      recentlyViewed: [],
+      favorites: [],
+      more: data.highestPrice || [],  // Map 'highestPrice' to 'more'
       generatedAt: data.generatedAt || new Date().toISOString(),
     };
   } catch (error) {
@@ -271,9 +275,14 @@ export async function fetchShortTermHomepageCache(): Promise<ShortTermHomepageCa
       generatedAt: data.generatedAt,
       lowestPriceCount: data.lowestPrice?.length || 0,
       topRatedCount: data.topRated?.length || 0,
+      featuredCount: data.featured?.length || 0,
+      recentCount: data.recent?.length || 0,
+      highestPriceCount: data.highestPrice?.length || 0,
     });
 
     // Map backend structure to frontend structure
+    // Backend returns: lowestPrice, highestPrice, topRated, featured, recent
+    // Frontend expects: lowestPrice, highestPrice, topRated, featured, recent (same keys!)
     return {
       lowestPrice: (data.lowestPrice || []).map(mapBackendShortTermToFrontend),
       highestPrice: (data.highestPrice || []).map(mapBackendShortTermToFrontend),

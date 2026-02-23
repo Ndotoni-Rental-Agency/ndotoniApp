@@ -1,14 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
-import { getPropertiesByCategory } from '@/lib/graphql/queries';
-import { cachedGraphQL } from '@/lib/cache';
-import { 
-  getHomepagePropertiesFromCache, 
-  transformCacheToAppData,
-  fetchLongTermHomepageCache,
-  fetchShortTermHomepageCache,
-  ShortTermPropertyCard
-} from '@/lib/homepage-cache';
 import { PropertyCard, PropertyType } from '@/lib/API';
+import { cachedGraphQL } from '@/lib/cache';
+import { getPropertiesByCategory } from '@/lib/graphql/queries';
+import {
+    fetchLongTermHomepageCache,
+    fetchShortTermHomepageCache,
+    ShortTermPropertyCard
+} from '@/lib/homepage-cache';
+import { useCallback, useEffect, useState } from 'react';
 
 export type PropertyCategory = 'NEARBY' | 'LOWEST_PRICE' | 'FAVORITES' | 'MOST_VIEWED' | 'RECENTLY_VIEWED' | 'MORE';
 export type RentalType = 'LONG_TERM' | 'SHORT_TERM';
@@ -106,7 +104,17 @@ export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: 
           throw new Error('Failed to load short-term homepage cache from CloudFront');
         }
         
+        console.log('[useCategorizedProperties] Short-term cache data:', {
+          lowestPriceCount: cacheData.lowestPrice?.length || 0,
+          highestPriceCount: cacheData.highestPrice?.length || 0,
+          topRatedCount: cacheData.topRated?.length || 0,
+          featuredCount: cacheData.featured?.length || 0,
+          recentCount: cacheData.recent?.length || 0,
+        });
+        
         // Transform short-term data to app data format
+        // Backend: lowestPrice, highestPrice, topRated, featured, recent
+        // Frontend sections: lowestPrice, nearby, mostViewed, more
         const appData = {
           categorizedProperties: {
             lowestPrice: {
@@ -144,18 +152,25 @@ export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: 
               category: 'MOST_VIEWED' as const,
             },
             more: {
-              properties: cacheData.featured.map((p: ShortTermPropertyCard) => ({ 
+              properties: cacheData.highestPrice.map((p: ShortTermPropertyCard) => ({ 
                 ...p, 
                 __typename: 'PropertyCard' as const,
                 bedrooms: p.maxGuests,
                 monthlyRent: p.nightlyRate,
                 propertyType: p.propertyType as PropertyType,
               })),
-              count: cacheData.featured.length,
+              count: cacheData.highestPrice.length,
               category: 'MORE' as const,
             },
           },
         };
+        
+        console.log('[useCategorizedProperties] Transformed app data:', {
+          lowestPrice: appData.categorizedProperties.lowestPrice.count,
+          nearby: appData.categorizedProperties.nearby.count,
+          mostViewed: appData.categorizedProperties.mostViewed.count,
+          more: appData.categorizedProperties.more.count,
+        });
         
         setAppData(appData);
       }
