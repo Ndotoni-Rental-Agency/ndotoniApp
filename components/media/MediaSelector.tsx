@@ -8,14 +8,14 @@ import { ResizeMode, Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface MediaSelectorProps {
@@ -234,97 +234,104 @@ export default function MediaSelector({
       const uploadedUrls: string[] = [];
       const newThumbnails: Record<string, string> = { ...videoThumbnails };
 
-      // Upload all assets in parallel for better performance
-      const uploadPromises = assets.map(async (asset, index) => {
-        const filename = asset.uri.split('/').pop() || 'media.jpg';
-        const match = /\.(\w+)$/.exec(filename);
+      // Upload all assets sequentially for videos (to avoid memory issues), parallel for images
+      for (let index = 0; index < assets.length; index++) {
+        const asset = assets[index];
         
-        // Determine content type based on file extension or asset type
-        let type = 'image/jpeg';
-        const isVideo = asset.type === 'video' || (match && ['mp4', 'mov', 'avi', 'webm'].includes(match[1].toLowerCase()));
-        
-        if (match) {
-          const ext = match[1].toLowerCase();
-          if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
-            type = `video/${ext === 'mov' ? 'quicktime' : ext}`;
-          } else {
-            type = `image/${ext}`;
+        try {
+          const filename = asset.uri.split('/').pop() || 'media.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          
+          // Determine content type based on file extension or asset type
+          let type = 'image/jpeg';
+          const isVideo = asset.type === 'video' || (match && ['mp4', 'mov', 'avi', 'webm'].includes(match[1].toLowerCase()));
+          
+          if (match) {
+            const ext = match[1].toLowerCase();
+            if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
+              type = `video/${ext === 'mov' ? 'quicktime' : ext}`;
+            } else {
+              type = `image/${ext}`;
+            }
+          } else if (isVideo) {
+            type = 'video/mp4';
           }
-        } else if (isVideo) {
-          type = 'video/mp4';
-        }
 
-        // Generate thumbnail for videos (in parallel)
-        let thumbnailPromise: Promise<string | null> | null = null;
-        if (isVideo) {
-          thumbnailPromise = generateVideoThumbnail(asset.uri);
-        }
+          console.log(`[MediaSelector] Uploading ${isVideo ? 'video' : 'image'} ${index + 1}/${assets.length}`);
 
-        // Step 1: Get presigned URL from backend
-        const isAuthenticated = await GraphQLClient.isAuthenticated();
-        const urlData = isAuthenticated
-          ? await GraphQLClient.executeAuthenticated<{ getMediaUploadUrl: any }>(
-              getMediaUploadUrl,
-              { 
-                fileName: filename,
-                contentType: type
-              }
-            )
-          : await GraphQLClient.executePublic<{ getMediaUploadUrl: any }>(
-              getMediaUploadUrl,
-              { 
-                fileName: filename,
-                contentType: type
-              }
-            );
-
-        if (!urlData.getMediaUploadUrl?.uploadUrl) {
-          throw new Error('Failed to get upload URL');
-        }
-
-        const { uploadUrl, fileUrl } = urlData.getMediaUploadUrl;
-
-        // Step 2: Upload file to S3 using presigned URL
-        const response = await fetch(asset.uri);
-        const blob = await response.blob();
-
-        await fetch(uploadUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: {
-            'Content-Type': type,
-          },
-        });
-
-        // Wait for thumbnail if it was being generated
-        if (thumbnailPromise) {
-          const thumbnailUri = await thumbnailPromise;
-          if (thumbnailUri) {
-            newThumbnails[fileUrl] = thumbnailUri;
+          // Generate thumbnail for videos
+          if (isVideo) {
+            const thumbnailUri = await generateVideoThumbnail(asset.uri);
+            if (thumbnailUri) {
+              newThumbnails[asset.uri] = thumbnailUri;
+            }
           }
+
+          // Step 1: Get presigned URL from backend
+          const isAuthenticated = await GraphQLClient.isAuthenticated();
+          const urlData = isAuthenticated
+            ? await GraphQLClient.executeAuthenticated<{ getMediaUploadUrl: any }>(
+                getMediaUploadUrl,
+                { 
+                  fileName: filename,
+                  contentType: type
+                }
+              )
+            : await GraphQLClient.executePublic<{ getMediaUploadUrl: any }>(
+                getMediaUploadUrl,
+                { 
+                  fileName: filename,
+                  contentType: type
+                }
+              );
+
+          if (!urlData.getMediaUploadUrl?.uploadUrl) {
+            throw new Error('Failed to get upload URL');
+          }
+
+          const { uploadUrl, fileUrl } = urlData.getMediaUploadUrl;
+
+          // Step 2: Upload file to S3 using presigned URL
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+
+          // Log file size for debugging
+          const fileSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+          console.log(`[MediaSelector] Uploading ${isVideo ? 'video' : 'image'}: ${fileSizeMB}MB`);
+
+          if (isVideo && blob.size > 50 * 1024 * 1024) {
+            // Video is larger than 50MB - warn user
+            console.warn(`[MediaSelector] Large video detected: ${fileSizeMB}MB - this may take a while`);
+          }
+
+          await fetch(uploadUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: {
+              'Content-Type': type,
+            },
+          });
+
+          console.log(`[MediaSelector] Upload complete: ${fileUrl}`);
+
+          // Store thumbnail mapping with the final URL
+          if (isVideo && newThumbnails[asset.uri]) {
+            newThumbnails[fileUrl] = newThumbnails[asset.uri];
+            delete newThumbnails[asset.uri];
+          }
+
+          // Update progress
+          setUploadProgress({ current: index + 1, total: assets.length });
+
+          uploadedUrls.push(fileUrl);
+        } catch (error) {
+          console.error(`[MediaSelector] Failed to upload asset ${index + 1}:`, error);
+          // Continue with next asset
         }
+      }
 
-        // Update progress
-        setUploadProgress({ current: index + 1, total: assets.length });
-
-        return fileUrl;
-      });
-
-      // Wait for all uploads to complete (even if some fail)
-      const results = await Promise.allSettled(uploadPromises);
-      
-      // Collect successful uploads and count failures
-      let failedCount = 0;
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          uploadedUrls.push(result.value);
-        } else {
-          failedCount++;
-          console.error('[MediaSelector] Upload failed:', result.reason);
-        }
-      });
-
-      // Show warning if some uploads failed
+      // Show result
+      const failedCount = assets.length - uploadedUrls.length;
       if (failedCount > 0) {
         Alert.alert(
           'Partial Upload',
