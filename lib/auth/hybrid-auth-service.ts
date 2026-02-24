@@ -4,25 +4,25 @@
  */
 
 import {
-    confirmResetPassword as amplifyConfirmResetPassword,
-    confirmSignUp as amplifyConfirmSignUp,
-    fetchAuthSession as amplifyFetchAuthSession,
-    getCurrentUser as amplifyGetCurrentUser,
-    resendSignUpCode as amplifyResendCode,
-    resetPassword as amplifyResetPassword,
-    signIn as amplifySignIn,
-    signOut as amplifySignOut,
-    signUp as amplifySignUp
+  confirmResetPassword as amplifyConfirmResetPassword,
+  confirmSignUp as amplifyConfirmSignUp,
+  fetchAuthSession as amplifyFetchAuthSession,
+  getCurrentUser as amplifyGetCurrentUser,
+  resendSignUpCode as amplifyResendCode,
+  resetPassword as amplifyResetPassword,
+  signIn as amplifySignIn,
+  signOut as amplifySignOut,
+  signUp as amplifySignUp
 } from 'aws-amplify/auth';
 
 import {
-    getAccessToken as oidcGetAccessToken,
-    getCurrentUser as oidcGetCurrentUser,
-    getIdToken as oidcGetIdToken,
-    isAuthenticated as oidcIsAuthenticated,
-    signInWithFacebook as oidcSignInWithFacebook,
-    signInWithGoogle as oidcSignInWithGoogle,
-    signOutWithRedirect as oidcSignOut
+  getAccessToken as oidcGetAccessToken,
+  getCurrentUser as oidcGetCurrentUser,
+  getIdToken as oidcGetIdToken,
+  isAuthenticated as oidcIsAuthenticated,
+  signInWithFacebook as oidcSignInWithFacebook,
+  signInWithGoogle as oidcSignInWithGoogle,
+  signOutWithRedirect as oidcSignOut
 } from './oidc-manager';
 
 export type AuthMethod = 'amplify' | 'oidc';
@@ -163,13 +163,21 @@ export class HybridAuthService {
       return oidcToken;
     }
 
-    // Try Amplify
+    // Try Amplify with automatic refresh
     try {
-      const session = await amplifyFetchAuthSession({ forceRefresh: false });
-      const token = session.tokens?.accessToken?.toString();
+      // First try without forcing refresh
+      let session = await amplifyFetchAuthSession({ forceRefresh: false });
+      let token = session.tokens?.accessToken?.toString();
+      
+      // If no token or token is expired, force refresh
+      if (!token || this.isTokenExpired(session.tokens?.accessToken)) {
+        console.log('[HybridAuthService] Token expired or missing, forcing refresh...');
+        session = await amplifyFetchAuthSession({ forceRefresh: true });
+        token = session.tokens?.accessToken?.toString();
+      }
       
       if (!token) {
-        console.warn('[HybridAuthService] No access token in session');
+        console.warn('[HybridAuthService] No access token after refresh');
         return undefined;
       }
       
@@ -179,11 +187,25 @@ export class HybridAuthService {
       
       // Check if it's a token expiration error
       if (error?.name === 'NotAuthorizedException' || error?.message?.includes('expired')) {
-        console.log('[HybridAuthService] Token expired, user needs to sign in again');
+        console.log('[HybridAuthService] Token expired and refresh failed, user needs to sign in again');
       }
       
       return undefined;
     }
+  }
+
+  /**
+   * Check if token is expired or about to expire (within 5 minutes)
+   */
+  private static isTokenExpired(token: any): boolean {
+    if (!token?.payload?.exp) return true;
+    
+    const expirationTime = token.payload.exp * 1000; // Convert to milliseconds
+    const currentTime = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    // Consider expired if less than 5 minutes remaining
+    return expirationTime - currentTime < fiveMinutes;
   }
 
   /**

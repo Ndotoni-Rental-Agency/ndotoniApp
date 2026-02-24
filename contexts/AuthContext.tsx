@@ -5,21 +5,21 @@
  */
 
 import {
-    ApplicationResponse,
-    UserProfile,
-    UserType
+  ApplicationResponse,
+  UserProfile,
+  UserType
 } from '@/lib/API';
 import HybridAuthService from '@/lib/auth/hybrid-auth-service';
 import { GraphQLClient } from '@/lib/graphql-client';
 import {
-    submitLandlordApplication as submitLandlordApplicationMutation,
-    updateUser as updateUserMutation
+  submitLandlordApplication as submitLandlordApplicationMutation,
+  updateUser as updateUserMutation
 } from '@/lib/graphql/mutations';
 import { getMe } from '@/lib/graphql/queries';
 import {
-    extractErrorMessage,
-    isUserAlreadyExistsError,
-    isUserNotConfirmedError
+  extractErrorMessage,
+  isUserAlreadyExistsError,
+  isUserNotConfirmedError
 } from '@/lib/utils/errorUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -161,8 +161,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.warn('[AuthContext] getMe returned no user data');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AuthContext] Error fetching user from backend:', error);
+      
+      // If it's an auth error, clear cached user data
+      if (error?.message?.includes('Unauthorized') || 
+          error?.message?.includes('expired') ||
+          error?.message?.includes('No valid authentication')) {
+        console.log('[AuthContext] Auth error detected, clearing cached user data');
+        await AsyncStorage.removeItem(USER_KEY);
+        setAuthState({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      }
+      
       // Re-throw to let caller handle it
       throw error;
     }
