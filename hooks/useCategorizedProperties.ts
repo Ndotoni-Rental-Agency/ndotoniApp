@@ -1,10 +1,8 @@
 import { PropertyCard, PropertyType } from '@/lib/API';
-import { cachedGraphQL } from '@/lib/cache';
-import { getPropertiesByCategory } from '@/lib/graphql/queries';
 import {
-    fetchLongTermHomepageCache,
-    fetchShortTermHomepageCache,
-    ShortTermPropertyCard
+  fetchLongTermHomepageCache,
+  fetchShortTermHomepageCache,
+  ShortTermPropertyCard
 } from '@/lib/homepage-cache';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -27,42 +25,28 @@ interface CategorizedPropertiesResponse {
   more?: CategoryPropertyResponse;
 }
 
-interface Region {
-  id: string;
-  name: string;
-}
-
 interface AppInitialStateResponse {
   categorizedProperties: CategorizedPropertiesResponse;
 }
 
 // =============================================================================
 // USE CATEGORIZED PROPERTIES (Optimized) - Supports both Long-Term and Short-Term
+// Always loads from CloudFront cache (public, no auth) for maximum speed
 // =============================================================================
-export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: RentalType = 'LONG_TERM') {
+export function useCategorizedProperties(rentalType: RentalType = 'LONG_TERM') {
   const [appData, setAppData] = useState<AppInitialStateResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [categoryTokens, setCategoryTokens] = useState<Record<string, string | null>>({
-    nearby: null,
-    lowestPrice: null,
-    mostViewed: null,
-    favorites: null,
-    recentlyViewed: null,
-    more: null,
-  });
   const [hasInitialized, setHasInitialized] = useState(false);
-  const [loadedCategories, setLoadedCategories] = useState<Set<PropertyCategory>>(new Set<PropertyCategory>(['NEARBY', 'LOWEST_PRICE']));
-  const [loadingCategories, setLoadingCategories] = useState<Set<PropertyCategory>>(new Set<PropertyCategory>());
 
-  // Fetch initial app state from CloudFront cache (no fallback)
+  // Fetch initial app state from CloudFront cache (FAST - no auth headers, no GraphQL)
   const fetchInitialData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
       if (rentalType === 'LONG_TERM') {
-        // Fetch long-term properties
+        // Fetch long-term properties from CloudFront
         const cacheData = await fetchLongTermHomepageCache();
         
         if (!cacheData) {
@@ -97,7 +81,7 @@ export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: 
         
         setAppData(appData);
       } else {
-        // Fetch short-term properties
+        // Fetch short-term properties from CloudFront
         const cacheData = await fetchShortTermHomepageCache();
         
         if (!cacheData) {
@@ -175,17 +159,6 @@ export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: 
         setAppData(appData);
       }
       
-      const loaded = new Set<PropertyCategory>(['NEARBY', 'LOWEST_PRICE', 'MOST_VIEWED', 'MORE']);
-      setLoadedCategories(loaded);
-      setCategoryTokens({
-        nearby: null,
-        lowestPrice: null,
-        mostViewed: null,
-        more: null,
-        favorites: null,
-        recentlyViewed: null,
-      });
-      
       setHasInitialized(true);
       setError(null);
     } catch (err) {
@@ -196,247 +169,16 @@ export function useCategorizedProperties(isAuthenticated?: boolean, rentalType: 
     }
   }, [rentalType]);
 
-  const loadMoreForCategory = useCallback(async (category: PropertyCategory) => {
-    // Map category enum to camelCase key
-    let key: string;
-    switch (category) {
-      case 'MOST_VIEWED':
-        key = 'mostViewed';
-        break;
-      case 'LOWEST_PRICE':
-        key = 'lowestPrice';
-        break;
-      case 'RECENTLY_VIEWED':
-        key = 'recentlyViewed';
-        break;
-      case 'NEARBY':
-        key = 'nearby';
-        break;
-      case 'MORE':
-        key = 'more';
-        break;
-      case 'FAVORITES':
-        key = 'favorites';
-        break;
-    }
-    
-    const nextToken = categoryTokens[key];
-    
-    if (loadingCategories.has(category)) {
-      return;
-    }
-    
-    if (!nextToken || !appData) {
-      return;
-    }
-
-    try {
-      setLoadingCategories(prev => new Set(prev).add(category));
-      
-      const variables = { category, limit: 10, nextToken };
-      
-      const response = isAuthenticated 
-        ? await cachedGraphQL.queryAuthenticated({ query: getPropertiesByCategory, variables })
-        : await cachedGraphQL.queryPublic({ query: getPropertiesByCategory, variables });
-      const result = response.data?.getPropertiesByCategory;
-
-      if (result) {
-        setAppData(prev => {
-          if (!prev) return prev;
-          const updated = { ...prev };
-          const catKey = key as keyof CategorizedPropertiesResponse;
-
-          if (updated.categorizedProperties[catKey]) {
-            const existingIds = new Set(updated.categorizedProperties[catKey]!.properties.map((p: PropertyCard) => p.propertyId));
-            const newProperties = result.properties.filter((p: PropertyCard) => !existingIds.has(p.propertyId));
-            
-            updated.categorizedProperties[catKey] = {
-              ...updated.categorizedProperties[catKey]!,
-              properties: [
-                ...updated.categorizedProperties[catKey]!.properties,
-                ...newProperties,
-              ],
-              nextToken: result.nextToken,
-            };
-          }
-          return updated;
-        });
-
-        setCategoryTokens(prev => ({ ...prev, [key]: result.nextToken || null }));
-      }
-    } catch (err) {
-      console.error(`Error loading more for category ${category}:`, err);
-    } finally {
-      // Remove from loading set
-      setLoadingCategories(prev => {
-        const next = new Set(prev);
-        next.delete(category);
-        return next;
-      });
-    }
-  }, [categoryTokens, appData, isAuthenticated, loadingCategories]);
-
-  const loadCategory = useCallback(async (category: PropertyCategory) => {
-    if (loadedCategories.has(category)) return;
-
-    try {
-      const variables = { category, limit: 10 };
-      
-      const response = isAuthenticated
-        ? await cachedGraphQL.queryAuthenticated({ query: getPropertiesByCategory, variables })
-        : await cachedGraphQL.queryPublic({ query: getPropertiesByCategory, variables });
-      const result = response.data?.getPropertiesByCategory;
-
-      if (result) {
-        setAppData(prev => {
-          if (!prev) return prev;
-          const updated = { ...prev };
-          
-          // Map category enum to camelCase key
-          let key: keyof CategorizedPropertiesResponse;
-          switch (category) {
-            case 'MOST_VIEWED':
-              key = 'mostViewed';
-              break;
-            case 'LOWEST_PRICE':
-              key = 'lowestPrice';
-              break;
-            case 'RECENTLY_VIEWED':
-              key = 'recentlyViewed';
-              break;
-            case 'NEARBY':
-              key = 'nearby';
-              break;
-            case 'MORE':
-              key = 'more';
-              break;
-            case 'FAVORITES':
-              key = 'favorites';
-              break;
-          }
-
-          updated.categorizedProperties[key] = result;
-          return updated;
-        });
-
-        // Also use proper camelCase for tokens
-        let tokenKey: string;
-        switch (category) {
-          case 'MOST_VIEWED':
-            tokenKey = 'mostViewed';
-            break;
-          case 'LOWEST_PRICE':
-            tokenKey = 'lowestPrice';
-            break;
-          case 'RECENTLY_VIEWED':
-            tokenKey = 'recentlyViewed';
-            break;
-          case 'NEARBY':
-            tokenKey = 'nearby';
-            break;
-          case 'MORE':
-            tokenKey = 'more';
-            break;
-          case 'FAVORITES':
-            tokenKey = 'favorites';
-            break;
-        }
-        
-        setCategoryTokens(prev => ({ ...prev, [tokenKey]: result.nextToken || null }));
-        setLoadedCategories(prev => new Set(prev).add(category));
-      }
-    } catch (err) {
-      console.error(`Error loading category ${category}:`, err);
-      setLoadedCategories(prev => new Set(prev).add(category));
-    }
-  }, [loadedCategories, isAuthenticated]);
-
-  const hasMoreForCategory = useCallback((category: PropertyCategory) => {
-    // Map category enum to camelCase key
-    let key: string;
-    switch (category) {
-      case 'MOST_VIEWED':
-        key = 'mostViewed';
-        break;
-      case 'LOWEST_PRICE':
-        key = 'lowestPrice';
-        break;
-      case 'RECENTLY_VIEWED':
-        key = 'recentlyViewed';
-        break;
-      case 'NEARBY':
-        key = 'nearby';
-        break;
-      case 'MORE':
-        key = 'more';
-        break;
-      case 'FAVORITES':
-        key = 'favorites';
-        break;
-    }
-    return !!categoryTokens[key];
-  }, [categoryTokens]);
-
   // Fetch on hook mount and when rentalType changes
   useEffect(() => { 
     fetchInitialData(); 
   }, [fetchInitialData]);
 
-  // Refetch when authentication status changes (for favorites, etc.)
-  useEffect(() => {
-    if (hasInitialized && isAuthenticated !== undefined) {
-      fetchInitialData();
-    }
-  }, [isAuthenticated]);
-
-  return { appData, isLoading, error, refetch: fetchInitialData, loadMoreForCategory, loadCategory, hasMoreForCategory, hasInitialized, isCategoryLoaded: (cat: PropertyCategory) => loadedCategories.has(cat) };
-}
-
-// =============================================================================
-// USE SINGLE CATEGORY PROPERTIES (Optimized)
-// =============================================================================
-export function useCategoryProperties(category: PropertyCategory, isAuthenticated?: boolean) {
-  const [properties, setProperties] = useState<PropertyCard[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [nextToken, setNextToken] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [hasInitialized, setHasInitialized] = useState(false);
-
-  const fetchCategoryProperties = useCallback(async (limit = 20, loadMore = false) => {
-    if (!loadMore && hasInitialized) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const variables: any = { category, limit };
-      if (loadMore && nextToken) variables.nextToken = nextToken;
-
-      const response = isAuthenticated
-        ? await cachedGraphQL.queryAuthenticated({ query: getPropertiesByCategory, variables })
-        : await cachedGraphQL.queryPublic({ query: getPropertiesByCategory, variables });
-      const result = response.data?.getPropertiesByCategory;
-      const items: PropertyCard[] = (result?.properties || []).map((p: PropertyCard) => ({ ...p, ward: p.district }));
-
-      if (loadMore) setProperties(prev => [...prev, ...items]);
-      else setProperties(items);
-
-      setNextToken(result?.nextToken || null);
-      setHasMore(!!result?.nextToken);
-      setHasInitialized(true);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to load ${category.toLowerCase()} properties`;
-      setError(errorMessage);
-      console.error(`Error fetching ${category} properties:`, err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [category, nextToken, isAuthenticated, hasInitialized]);
-
-  const loadMore = useCallback(() => { if (!isLoading && hasMore) fetchCategoryProperties(20, true); }, [fetchCategoryProperties, isLoading, hasMore]);
-
-  useEffect(() => { fetchCategoryProperties(); }, [category, isAuthenticated]);
-
-  return { properties, isLoading, error, loadMore, hasMore, refetch: () => fetchCategoryProperties(), hasInitialized };
+  return { 
+    appData, 
+    isLoading, 
+    error, 
+    refetch: fetchInitialData, 
+    hasInitialized,
+  };
 }

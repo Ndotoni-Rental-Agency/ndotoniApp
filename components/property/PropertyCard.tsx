@@ -1,8 +1,9 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface PropertyCardProps {
   propertyId: string;
@@ -40,9 +41,10 @@ export default function PropertyCard({
   const router = useRouter();
   const { width } = useWindowDimensions();
   const CARD_WIDTH = (width - 48) / 2;
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   
   const textColor = useThemeColor({}, 'text');
-  const backgroundColor = useThemeColor({}, 'background');
   const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
 
   const formatPrice = (amount: number) => {
@@ -97,12 +99,29 @@ export default function PropertyCard({
     >
       {/* Property Image with Enhanced Shadow */}
       <View style={styles.imageContainer}>
-        {thumbnail ? (
-          <Image 
-            source={{ uri: thumbnail }} 
-            style={[styles.image, { height: CARD_WIDTH * 1.05 }]}
-            resizeMode="cover"
-          />
+        {thumbnail && !imageError ? (
+          <>
+            <Image 
+              source={{ uri: thumbnail }} 
+              style={[styles.image, { height: CARD_WIDTH * 1.05 }]}
+              contentFit="cover"
+              transition={200}
+              priority="normal"
+              cachePolicy="memory-disk"
+              onLoadStart={() => setImageLoading(true)}
+              onLoadEnd={() => setImageLoading(false)}
+              onError={() => {
+                setImageError(true);
+                setImageLoading(false);
+              }}
+              placeholder={require('@/assets/images/partial-react-logo.png')}
+            />
+            {imageLoading && (
+              <View style={[styles.imageLoader, { height: CARD_WIDTH * 1.05 }]}>
+                <ActivityIndicator size="small" color="#999" />
+              </View>
+            )}
+          </>
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: cardBg, height: CARD_WIDTH * 1.05 }]}>
             <Ionicons name="image-outline" size={48} color="#999" />
@@ -183,6 +202,17 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageLoader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -27,6 +27,7 @@ export default function MapCoordinatesPicker({
   district, 
   ward 
 }: MapCoordinatesPickerProps) {
+  const mapRef = React.useRef<MapView>(null);
   const [markerCoords, setMarkerCoords] = useState<Coordinates | null>(value);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
@@ -103,17 +104,20 @@ export default function MapCoordinatesPicker({
         const geocoded = await geocodeAddress();
         
         if (geocoded) {
-          // Always update map region to new location
-          setMapRegion({
-            latitude: geocoded.latitude,
-            longitude: geocoded.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          });
-          
           // Update marker position if user hasn't manually set coordinates
           if (!value) {
             setMarkerCoords(geocoded);
+          }
+          
+          // Animate to new location without updating state
+          // This prevents re-renders that break the map
+          if (mapRef.current) {
+            mapRef.current.animateToRegion({
+              latitude: geocoded.latitude,
+              longitude: geocoded.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }, 1000);
           }
         }
         
@@ -179,14 +183,17 @@ export default function MapCoordinatesPicker({
 
       console.log('[MapCoordinatesPicker] Current location:', coords);
 
-      // Update marker and map region
+      // Update marker and animate map
       setMarkerCoords(coords);
-      setMapRegion({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
+      
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      }
 
       setIsGeocoding(false);
     } catch (error) {
@@ -210,16 +217,28 @@ export default function MapCoordinatesPicker({
           </Text>
         </View>
       ) : mapRegion ? (
-        <View style={styles.mapContainer}>
+        <View 
+          style={styles.mapContainer}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+        >
+          {Platform.OS === 'android' && (
+            <View style={styles.debugOverlay}>
+              <Text style={{ fontSize: 10, color: '#666' }}>
+                Android Map - API Key: {MAPS_CONFIG.GOOGLE_API_KEY ? 'Present' : 'Missing'}
+              </Text>
+            </View>
+          )}
           <MapView
+            ref={mapRef}
             style={styles.map}
             provider={Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE}
-            region={mapRegion}
-            onRegionChangeComplete={setMapRegion}
+            initialRegion={mapRegion}
             scrollEnabled={true}
             zoomEnabled={true}
             pitchEnabled={false}
             rotateEnabled={false}
+            onMapReady={() => console.log('[MapCoordinatesPicker] Map is ready')}
           >
             {markerCoords && (
               <Marker
@@ -324,9 +343,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    backgroundColor: '#f0f0f0', // Add background to see if container is rendering
   },
   map: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   coordsOverlay: {
     position: 'absolute',
@@ -368,6 +389,15 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 12,
     textAlign: 'center',
+  },
+  debugOverlay: {
+    position: 'absolute',
+    top: 60,
+    right: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 4,
+    borderRadius: 4,
+    zIndex: 1000,
   },
   buttonRow: {
     flexDirection: 'row',

@@ -1,27 +1,30 @@
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import LocationSelector from '@/components/location/LocationSelector';
+import PropertyMapView from '@/components/map/PropertyMapView';
 import MediaSelector from '@/components/media/MediaSelector';
-import MapCoordinatesPicker from '@/components/property/MapCoordinatesPicker';
+import CoordinatesInput from '@/components/property/CoordinatesInput';
+import { MAPS_CONFIG } from '@/config/maps';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { geocodeLocation } from '@/lib/geocoding-service';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { createPropertyDraft, createShortTermPropertyDraft } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Keyboard,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -82,6 +85,41 @@ export default function ListPropertyScreen() {
   const [showSignUp, setShowSignUp] = useState(false);
   const [showPropertyTypePicker, setShowPropertyTypePicker] = useState(false);
   const [showTitleGenerator, setShowTitleGenerator] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState<{ latitude: number; longitude: number }>({
+    latitude: -6.369028,
+    longitude: 34.888822,
+  });
+
+  // Geocode location when region/district/ward changes
+  useEffect(() => {
+    const updateMapLocation = async () => {
+      if (!formData.region) return;
+
+      try {
+        // Don't pass saved coordinates - we want fresh geocoding for the new location
+        const result = await geocodeLocation(
+          {
+            region: formData.region,
+            district: formData.district,
+            ward: formData.ward,
+          },
+          null // Force fresh geocoding
+        );
+        
+        console.log('[ListProperty] Geocoded location:', result);
+        setMapCoordinates(result.coordinates);
+        
+        // Auto-update coordinates field with geocoded location
+        // User can override by manually entering or using current location
+        setFormData(prev => ({ ...prev, coordinates: result.coordinates }));
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        setMapCoordinates(MAPS_CONFIG.TANZANIA_CENTER);
+      }
+    };
+
+    updateMapLocation();
+  }, [formData.region, formData.district, formData.ward]);
 
   // Generate multiple title variations
   const generateTitleOptions = () => {
@@ -501,12 +539,20 @@ export default function ListPropertyScreen() {
           {formData.region && (
             <View style={styles.section}>
               <Text style={[styles.label, { color: textColor }]}>GPS Coordinates (optional)</Text>
-              <MapCoordinatesPicker
+              
+              {/* Always show map - updates based on region/district or manual coordinates */}
+              <View style={styles.mapPreview}>
+                <PropertyMapView
+                  key={`${formData.coordinates?.latitude || mapCoordinates.latitude}-${formData.coordinates?.longitude || mapCoordinates.longitude}`}
+                  latitude={formData.coordinates?.latitude || mapCoordinates.latitude}
+                  longitude={formData.coordinates?.longitude || mapCoordinates.longitude}
+                  title={formData.title || 'Property Location'}
+                />
+              </View>
+              
+              <CoordinatesInput
                 value={formData.coordinates}
                 onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
-                region={formData.region}
-                district={formData.district}
-                ward={formData.ward}
               />
             </View>
           )}
@@ -995,6 +1041,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 6,
     marginLeft: 30,
+  },
+  mapPreview: {
+    marginBottom: 16,
   },
   infoBox: {
     flexDirection: 'row',

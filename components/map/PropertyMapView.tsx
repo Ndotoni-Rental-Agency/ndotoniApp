@@ -26,6 +26,11 @@ export default function PropertyMapView({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
+  // Debug: Log when component renders
+  React.useEffect(() => {
+    console.log('PropertyMapView rendered:', { latitude, longitude, platform: Platform.OS });
+  }, [latitude, longitude]);
+
   // Generate consistent offset for privacy (like Airbnb)
   const pinPosition = useMemo(() => {
     const seed = Math.abs(Math.sin(latitude * longitude * 1000));
@@ -56,6 +61,7 @@ export default function PropertyMapView({
         zoomEnabled={true}
         pitchEnabled={false}
         rotateEnabled={false}
+        onMapReady={() => console.log('Map is ready')}
       >
         {/* Privacy circle */}
         <Circle

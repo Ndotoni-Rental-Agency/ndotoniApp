@@ -192,11 +192,26 @@ export async function fetchLongTermHomepageCache(): Promise<LongTermHomepageCach
     
     console.log('[HomepageCache] Fetching long-term from:', url);
     
+    const startTime = Date.now();
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'max-age=60',
       },
+    });
+    const endTime = Date.now();
+
+    // Log CloudFront cache performance
+    const cacheStatus = response.headers.get('x-cache');
+    const age = response.headers.get('age');
+    const via = response.headers.get('via');
+    
+    console.log('[HomepageCache] Performance metrics:', {
+      responseTime: `${endTime - startTime}ms`,
+      cacheStatus, // "Hit from cloudfront" = cached, "Miss from cloudfront" = not cached
+      age: age ? `${age}s` : 'N/A',
+      via,
+      status: response.status,
     });
 
     if (!response.ok) {
@@ -254,11 +269,26 @@ export async function fetchShortTermHomepageCache(): Promise<ShortTermHomepageCa
     
     console.log('[HomepageCache] Fetching short-term from:', url);
     
+    const startTime = Date.now();
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'max-age=60',
       },
+    });
+    const endTime = Date.now();
+
+    // Log CloudFront cache performance
+    const cacheStatus = response.headers.get('x-cache');
+    const age = response.headers.get('age');
+    const via = response.headers.get('via');
+    
+    console.log('[HomepageCache] Performance metrics:', {
+      responseTime: `${endTime - startTime}ms`,
+      cacheStatus, // "Hit from cloudfront" = cached, "Miss from cloudfront" = not cached
+      age: age ? `${age}s` : 'N/A',
+      via,
+      status: response.status,
     });
 
     if (!response.ok) {

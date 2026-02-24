@@ -7,7 +7,7 @@ import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { PropertyType, usePropertyTypeCache } from '@/hooks/usePropertyTypeCache';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -31,13 +31,13 @@ export default function HomeScreen() {
     checkOutDate: oneWeekLater.toISOString().split('T')[0],
     moveInDate: today.toISOString().split('T')[0],
   });
-  const [loadingMore, setLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [renderedSections, setRenderedSections] = useState<Set<number>>(new Set([0])); // Only render first section initially
+  const isRenderingSection = useRef(false); // Prevent multiple sections rendering at once
   const { isAuthenticated } = useAuth();
   
-  // Use the categorized properties hook with rental type
-  const { appData, isLoading, error, refetch, loadMoreForCategory, hasMoreForCategory } = useCategorizedProperties(
-    isAuthenticated, 
+  // Use the categorized properties hook with rental type (always public/CloudFront)
+  const { appData, isLoading, error, refetch } = useCategorizedProperties(
     rentalType === RentalType.LONG_TERM ? 'LONG_TERM' : 'SHORT_TERM'
   );
   
@@ -82,26 +82,17 @@ export default function HomeScreen() {
       // Combine both rental types
       const allProperties = [...longTermProperties, ...shortTermProperties];
       
-      console.log('[HomePage] Property Type View:', {
-        type: selectedPropertyType,
-        longTermCount: longTermProperties.length,
-        shortTermCount: shortTermProperties.length,
-        totalCount: allProperties.length,
-      });
       
       return [{
         title: `${selectedPropertyType.charAt(0) + selectedPropertyType.slice(1).toLowerCase()}s`,
         categoryName: selectedPropertyType.toLowerCase(),
         properties: allProperties,
         category: 'PROPERTY_TYPE' as const,
-        hasMore: false,
       }];
     }
     
     // Otherwise show categorized properties filtered by rental type
     if (!appData) return [];
-    
-    console.log('[HomePage] App Data:', JSON.stringify(appData, null, 2));
     
     // Both rental types use the same structure now
     const sections = [
@@ -110,37 +101,55 @@ export default function HomeScreen() {
         categoryName: 'best prices',
         properties: appData.categorizedProperties.lowestPrice?.properties || [],
         category: 'LOWEST_PRICE' as const,
-        hasMore: hasMoreForCategory('LOWEST_PRICE'),
       },
       {
         title: rentalType === RentalType.LONG_TERM ? 'Nearby' : 'Recent Stays',
         categoryName: 'nearby',
         properties: appData.categorizedProperties.nearby?.properties || [],
         category: 'NEARBY' as const,
-        hasMore: hasMoreForCategory('NEARBY'),
       },
       {
         title: rentalType === RentalType.LONG_TERM ? 'Most Viewed' : 'Top Rated',
         categoryName: 'most viewed',
         properties: appData.categorizedProperties.mostViewed?.properties || [],
         category: 'MOST_VIEWED' as const,
-        hasMore: hasMoreForCategory('MOST_VIEWED'),
       },
       {
         title: rentalType === RentalType.LONG_TERM ? 'Premium Properties' : 'Luxury Stays',
         categoryName: 'premium',
         properties: appData.categorizedProperties.more?.properties || [],
         category: 'MORE' as const,
-        hasMore: hasMoreForCategory('MORE'),
       },
     ];
-    
-    console.log('[HomePage] Sections:', sections.map(s => ({ title: s.title, count: s.properties.length })));
-    
+  
     return sections;
   };
 
   const categorizedProperties = getPropertiesByCategory();
+
+  // Debug: Check if images are using CloudFront or S3
+  useEffect(() => {
+    if (appData?.categorizedProperties.lowestPrice?.properties[0]) {
+      const firstProperty = appData.categorizedProperties.lowestPrice.properties[0];
+      const totalProperties = Object.values(appData.categorizedProperties)
+        .reduce((sum, cat) => sum + (cat?.properties?.length || 0), 0);
+      
+      console.log('[DEBUG] Sample thumbnail URL:', firstProperty.thumbnail);
+      console.log('[DEBUG] Total properties to render:', totalProperties);
+      
+      if (firstProperty.thumbnail?.includes('s3.amazonaws.com')) {
+        console.warn('⚠️ Images are loading from S3 directly - not using CloudFront!');
+        console.warn('⚠️ This is causing slow image loads. Images should use CloudFront domain.');
+      } else if (firstProperty.thumbnail?.includes('cloudfront.net')) {
+        console.log('✅ Images are using CloudFront');
+      } else {
+        console.log('[DEBUG] Image URL format:', firstProperty.thumbnail?.substring(0, 50));
+      }
+      
+      // Reset rendered sections when data changes
+      setRenderedSections(new Set([0]));
+    }
+  }, [appData]);
 
   // Animated scale values for smooth shrinking
   const searchBarScale = scrollY.interpolate({
@@ -163,19 +172,7 @@ export default function HomeScreen() {
 
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
-    console.log('Search params:', params);
     // TODO: Navigate to search results page with params
-  };
-
-  const handleLoadMore = async (category: 'LOWEST_PRICE' | 'NEARBY' | 'MOST_VIEWED' | 'MORE') => {
-    if (loadingMore) return;
-    
-    setLoadingMore(true);
-    try {
-      await loadMoreForCategory(category);
-    } finally {
-      setLoadingMore(false);
-    }
   };
 
   const handleRefresh = async () => {
@@ -193,7 +190,40 @@ export default function HomeScreen() {
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    { useNativeDriver: false }
+    { 
+      useNativeDriver: false,
+      listener: (event: any) => {
+        // Prevent rendering multiple sections at once
+        if (isRenderingSection.current) return;
+        
+        const offsetY = event.nativeEvent.contentOffset.y;
+        const layoutHeight = event.nativeEvent.layoutMeasurement.height;
+        const contentHeight = event.nativeEvent.contentSize.height;
+        
+        // Lazy render next section when user is 800px from bottom
+        if (contentHeight - offsetY - layoutHeight < 800) {
+          const maxSection = categorizedProperties.length - 1;
+          const currentMax = Math.max(...Array.from(renderedSections));
+          
+          // Only render next section if there is one
+          if (currentMax < maxSection) {
+            isRenderingSection.current = true;
+            
+            setRenderedSections(prev => {
+              const newSet = new Set(prev);
+              newSet.add(currentMax + 1);
+              console.log('[HomePage] Lazy rendering section:', currentMax + 1, 'of', maxSection);
+              return newSet;
+            });
+            
+            // Allow next section to render after a delay
+            setTimeout(() => {
+              isRenderingSection.current = false;
+            }, 500);
+          }
+        }
+      }
+    }
   );
 
   const toggleSection = (sectionIndex: number) => {
@@ -207,7 +237,7 @@ export default function HomeScreen() {
     setExpandedSections(newExpanded);
   };
 
-  const INITIAL_DISPLAY_COUNT = 4; // Show 4 properties initially (2 rows)
+  const INITIAL_DISPLAY_COUNT = 4; // Show 4 properties initially (2 rows) - optimized for fast render
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
@@ -355,9 +385,32 @@ export default function HomeScreen() {
               </View>
             )}
             
-            {/* Property Sections with Headers */}
+            {/* Property Sections with Headers - Lazy Rendered */}
             {categorizedProperties.map((section, sectionIndex) => {
               if (section.properties.length === 0) return null;
+              
+              // Only render sections that have been scrolled to
+              if (!renderedSections.has(sectionIndex)) {
+                // Render placeholder to maintain scroll position
+                return (
+                  <View key={sectionIndex} style={[styles.section, styles.sectionPlaceholder]}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionTitleContainer}>
+                        <Text style={[styles.sectionTitle, { color: textColor }]}>
+                          {section.title}
+                        </Text>
+                        <View style={[styles.sectionAccent, { backgroundColor: tintColor }]} />
+                      </View>
+                    </View>
+                    <View style={styles.loadingSection}>
+                      <ActivityIndicator size="small" color={tintColor} />
+                      <Text style={[styles.loadingText, { color: textColor }]}>
+                        Scroll to load...
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }
               
               const isExpanded = expandedSections.has(`section-${sectionIndex}`);
               const displayProperties = isExpanded 
@@ -407,18 +460,6 @@ export default function HomeScreen() {
                       const price = isLongTerm ? property.monthlyRent : property.nightlyRate;
                       const priceUnit = isLongTerm ? 'month' : 'night';
                       
-                      // Debug logging for problematic properties
-                      if (property.propertyId === 'TII1ITQAxoDu' || property.propertyId === 'Y-3yD0EF-f-c') {
-                        console.log(`[HomePage] Property ${property.propertyId} classification:`, {
-                          monthlyRent: property.monthlyRent,
-                          nightlyRate: property.nightlyRate,
-                          rentalType,
-                          sectionCategory: section.category,
-                          isLongTerm,
-                          priceUnit,
-                          price,
-                        });
-                      }
                       
                       return (
                         <PropertyCard
@@ -458,35 +499,9 @@ export default function HomeScreen() {
                       />
                     </TouchableOpacity>
                   )}
-
-                  {/* Load More Button (only when expanded and has more from API) */}
-                  {isExpanded && section.hasMore && section.category !== 'PROPERTY_TYPE' && (
-                    <TouchableOpacity
-                      style={[styles.loadMoreButton, { borderColor: borderColor }]}
-                      onPress={() => handleLoadMore(section.category as 'LOWEST_PRICE' | 'NEARBY' | 'MOST_VIEWED' | 'MORE')}
-                      disabled={loadingMore}
-                      activeOpacity={0.7}
-                    >
-                      {loadingMore ? (
-                        <ActivityIndicator color={tintColor} size="small" />
-                      ) : (
-                        <>
-                          <Text style={[styles.loadMoreText, { color: textColor }]}>Load more from server</Text>
-                          <Ionicons name="chevron-down" size={20} color={textColor} />
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  )}
                 </View>
               );
             })}
-
-            {/* Bottom Loading Indicator */}
-            {loadingMore && (
-              <View style={styles.bottomLoader}>
-                <ActivityIndicator size="large" color={tintColor} />
-              </View>
-            )}
           </>
         )}
       </Animated.ScrollView>
@@ -678,5 +693,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  sectionPlaceholder: {
+    minHeight: 200,
+  },
+  loadingSection: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
   },
 });
