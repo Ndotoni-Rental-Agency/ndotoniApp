@@ -48,6 +48,7 @@ export interface AuthContextType extends AuthState {
   submitLandlordApplication: (applicationData: any) => Promise<ApplicationResponse>;
   signOut: () => void;
   refreshUser: () => Promise<void>;
+  reloadAuth: () => Promise<void>;
   setLocalUser: (patch: Partial<UserProfile>) => void;
 }
 
@@ -290,8 +291,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await HybridAuthService.signInWithFacebook();
       }
       
-      // After OAuth redirect completes, fetch user profile
-      await refreshUserFromBackend();
+      // On iOS, the browser returns the callback URL directly,
+      // so we can fetch the user profile here.
+      // On Android, the auth/callback route handles everything
+      // (token exchange + user refresh), so this may be a no-op.
+      const isAuth = await HybridAuthService.isAuthenticated();
+      if (isAuth) {
+        await refreshUserFromBackend();
+      }
     } catch (error) {
       const errorMessage = extractErrorMessage(error, 'Social sign in failed');
       throw new Error(errorMessage);
@@ -406,6 +413,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Re-initialize auth state (used by auth/callback on Android)
+  const reloadAuth = async () => {
+    await initializeAuth();
+  };
+
   const setLocalUser = (patch: Partial<UserProfile>) => {
     setAuthState(prev => {
       const updatedUser = prev.user ? { ...prev.user, ...patch } : null;
@@ -432,6 +444,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     submitLandlordApplication,
     signOut,
     refreshUser,
+    reloadAuth,
     resendVerificationCode,
     setLocalUser
   };

@@ -7,6 +7,7 @@ import { UserManager, User, UserManagerSettings } from 'oidc-client-ts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 import oidcConfig, { getLogoutUrl } from './oidc-config';
 
 // Ensure polyfills are loaded
@@ -373,15 +374,15 @@ export async function signInWithGoogle(): Promise<void> {
       created: Date.now(),
       request_type: 'signin:Google'
     });
-    
+
     // Build authorization URL manually
     const authUrl = buildAuthUrl('Google', {
       state,
       prompt: 'select_account'
     });
-    
+
     console.log('[OIDC] Opening Google sign-in:', authUrl);
-    
+
     // Open browser with the authorization URL
     const result = await WebBrowser.openAuthSessionAsync(
       authUrl,
@@ -391,10 +392,19 @@ export async function signInWithGoogle(): Promise<void> {
     console.log('[OIDC] Browser result:', result);
 
     if (result.type === 'success' && result.url) {
+      // iOS: browser returns the callback URL directly
       console.log('[OIDC] Processing callback URL:', result.url);
       await handleAuthCallback(result.url);
-    } else if (result.type === 'cancel') {
-      throw new Error('Google sign-in cancelled');
+    } else if (result.type === 'cancel' || result.type === 'dismiss') {
+      // On Android, the browser may report 'cancel' or 'dismiss' because
+      // the OAuth redirect is handled by the auth/callback deep link route
+      // instead of returning through the browser session. This is expected
+      // behavior — the callback route handles token exchange and auth state.
+      // Only throw if we're on iOS where cancel means the user actually cancelled.
+      if (Platform.OS === 'ios') {
+        throw new Error('Google sign-in cancelled');
+      }
+      console.log('[OIDC] Browser dismissed on Android — callback route will handle auth');
     }
   } catch (error) {
     console.error('Google sign-in error:', error);

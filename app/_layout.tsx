@@ -10,6 +10,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Initialize Amplify configuration
 import '@/lib/amplify';
@@ -35,6 +36,7 @@ function RootLayoutContent() {
         <Stack.Screen name="short-property/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
@@ -49,7 +51,9 @@ export default function RootLayout() {
       <LanguageProvider>
         <AuthProvider>
           <ChatProvider>
-            <RootLayoutContent />
+            <ErrorBoundary>
+              <RootLayoutContent />
+            </ErrorBoundary>
           </ChatProvider>
         </AuthProvider>
       </LanguageProvider>

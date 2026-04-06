@@ -114,7 +114,7 @@ export default function PropertyCard({
                 setImageError(true);
                 setImageLoading(false);
               }}
-              placeholder={require('@/assets/images/partial-react-logo.png')}
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
             />
             {imageLoading && (
               <View style={[styles.imageLoader, { height: CARD_WIDTH * 1.05 }]}>

@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -30,6 +30,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -39,7 +40,15 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
-  const { signUp, signUpWithSocial } = useAuth();
+  const { signUp, signUpWithSocial, isAuthenticated } = useAuth();
+
+  // Auto-close modal when auth state changes to authenticated
+  useEffect(() => {
+    if (isAuthenticated && visible && isSocialLoading) {
+      setIsSocialLoading(false);
+      onClose();
+    }
+  }, [isAuthenticated, visible, isSocialLoading]);
 
   const handleSignUp = async () => {
     if (!email || !password || !firstName || !lastName || !phoneNumber) {
@@ -106,10 +115,12 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   };
 
   const handleGoogleSignUp = async () => {
+    setIsSocialLoading(true);
     try {
       await signUpWithSocial('google');
       onClose();
     } catch (error: any) {
+      setIsSocialLoading(false);
       Alert.alert('Error', error.message || 'Google sign up failed');
     }
   };
@@ -131,6 +142,17 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
           onPress={onClose}
         />
         <View style={[styles.modalContent, { backgroundColor }]}>
+          {/* Social sign-in loading overlay */}
+          {isSocialLoading && (
+            <View style={[styles.loadingOverlay, { backgroundColor }]}>
+              <View style={[styles.loadingCard, { backgroundColor: inputBg, borderColor }]}>
+                <ActivityIndicator size="large" color={tintColor} />
+                <Text style={[styles.loadingText, { color: textColor }]}>Signing you in...</Text>
+                <Text style={[styles.loadingSubtext, { color: placeholderColor }]}>Please wait while we set things up</Text>
+              </View>
+            </View>
+          )}
+
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Create Account</Text>
@@ -402,5 +424,29 @@ const styles = StyleSheet.create({
   switchModeLink: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  loadingCard: {
+    paddingVertical: 32,
+    paddingHorizontal: 40,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  loadingSubtext: {
+    marginTop: 8,
+    fontSize: 14,
   },
 });

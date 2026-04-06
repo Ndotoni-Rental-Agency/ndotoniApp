@@ -72,6 +72,7 @@ export default function PropertyMediaGallery({
               contentFit="cover"
               transition={300}
               cachePolicy="memory-disk"
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
             />
           );
         }}

@@ -63,8 +63,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   mapWrapper: {
-    borderRadius: 16,
-    overflow: 'hidden',
     marginBottom: 12,
   },
   infoCard: {
