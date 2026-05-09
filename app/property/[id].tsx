@@ -11,6 +11,7 @@ import PropertySpecifications from '@/components/property/PropertySpecifications
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { usePropertyDetail } from '@/hooks/propertyDetails/usePropertyDetail';
+import { usePropertyFavorites } from '@/hooks/useProperty';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { generateWhatsAppUrl } from '@/lib/utils/whatsapp';
@@ -40,6 +41,7 @@ export default function LongTermPropertyDetailsScreen() {
   const { property, loading: isLoading, error, retry } = usePropertyDetail(propertyId);
   const { isAuthenticated } = useAuth();
   const { initializeChat } = useChat();
+  const { toggleFavorite, isFavorited } = usePropertyFavorites();
   
   // Use the new geocoding hook
   const { coordinates } = usePropertyGeocode(property);
@@ -172,7 +174,8 @@ export default function LongTermPropertyDetailsScreen() {
             videos={videos}
             onBack={() => router.back()}
             onShare={() => console.log('Share')}
-            onFavorite={() => console.log('Favorite')}
+            onFavorite={() => toggleFavorite(propertyId)}
+            isFavorited={isFavorited(propertyId)}
           />
         )}
 

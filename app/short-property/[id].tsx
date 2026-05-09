@@ -10,6 +10,7 @@ import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDet
 import ShortTermPropertyHeader from '@/components/property/ShortTermPropertyHeader';
 import ShortTermPropertyPricing from '@/components/property/ShortTermPropertyPricing';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
+import { usePropertyFavorites } from '@/hooks/useProperty';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,7 @@ export default function ShortTermPropertyDetailsScreen() {
   
   // Use the short-term property detail hook
   const { property, loading: isLoading, error, retry } = useShortTermPropertyDetail(propertyId);
+  const { toggleFavorite, isFavorited } = usePropertyFavorites();
   
   // Use the new geocoding hook
   const { coordinates } = usePropertyGeocode(property);
@@ -109,7 +111,8 @@ export default function ShortTermPropertyDetailsScreen() {
             videos={videos}
             onBack={() => router.back()}
             onShare={() => console.log('Share')}
-            onFavorite={() => console.log('Favorite')}
+            onFavorite={() => toggleFavorite(propertyId)}
+            isFavorited={isFavorited(propertyId)}
           />
         )}
 

@@ -10,6 +10,7 @@ interface PropertyMediaGalleryProps {
   onBack: () => void;
   onShare?: () => void;
   onFavorite?: () => void;
+  isFavorited?: boolean;
 }
 
 export default function PropertyMediaGallery({
@@ -18,6 +19,7 @@ export default function PropertyMediaGallery({
   onBack,
   onShare,
   onFavorite,
+  isFavorited = false,
 }: PropertyMediaGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -102,7 +104,7 @@ export default function PropertyMediaGallery({
                 style={styles.headerButton}
                 onPress={onFavorite}
               >
-                <Ionicons name="heart-outline" size={22} color="#000" />
+                <Ionicons name={isFavorited ? "heart" : "heart-outline"} size={22} color={isFavorited ? "#FF385C" : "#000"} />
               </TouchableOpacity>
             )}
           </View>

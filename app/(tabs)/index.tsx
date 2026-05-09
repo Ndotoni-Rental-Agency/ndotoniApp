@@ -4,6 +4,7 @@ import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
+import { usePropertyFavorites } from '@/hooks/useProperty';
 import { PropertyType, usePropertyTypeCache } from '@/hooks/usePropertyTypeCache';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +50,8 @@ export default function HomeScreen() {
     refetch: refetchPropertyType 
   } = usePropertyTypeCache(selectedPropertyType);
   
+  const { toggleFavorite, isFavorited } = usePropertyFavorites();
+
   const backgroundColor = useThemeColor({ light: '#FAFAFA', dark: '#000000' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -474,7 +477,8 @@ export default function HomeScreen() {
                           bedrooms={property.bedrooms || property.maxGuests}
                           propertyType={property.propertyType}
                           priceUnit={priceUnit}
-                          onFavoritePress={() => console.log('Favorite pressed:', property.propertyId)}
+                          onFavoritePress={() => toggleFavorite(property.propertyId)}
+                          isFavorited={isFavorited(property.propertyId)}
                         />
                       );
                     })}
