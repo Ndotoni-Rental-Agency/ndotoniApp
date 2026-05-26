@@ -41,8 +41,8 @@ export enum RentalType {
 
 export const rentalTypeLabels = {
   [RentalType.LONG_TERM]: {
-    en: 'Monthly',
-    sw: 'Kila Mwezi',
+    en: 'All',
+    sw: 'Zote',
   },
   [RentalType.SHORT_TERM]: {
     en: 'Nightly',

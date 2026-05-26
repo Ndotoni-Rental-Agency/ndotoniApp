@@ -59,7 +59,7 @@ export const COMPANY_INFO = {
     instagram: 'https://www.instagram.com/ndotoni_rentals?igsh=eWY3c2YwbWFmejJo&utm_source=qr',
     linkedin: 'https://www.linkedin.com/in/ndotoni-rentals-02571a3ab',
     youtube: 'https://youtube.com/@ndotoni',
-    whatsapp: 'https://wa.me/12164136022',
+    whatsapp: 'https://wa.me/255790720329?text=show%20me%20cheap%20houses%20in%20Dar'
   },
 
   // Mission & Vision
