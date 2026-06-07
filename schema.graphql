@@ -677,18 +677,18 @@ type PropertyPricing @aws_api_key @aws_cognito_user_pools {
 }
 
 type PropertyRatingSummary @aws_api_key @aws_cognito_user_pools {
-  accuracy: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
+  accuracy: Float @aws_api_key @aws_cognito_user_pools @aws_iam
   averageRating: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
-  cleanliness: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
-  communication: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
-  fiveStars: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
-  fourStars: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
-  location: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
-  oneStar: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
-  threeStars: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
+  cleanliness: Float @aws_api_key @aws_cognito_user_pools @aws_iam
+  communication: Float @aws_api_key @aws_cognito_user_pools @aws_iam
+  fiveStars: Int @aws_api_key @aws_cognito_user_pools @aws_iam
+  fourStars: Int @aws_api_key @aws_cognito_user_pools @aws_iam
+  location: Float @aws_api_key @aws_cognito_user_pools @aws_iam
+  oneStar: Int @aws_api_key @aws_cognito_user_pools @aws_iam
+  threeStars: Int @aws_api_key @aws_cognito_user_pools @aws_iam
   totalReviews: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
-  twoStars: Int! @aws_api_key @aws_cognito_user_pools @aws_iam
-  value: Float! @aws_api_key @aws_cognito_user_pools @aws_iam
+  twoStars: Int @aws_api_key @aws_cognito_user_pools @aws_iam
+  value: Float @aws_api_key @aws_cognito_user_pools @aws_iam
 }
 
 type PropertySearchResponse @aws_api_key @aws_cognito_user_pools {
