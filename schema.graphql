@@ -163,6 +163,9 @@ type Booking @aws_cognito_user_pools {
   createdAt: AWSDateTime! @aws_cognito_user_pools @aws_iam
   guest: PropertyUser @aws_cognito_user_pools @aws_iam
   guestId: ID! @aws_cognito_user_pools @aws_iam
+  guestName: String @aws_cognito_user_pools @aws_iam
+  guestEmail: String @aws_cognito_user_pools @aws_iam
+  guestPhone: String @aws_cognito_user_pools @aws_iam
   hostNotes: String @aws_cognito_user_pools @aws_iam
   numberOfAdults: Int! @aws_cognito_user_pools @aws_iam
   numberOfChildren: Int! @aws_cognito_user_pools @aws_iam
@@ -503,7 +506,7 @@ type Mutation {
   associateMediaWithProperty(media: PropertyMediaInput!, propertyId: ID!): Property! @aws_cognito_user_pools
   blockDates(input: BlockDatesInput!): SuccessResponse! @aws_cognito_user_pools
   cancelBooking(bookingId: ID!, reason: String): CancelBookingResponse! @aws_cognito_user_pools
-  createBooking(input: CreateBookingInput!): CreateBookingResponse! @aws_cognito_user_pools
+  createBooking(input: CreateBookingInput!): CreateBookingResponse! @aws_cognito_user_pools @aws_api_key
   createLocation(input: CreateLocationInput!): LocationCreateResponse! @aws_cognito_user_pools
   createProperty(input: CreatePropertyInput!): CreatePropertyResponse! @aws_cognito_user_pools
   createPropertyDraft(input: CreatePropertyDraftInput!): CreatePropertyResponse! @aws_api_key @aws_cognito_user_pools
@@ -1240,6 +1243,9 @@ input CreateBookingInput {
   paymentMethodId: String!
   propertyId: ID!
   specialRequests: String
+  guestName: String
+  guestEmail: String
+  guestPhone: String
 }
 
 input CreateLocationInput {
