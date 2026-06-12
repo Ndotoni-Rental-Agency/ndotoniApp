@@ -47,6 +47,23 @@ const SHORT_TERM_PROPERTY_TYPES = [
   { value: 'COTTAGE', label: 'Cottage' },
 ];
 
+const STAY_CATEGORIES = [
+  { value: 'NIGHTLY_STAY', label: 'Nightly Stay', icon: '🏠' },
+  { value: 'PARTY', label: 'Party & Events', icon: '🎉' },
+  { value: 'PHOTOSHOOT', label: 'Photoshoot', icon: '📸' },
+  { value: 'MEETING', label: 'Meeting & Work', icon: '💼' },
+  { value: 'GETAWAY', label: 'Getaway', icon: '🌊' },
+  { value: 'GROUP_TRIP', label: 'Group Trip', icon: '👥' },
+  { value: 'WEDDING', label: 'Wedding', icon: '💒' },
+  { value: 'FILMING', label: 'Filming', icon: '🎬' },
+  { value: 'SAFARI', label: 'Safari', icon: '🦁' },
+  { value: 'BEACH', label: 'Beach', icon: '🏖️' },
+  { value: 'NATURE', label: 'Nature', icon: '🌿' },
+  { value: 'ROMANTIC', label: 'Romantic', icon: '💕' },
+  { value: 'CITY_LIFE', label: 'City Life', icon: '🌃' },
+  { value: 'RETREAT', label: 'Retreat', icon: '🧘' },
+];
+
 export default function ListPropertyScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -62,6 +79,7 @@ export default function ListPropertyScreen() {
     title: 'Beautiful Home Available',
     propertyType: 'HOUSE',
     shortTermPropertyType: 'HOUSE',
+    stayCategories: ['NIGHTLY_STAY'] as string[],
     region: '',
     district: '',
     ward: '',
@@ -276,6 +294,7 @@ export default function ListPropertyScreen() {
     const input: any = {
       title: formData.title.trim(),
       propertyType: formData.shortTermPropertyType,
+      stayCategories: formData.stayCategories,
       region: formData.region,
       district: formData.district,
       nightlyRate: parseFloat(formData.nightlyRate),
@@ -326,6 +345,7 @@ export default function ListPropertyScreen() {
               title: '',
               propertyType: 'HOUSE',
               shortTermPropertyType: 'HOUSE',
+              stayCategories: ['NIGHTLY_STAY'],
               region: '',
               district: '',
               ward: '',
@@ -522,6 +542,55 @@ export default function ListPropertyScreen() {
               <Ionicons name="chevron-down" size={20} color={placeholderColor} />
             </TouchableOpacity>
           </View>
+
+          {/* Stay Categories - Short-term only */}
+          {formData.rentalType === 'SHORT_TERM' && (
+            <View style={styles.section}>
+              <Text style={[styles.label, { color: textColor }]}>
+                What's this space great for?
+              </Text>
+              <Text style={[styles.sublabel, { color: placeholderColor }]}>
+                Select all that apply
+              </Text>
+              <View style={styles.categoryChips}>
+                {STAY_CATEGORIES.map((cat) => {
+                  const isSelected = formData.stayCategories.includes(cat.value);
+                  return (
+                    <TouchableOpacity
+                      key={cat.value}
+                      style={[
+                        styles.categoryChip,
+                        { 
+                          borderColor: isSelected ? tintColor : borderColor,
+                          backgroundColor: isSelected ? `${tintColor}15` : inputBg,
+                        },
+                      ]}
+                      onPress={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          stayCategories: isSelected
+                            ? prev.stayCategories.filter(c => c !== cat.value)
+                            : [...prev.stayCategories, cat.value],
+                        }));
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.categoryChipIcon}>{cat.icon}</Text>
+                      <Text style={[
+                        styles.categoryChipText,
+                        { color: isSelected ? tintColor : textColor },
+                      ]}>
+                        {cat.label}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={16} color={tintColor} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Location */}
           <LocationSelector
@@ -938,6 +1007,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     letterSpacing: -0.2,
+  },
+  sublabel: {
+    fontSize: 13,
+    marginBottom: 10,
+    marginTop: -4,
+  },
+  categoryChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  categoryChipIcon: {
+    fontSize: 16,
+  },
+  categoryChipText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   required: {
     color: '#ef4444',
