@@ -306,6 +306,8 @@ export enum ShortTermPropertyType {
   HOSTEL = "HOSTEL",
   HOTEL = "HOTEL",
   HOUSE = "HOUSE",
+  LODGE = "LODGE",
+  OTHER = "OTHER",
   RESORT = "RESORT",
   ROOM = "ROOM",
   STUDIO = "STUDIO",

@@ -19,7 +19,7 @@ export interface PropertyTypeData {
   stage: string;
 }
 
-export type PropertyType = 'HOUSE' | 'VILLA' | 'APARTMENT' | 'STUDIO' | 'ROOM' | 'GUESTHOUSE' | 'HOTEL' | 'COTTAGE' | 'BUNGALOW' | 'HOSTEL' | 'RESORT' | 'COMMERCIAL';
+export type PropertyType = 'HOUSE' | 'VILLA' | 'APARTMENT' | 'STUDIO' | 'ROOM' | 'GUESTHOUSE' | 'HOTEL' | 'COTTAGE' | 'BUNGALOW' | 'LODGE' | 'HOSTEL' | 'RESORT' | 'OTHER' | 'COMMERCIAL';
 
 export function usePropertyTypeCache(propertyType: PropertyType | null) {
   const [data, setData] = useState<PropertyTypeData | null>(null);

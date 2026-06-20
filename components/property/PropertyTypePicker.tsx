@@ -30,7 +30,9 @@ const SHORT_TERM_TYPES = [
   { value: ShortTermPropertyType.GUESTHOUSE, label: 'Guesthouse', icon: 'home-sharp' },
   { value: ShortTermPropertyType.COTTAGE, label: 'Cottage', icon: 'home' },
   { value: ShortTermPropertyType.BUNGALOW, label: 'Bungalow', icon: 'home' },
+  { value: ShortTermPropertyType.LODGE, label: 'Lodge', icon: 'leaf' },
   { value: ShortTermPropertyType.HOSTEL, label: 'Hostel', icon: 'people' },
+  { value: ShortTermPropertyType.OTHER, label: 'Other', icon: 'ellipsis-horizontal' },
 ];
 
 export default function PropertyTypePicker({ value, onChange, propertyCategory }: PropertyTypePickerProps) {
