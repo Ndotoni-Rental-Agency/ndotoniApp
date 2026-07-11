@@ -734,6 +734,7 @@ type PropertyUpdateEvent {
 type PropertyUser @aws_api_key @aws_cognito_user_pools {
   firstName: String! @aws_api_key @aws_cognito_user_pools @aws_iam
   lastName: String! @aws_api_key @aws_cognito_user_pools @aws_iam
+  profileImage: String @aws_api_key @aws_cognito_user_pools @aws_iam
   whatsappNumber: String @aws_api_key @aws_cognito_user_pools @aws_iam
 }
 

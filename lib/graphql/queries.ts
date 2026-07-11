@@ -1452,6 +1452,7 @@ export const getShortTermProperty = /* GraphQL */ `query GetShortTermProperty($p
     host {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }

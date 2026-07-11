@@ -94,6 +94,9 @@ export function useShortTermPropertyDetail(propertyId?: string) {
       const cachedProperty = await getCachedProperty(propertyId);
       if (cachedProperty) {
         console.log('[useShortTermPropertyDetail] ✅ Got property from AsyncStorage cache');
+        console.log('[useShortTermPropertyDetail] 🏠 Host data (cache):', {
+          host: cachedProperty.host ?? '⚠️ host is null/undefined',
+        });
         setProperty(cachedProperty);
         setLoading(false);
         
@@ -192,6 +195,7 @@ export function useShortTermPropertyDetail(propertyId?: string) {
           propertyId: propertyData.propertyId,
           title: propertyData.title,
           status: propertyData.status,
+          host: propertyData.host ?? '⚠️ host is null/undefined',
         });
       }
     } catch (error) {
@@ -223,6 +227,10 @@ export function useShortTermPropertyDetail(propertyId?: string) {
       if (data.getShortTermProperty) {
         console.log('[useShortTermPropertyDetail] ✅ Property loaded from GraphQL fallback');
         const propertyData = data.getShortTermProperty;
+
+        console.log('[useShortTermPropertyDetail] 🏠 Host data (GraphQL):', {
+          host: propertyData.host ?? '⚠️ host is null/undefined',
+        });
         
         // Update state and cache
         setProperty(propertyData);

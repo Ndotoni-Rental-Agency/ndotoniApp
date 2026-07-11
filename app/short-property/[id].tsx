@@ -223,6 +223,7 @@ export default function ShortTermPropertyDetailsScreen() {
               <PropertyHost
                 firstName={property.host.firstName}
                 lastName={property.host.lastName}
+                profileImage={property.host.profileImage}
                 textColor={textColor}
                 tintColor={tintColor}
                 backgroundColor={backgroundColor}

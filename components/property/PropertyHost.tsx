@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface PropertyHostProps {
   firstName?: string;
   lastName?: string;
+  profileImage?: string | null;
   textColor: string;
   tintColor: string;
   backgroundColor: string;
@@ -14,12 +15,17 @@ interface PropertyHostProps {
 export default function PropertyHost({
   firstName,
   lastName,
+  profileImage,
   textColor,
   tintColor,
   backgroundColor,
   borderColor,
 }: PropertyHostProps) {
-  if (!firstName || !lastName) return null;
+  const [imageError, setImageError] = useState(false);
+
+  if (!firstName) return null;
+
+  const showImage = profileImage && !imageError;
 
   return (
     <View style={styles.container}>
@@ -28,18 +34,26 @@ export default function PropertyHost({
         <Text style={[styles.title, { color: textColor }]}>Hosted by</Text>
       </View>
       <View style={[styles.card, { backgroundColor, borderColor }]}>
-        <View style={[styles.avatar, { backgroundColor: tintColor }]}>
-          <Text style={styles.initials}>
-            {firstName[0]}{lastName[0]}
-          </Text>
-        </View>
+        {showImage ? (
+          <Image
+            source={{ uri: profileImage }}
+            style={styles.avatar}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View style={[styles.avatar, styles.initialsAvatar, { backgroundColor: tintColor }]}>
+            <Text style={styles.initials}>
+              {firstName[0]}{lastName ? lastName[0] : ''}
+            </Text>
+          </View>
+        )}
         <View style={styles.details}>
           <Text style={[styles.name, { color: textColor }]}>
-            {firstName} {lastName}
+            {firstName}{lastName ? ` ${lastName}` : ''}
           </Text>
           <View style={styles.badge}>
             <Ionicons name="shield-checkmark" size={14} color="#10b981" />
-            <Text style={styles.role}>Verified Landlord</Text>
+            <Text style={styles.role}>Verified Host</Text>
           </View>
         </View>
       </View>
@@ -74,6 +88,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
+  },
+  initialsAvatar: {
     justifyContent: 'center',
     alignItems: 'center',
   },
