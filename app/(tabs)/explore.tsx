@@ -32,7 +32,7 @@ export default function LandlordPropertiesScreen() {
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
-  const [selectedTab, setSelectedTab] = useState<'long-term' | 'short-term'>('long-term');
+  const [selectedTab, setSelectedTab] = useState<'long-term' | 'short-term'>('short-term');
   const [refreshing, setRefreshing] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -42,15 +42,7 @@ export default function LandlordPropertiesScreen() {
   const [publishModalVisible, setPublishModalVisible] = useState(false);
   const [selectedPropertyForPublish, setSelectedPropertyForPublish] = useState<any>(null);
 
-  // Long-term properties - only fetch when authenticated
-  const {
-    properties: longTermProperties,
-    loading: longTermLoading,
-    error: longTermError,
-    refetch: refetchLongTerm,
-  } = useLandlordProperties(isAuthenticated && !authLoading);
-
-  // Short-term properties - only fetch when authenticated
+  // Short-term properties only - this is ndotoni Stays
   const {
     properties: shortTermProperties,
     loading: shortTermLoading,
@@ -58,25 +50,29 @@ export default function LandlordPropertiesScreen() {
     refetch: refetchShortTerm,
   } = useLandlordShortTermProperties(isAuthenticated && !authLoading);
 
+  // Keep long-term hook for backward compat but don't show it
+  const {
+    properties: longTermProperties,
+    loading: longTermLoading,
+    error: longTermError,
+    refetch: refetchLongTerm,
+  } = useLandlordProperties(isAuthenticated && !authLoading);
+
   // Delete property hook
   const { deletePropertyById, isDeleting } = useDeleteProperty();
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (selectedTab === 'long-term') {
-        await refetchLongTerm();
-      } else {
-        await refetchShortTerm();
-      }
+      await refetchShortTerm();
     } finally {
       setRefreshing(false);
     }
   };
 
-  const properties = selectedTab === 'long-term' ? longTermProperties : shortTermProperties;
-  const loading = selectedTab === 'long-term' ? longTermLoading : shortTermLoading;
-  const error = selectedTab === 'long-term' ? longTermError : shortTermError;
+  const properties = shortTermProperties;
+  const loading = shortTermLoading;
+  const error = shortTermError;
 
   const formatPrice = (amount: number, currency: string = 'TZS') => {
     return `${currency} ${amount?.toLocaleString()}`;
@@ -102,10 +98,8 @@ export default function LandlordPropertiesScreen() {
   };
 
   const renderPropertyCard = ({ item: property }: { item: any }) => {
-    const isLongTerm = selectedTab === 'long-term';
-    const thumbnail = isLongTerm 
-      ? property.media?.images?.[0] 
-      : property.thumbnail || property.images?.[0];
+    const isLongTerm = false; // Always short-term in ndotoni Stays
+    const thumbnail = property.thumbnail || property.images?.[0];
     
     const isDraft = !property.status || property.status === 'DRAFT';
     const isActive = property.status === 'ACTIVE' || property.status === 'AVAILABLE' || property.status === 'PUBLISHED';
@@ -314,13 +308,13 @@ export default function LandlordPropertiesScreen() {
           {/* Header */}
           <View style={styles.unauthHeader}>
             <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
-              <Ionicons name="business" size={48} color={tintColor} />
+              <Ionicons name="home-outline" size={48} color={tintColor} />
             </View>
             <Text style={[styles.unauthTitle, { color: textColor }]}>
-              Manage Your Properties
+              Become a Host
             </Text>
             <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
-              Sign in to list and manage your rental properties
+              Sign in to list your property for short-term stays
             </Text>
           </View>
 
@@ -348,7 +342,7 @@ export default function LandlordPropertiesScreen() {
             <View style={styles.featureItem}>
               <Ionicons name="add-circle" size={24} color={tintColor} />
               <Text style={[styles.featureText, { color: textColor }]}>
-                List your properties for rent
+                List your property for nightly stays
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -360,7 +354,7 @@ export default function LandlordPropertiesScreen() {
             <View style={styles.featureItem}>
               <Ionicons name="cash" size={24} color={tintColor} />
               <Text style={[styles.featureText, { color: textColor }]}>
-                Track your rental income
+                Earn from your property
               </Text>
             </View>
           </View>
@@ -405,45 +399,9 @@ export default function LandlordPropertiesScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
-        <Text style={[styles.headerTitle, { color: textColor }]}>My Properties</Text>
+        <Text style={[styles.headerTitle, { color: textColor }]}>My Listings</Text>
         <TouchableOpacity onPress={() => router.push('/(tabs)/list-property')} style={styles.addButton}>
           <Ionicons name="add" size={24} color={tintColor} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabs */}
-      <View style={[styles.tabs, { backgroundColor: cardBg, borderBottomColor: borderColor }]}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'long-term' && { borderBottomColor: tintColor, borderBottomWidth: 2 },
-          ]}
-          onPress={() => setSelectedTab('long-term')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              { color: selectedTab === 'long-term' ? tintColor : secondaryText },
-            ]}
-          >
-            Long-term
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'short-term' && { borderBottomColor: tintColor, borderBottomWidth: 2 },
-          ]}
-          onPress={() => setSelectedTab('short-term')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              { color: selectedTab === 'short-term' ? tintColor : secondaryText },
-            ]}
-          >
-            Short-term
-          </Text>
         </TouchableOpacity>
       </View>
 
@@ -479,7 +437,7 @@ export default function LandlordPropertiesScreen() {
               <Ionicons name="home-outline" size={64} color={secondaryText} />
               <Text style={[styles.emptyTitle, { color: textColor }]}>No Properties Yet</Text>
               <Text style={[styles.emptyText, { color: secondaryText }]}>
-                Start listing your {selectedTab === 'long-term' ? 'long-term' : 'short-term'} properties
+                Start listing your properties for short-term stays
               </Text>
               <TouchableOpacity
                 style={[styles.addPropertyButton, { backgroundColor: tintColor }]}

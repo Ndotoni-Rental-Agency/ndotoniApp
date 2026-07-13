@@ -9,7 +9,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -18,8 +18,9 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
-  View
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import CalendarDatePicker from '../property/CalendarDatePicker';
 
 interface SearchModalProps {
@@ -35,835 +36,352 @@ export interface SearchParams {
   checkInDate?: string;
   checkOutDate?: string;
   moveInDate?: string;
+  guests?: number;
 }
 
-export default function SearchModal({
-  visible,
-  onClose,
-  rentalType,
-  onSearch,
-  onRentalTypeChange,
-}: SearchModalProps) {
+const DESTINATIONS = [
+  { name: 'Dar es Salaam', emoji: '🌆', region: 'DAR ES SALAAM' },
+  { name: 'Zanzibar', emoji: '🏝️', region: 'ZANZIBAR' },
+  { name: 'Arusha', emoji: '🏔️', region: 'ARUSHA' },
+  { name: 'Mwanza', emoji: '🌊', region: 'MWANZA' },
+  { name: 'Dodoma', emoji: '🏛️', region: 'DODOMA' },
+  { name: 'Mbeya', emoji: '⛰️', region: 'MBEYA' },
+];
+
+export default function SearchModal({ visible, onClose, onSearch }: SearchModalProps) {
   const router = useRouter();
-  const { height: SCREEN_HEIGHT } = useWindowDimensions();
-  const [activeSection, setActiveSection] = useState<'location' | 'dates'>('location');
+  const { height: H } = useWindowDimensions();
+  const [step, setStep] = useState<'where' | 'when' | 'who'>('where');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<FlattenedLocation | null>(null);
-  
-  // Date states - store as ISO strings for consistency with CalendarDatePicker
-  const [checkInDate, setCheckInDate] = useState<string>('');
-  const [checkOutDate, setCheckOutDate] = useState<string>('');
-  const [moveInDate, setMoveInDate] = useState<string>('');
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guests, setGuests] = useState(2);
   const [showCalendar, setShowCalendar] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
+  const bg = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const tint = useThemeColor({}, 'tint');
+  const card = useThemeColor({ light: '#f5f5f5', dark: '#1c1c1e' }, 'background');
+  const border = useThemeColor({ light: '#e5e5e5', dark: '#333' }, 'background');
+  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
-  // Dark mode colors
-  const cardBg = useThemeColor({ light: '#f9fafb', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#2c2c2e' }, 'background');
-  const pillBg = useThemeColor({ light: '#fff', dark: '#2c2c2e' }, 'background');
-  const pillBorder = useThemeColor({ light: '#e5e7eb', dark: '#4b5563' }, 'background');
-  const closeButtonBg = useThemeColor({ light: '#fff', dark: '#2c2c2e' }, 'background');
-  const closeIconColor = useThemeColor({ light: '#6b7280', dark: '#9ca3af' }, 'text');
-  const selectedBorder = tintColor;
-  const footerBorder = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
-  const datePickerBorder = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
-  const subtleText = useThemeColor({ light: '#6b7280', dark: '#9ca3af' }, 'text');
+  const slideAnim = useRef(new Animated.Value(H)).current;
+  const { results: locations, isLoading: loadingLocs } = useLocationSearch(searchQuery);
 
-  // Animation values
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Use location search hook
-  const { results: filteredLocations, isLoading: isLoadingLocations } = useLocationSearch(searchQuery);
-
-  const isShortTerm = rentalType === RentalType.SHORT_TERM;
-
-  // Animate modal in/out
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 65,
-          friction: 11,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 50, friction: 12 }).start();
+      setTimeout(() => { if (step === 'where') inputRef.current?.focus(); }, 400);
     } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      slideAnim.setValue(H);
+      setStep('where');
     }
   }, [visible]);
 
-  const handleLocationSelect = (location: FlattenedLocation) => {
-    setSelectedLocation(location);
-    setSearchQuery(toTitleCase(location.displayName));
-    setActiveSection('dates');
+  const reset = () => { setSearchQuery(''); setSelectedLocation(null); setCheckIn(''); setCheckOut(''); setGuests(2); setStep('where'); };
+
+  const goBack = () => {
+    if (step === 'who') setStep('when');
+    else if (step === 'when') setStep('where');
+    else onClose();
+  };
+
+  const selectDestination = (d: typeof DESTINATIONS[0]) => {
+    setSelectedLocation({ type: 'region', name: d.region, displayName: d.name } as FlattenedLocation);
+    setSearchQuery(d.name);
+    Keyboard.dismiss();
+    setStep('when');
+  };
+
+  const selectLocation = (loc: FlattenedLocation) => {
+    setSelectedLocation(loc);
+    setSearchQuery(toTitleCase(loc.displayName));
+    Keyboard.dismiss();
+    setStep('when');
   };
 
   const handleSearch = () => {
-    const params: SearchParams = {
-      location: selectedLocation || undefined,
-    };
-
-    if (isShortTerm) {
-      if (checkInDate) params.checkInDate = new Date(checkInDate).toISOString().split('T')[0];
-      if (checkOutDate) params.checkOutDate = new Date(checkOutDate).toISOString().split('T')[0];
-    } else {
-      if (moveInDate) params.moveInDate = new Date(moveInDate).toISOString().split('T')[0];
-    }
-
-    // Call the onSearch callback
+    const params: SearchParams = { location: selectedLocation || undefined, guests };
+    if (checkIn) params.checkInDate = checkIn;
+    if (checkOut) params.checkOutDate = checkOut;
     onSearch(params);
-    
-    // Navigate to search results page
-    const searchParams: any = {
-      rentalType: isShortTerm ? 'short-term' : 'long-term',
-    };
 
+    const navParams: any = { rentalType: 'short-term' };
     if (selectedLocation) {
-      searchParams.location = selectedLocation.displayName;
-      if (selectedLocation.type === 'region') {
-        searchParams.region = selectedLocation.name;
-      } else {
-        searchParams.region = selectedLocation.regionName;
-        searchParams.district = selectedLocation.name;
-      }
+      navParams.location = selectedLocation.displayName;
+      if (selectedLocation.type === 'region') navParams.region = selectedLocation.name;
+      else { navParams.region = selectedLocation.regionName; navParams.district = selectedLocation.name; }
     }
+    if (checkIn) navParams.checkInDate = checkIn;
+    if (checkOut) navParams.checkOutDate = checkOut;
+    if (guests > 1) navParams.guests = guests.toString();
 
-    if (isShortTerm) {
-      if (checkInDate) searchParams.checkInDate = new Date(checkInDate).toISOString().split('T')[0];
-      if (checkOutDate) searchParams.checkOutDate = new Date(checkOutDate).toISOString().split('T')[0];
-    } else {
-      if (moveInDate) searchParams.moveInDate = new Date(moveInDate).toISOString().split('T')[0];
-    }
-
-    // Clear search state
-    setSearchQuery('');
-    setSelectedLocation(null);
-    setCheckInDate('');
-    setCheckOutDate('');
-    setMoveInDate('');
-    setActiveSection('location');
-
-    // Close modal and navigate
+    reset();
     onClose();
-    router.push({
-      pathname: '/search',
-      params: searchParams,
-    });
+    router.push({ pathname: '/search', params: navParams });
   };
 
-  const formatDateDisplay = (dateStr: string) => {
-    if (!dateStr) return 'Select date';
-    return formatDateShort(dateStr);
-  };
+  const stepIdx = step === 'where' ? 0 : step === 'when' ? 1 : 2;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-        <TouchableOpacity 
-          style={styles.overlayTouchable} 
-          activeOpacity={1} 
-          onPress={onClose}
-        />
+    <Modal visible={visible} animationType="none" transparent statusBarTranslucent onRequestClose={onClose}>
+      <Animated.View style={[styles.backdrop, { opacity: slideAnim.interpolate({ inputRange: [0, H], outputRange: [1, 0] }) }]}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
       </Animated.View>
-      
-      <Animated.View 
-        style={[
-          styles.modalContainer,
-          {
-            height: SCREEN_HEIGHT * 0.92,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <View style={[styles.container, { backgroundColor }]}>
-            {/* Drag Handle */}
-            <View style={styles.dragHandleContainer}>
-              <View style={styles.dragHandle} />
-            </View>
 
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <View style={[styles.closeButtonCircle, { backgroundColor: closeButtonBg }]}>
-                  <Ionicons name="close" size={20} color={closeIconColor} />
+      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={['top', 'bottom']}>
+
+          {/* Top bar: back + progress + close */}
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={goBack} style={styles.topBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="arrow-back" size={22} color={text} />
+            </TouchableOpacity>
+            <View style={styles.progress}>
+              {[0, 1, 2].map(i => (
+                <View key={i} style={[styles.dot, i <= stepIdx ? { backgroundColor: tint } : { backgroundColor: border }]} />
+              ))}
+            </View>
+            <TouchableOpacity onPress={onClose} style={styles.topBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close" size={22} color={text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Scrollable content */}
+          <ScrollView style={styles.body} contentContainerStyle={styles.bodyInner} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+            {/* ====== WHERE ====== */}
+            {step === 'where' && (
+              <>
+                <Text style={[styles.heading, { color: text }]}>Where to?</Text>
+                <View style={[styles.field, { backgroundColor: card, borderColor: border }]}>
+                  <Ionicons name="search" size={18} color={subtle} />
+                  <TextInput
+                    ref={inputRef}
+                    style={[styles.fieldInput, { color: text }]}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search regions, districts..."
+                    placeholderTextColor={subtle}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => { setSearchQuery(''); setSelectedLocation(null); }}>
+                      <Ionicons name="close-circle" size={18} color={subtle} />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
-              
-              {/* Rental Type Tabs in Modal */}
-              <View style={styles.headerTabs}>
-                <TouchableOpacity 
-                  style={styles.headerTab}
-                  onPress={() => onRentalTypeChange?.(RentalType.LONG_TERM)}
-                >
-                  <Text style={[
-                    styles.headerTabText,
-                    { color: rentalType === RentalType.LONG_TERM ? textColor : '#717171' },
-                    rentalType === RentalType.LONG_TERM && styles.headerTabTextActive
-                  ]}>
-                    Monthly
-                  </Text>
-                  {rentalType === RentalType.LONG_TERM && (
-                    <View style={[styles.headerTabIndicator, { backgroundColor: textColor }]} />
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.headerTab}
-                  onPress={() => onRentalTypeChange?.(RentalType.SHORT_TERM)}
-                >
-                  <Text style={[
-                    styles.headerTabText,
-                    { color: rentalType === RentalType.SHORT_TERM ? textColor : '#717171' },
-                    rentalType === RentalType.SHORT_TERM && styles.headerTabTextActive
-                  ]}>
-                    Nightly
-                  </Text>
-                  {rentalType === RentalType.SHORT_TERM && (
-                    <View style={[styles.headerTabIndicator, { backgroundColor: textColor }]} />
-                  )}
-                </TouchableOpacity>
-              </View>
-              
-              <View style={{ width: 40 }} />
-            </View>
 
-            {/* Section Pills */}
-            <View style={styles.pillsContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.pill,
-                  { backgroundColor: pillBg, borderColor: pillBorder },
-                  activeSection === 'location' && [styles.pillActive, { backgroundColor: tintColor, borderColor: tintColor }],
-                ]}
-                onPress={() => setActiveSection('location')}
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name="location" 
-                  size={18} 
-                  color={activeSection === 'location' ? '#fff' : subtleText} 
-                  style={styles.pillIcon}
-                />
-                <Text
-                  style={[
-                    styles.pillText,
-                    { color: subtleText },
-                    activeSection === 'location' && styles.pillTextActive,
-                  ]}
-                >
-                  Where
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.pill,
-                  { backgroundColor: pillBg, borderColor: pillBorder },
-                  activeSection === 'dates' && [styles.pillActive, { backgroundColor: tintColor, borderColor: tintColor }],
-                ]}
-                onPress={() => setActiveSection('dates')}
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name="calendar" 
-                  size={18} 
-                  color={activeSection === 'dates' ? '#fff' : subtleText} 
-                  style={styles.pillIcon}
-                />
-                <Text
-                  style={[
-                    styles.pillText,
-                    { color: subtleText },
-                    activeSection === 'dates' && styles.pillTextActive,
-                  ]}
-                >
-                  {isShortTerm ? 'When' : 'Move-in'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Content */}
-            <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
-              {activeSection === 'location' && (
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionLabel, { color: textColor }]}>
-                      Where do you want to go?
-                    </Text>
-                    {(searchQuery || selectedLocation) && (
-                      <TouchableOpacity 
-                        onPress={() => {
-                          setSearchQuery('');
-                          setSelectedLocation(null);
-                        }}
-                        style={styles.clearSectionButton}
-                      >
-                        <Text style={[styles.clearSectionText, { color: tintColor }]}>Clear</Text>
-                      </TouchableOpacity>
+                {searchQuery.length > 0 ? (
+                  <View style={styles.results}>
+                    {loadingLocs ? (
+                      <ActivityIndicator color={tint} style={{ marginTop: 20 }} />
+                    ) : locations.length > 0 ? (
+                      locations.slice(0, 8).map((loc, i) => (
+                        <TouchableOpacity key={`${loc.name}-${i}`} style={styles.resultRow} onPress={() => selectLocation(loc)}>
+                          <View style={[styles.resultIcon, { backgroundColor: `${tint}15` }]}>
+                            <Ionicons name="location" size={16} color={tint} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.resultName, { color: text }]}>{toTitleCase(loc.displayName)}</Text>
+                            <Text style={[styles.resultType, { color: subtle }]}>{loc.type === 'region' ? 'Region' : 'District'}</Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={border} />
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <Text style={[styles.noResults, { color: subtle }]}>No locations found</Text>
                     )}
                   </View>
-                  <View style={[styles.searchInputContainer, { backgroundColor: cardBg, borderColor }]}>
-                    <Ionicons name="search" size={20} color={subtleText} />
-                    <TextInput
-                      style={[styles.searchInput, { color: textColor }]}
-                      value={searchQuery}
-                      onChangeText={setSearchQuery}
-                      placeholder="Search regions or districts"
-                      placeholderTextColor={subtleText}
-                      autoFocus
-                    />
-                    {searchQuery.length > 0 && (
-                      <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Ionicons name="close-circle" size={20} color={subtleText} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {isLoadingLocations ? (
-                    <View style={styles.emptyContainer}>
-                      <ActivityIndicator size="large" color={tintColor} />
-                      <Text style={[styles.emptyText, { color: subtleText }]}>Searching...</Text>
-                    </View>
-                  ) : filteredLocations.length > 0 ? (
-                    <View style={styles.locationList}>
-                      {filteredLocations.map((location, index) => (
-                        <TouchableOpacity
-                          key={`${location.type}-${location.name}-${index}`}
-                          style={[
-                            styles.locationItem,
-                            { backgroundColor: cardBg, borderColor },
-                            selectedLocation?.name === location.name && [styles.locationItemSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
-                          ]}
-                          onPress={() => handleLocationSelect(location)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[styles.locationIcon, { backgroundColor: `${tintColor}15` }]}>
-                            <Ionicons
-                              name={location.type === 'region' ? 'location' : 'location-outline'}
-                              size={22}
-                              color={tintColor}
-                            />
-                          </View>
-                          <View style={styles.locationInfo}>
-                            <Text style={[styles.locationName, { color: textColor }]}>
-                              {toTitleCase(location.displayName)}
-                            </Text>
-                            <Text style={[styles.locationType, { color: subtleText }]}>
-                              {location.type === 'region' ? 'Region' : 'District'}
-                            </Text>
-                          </View>
-                          {selectedLocation?.name === location.name && (
-                            <Ionicons name="checkmark-circle" size={24} color={tintColor} />
-                          )}
+                ) : (
+                  <>
+                    <Text style={[styles.label, { color: subtle }]}>Popular destinations</Text>
+                    <View style={styles.destGrid}>
+                      {DESTINATIONS.map(d => (
+                        <TouchableOpacity key={d.name} style={[styles.destCard, { backgroundColor: card, borderColor: border }]} onPress={() => selectDestination(d)}>
+                          <Text style={styles.destEmoji}>{d.emoji}</Text>
+                          <Text style={[styles.destName, { color: text }]}>{d.name}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
-                  ) : (
-                    <View style={styles.emptyContainer}>
-                      <Ionicons name="search-outline" size={56} color={subtleText} style={{ opacity: 0.3 }} />
-                      <Text style={[styles.emptyText, { color: subtleText }]}>
-                        {searchQuery ? 'No locations found' : 'Start typing to search'}
-                      </Text>
-                      {searchQuery && (
-                        <Text style={[styles.emptySubtext, { color: subtleText }]}>
-                          Try searching for a region or district
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {activeSection === 'dates' && (
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionLabel, { color: textColor }]}>
-                      {isShortTerm ? 'When\'s your trip?' : 'When do you want to move in?'}
-                    </Text>
-                    {((isShortTerm && (checkInDate || checkOutDate)) || (!isShortTerm && moveInDate)) && (
-                      <TouchableOpacity 
-                        onPress={() => {
-                          if (isShortTerm) {
-                            setCheckInDate('');
-                            setCheckOutDate('');
-                          } else {
-                            setMoveInDate('');
-                          }
-                        }}
-                        style={styles.clearSectionButton}
-                      >
-                        <Text style={[styles.clearSectionText, { color: tintColor }]}>Reset</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  
-                  {isShortTerm ? (
-                    <>
-                      {/* Date Range Selector */}
-                      <View style={styles.dateSection}>
-                        <Text style={[styles.dateLabel, { color: textColor }]}>
-                          Select dates
-                        </Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.dateButton,
-                            { backgroundColor: cardBg, borderColor },
-                            (checkInDate && checkOutDate) && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
-                          ]}
-                          onPress={() => setShowCalendar(true)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[styles.dateIconContainer, { backgroundColor: `${tintColor}15` }]}>
-                            <Ionicons name="calendar" size={22} color={tintColor} />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.dateButtonText, { color: checkInDate ? textColor : subtleText }]}>
-                              {checkInDate ? formatDateDisplay(checkInDate) : 'Check-in'}
-                            </Text>
-                            {checkOutDate && (
-                              <Text style={[styles.dateButtonSubtext, { color: subtleText }]}>
-                                to {formatDateDisplay(checkOutDate)}
-                              </Text>
-                            )}
-                          </View>
-                          {(checkInDate && checkOutDate) && (
-                            <Ionicons name="checkmark-circle" size={22} color={tintColor} />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Search Button */}
-                      <TouchableOpacity
-                        style={[
-                          styles.inlineSearchButton, 
-                          { backgroundColor: tintColor },
-                        ]}
-                        onPress={handleSearch}
-                        activeOpacity={0.8}
-                      >
-                        <Ionicons name="search" size={20} color="#fff" />
-                        <Text style={styles.searchButtonText}>
-                          {selectedLocation ? 'Search properties' : 'Search all properties'}
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      {/* Move-in Date */}
-                      <View style={styles.dateSection}>
-                        <Text style={[styles.dateLabel, { color: textColor }]}>
-                          Preferred move-in date
-                        </Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.dateButton,
-                            { backgroundColor: cardBg, borderColor },
-                            moveInDate && [styles.dateButtonSelected, { borderColor: selectedBorder, backgroundColor: `${tintColor}08` }],
-                          ]}
-                          onPress={() => setShowCalendar(true)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[styles.dateIconContainer, { backgroundColor: `${tintColor}15` }]}>
-                            <Ionicons name="calendar" size={22} color={tintColor} />
-                          </View>
-                          <Text style={[styles.dateButtonText, { color: moveInDate ? textColor : subtleText }]}>
-                            {moveInDate ? formatDateDisplay(moveInDate) : 'Select date (optional)'}
-                          </Text>
-                          {moveInDate && (
-                            <Ionicons name="checkmark-circle" size={22} color={tintColor} />
-                          )}
-                        </TouchableOpacity>
-                        <Text style={[styles.helperText, { color: subtleText }]}>
-                          Leave empty to see all available properties
-                        </Text>
-                      </View>
-
-                      {/* Search Button */}
-                      <TouchableOpacity
-                        style={[styles.inlineSearchButton, { backgroundColor: tintColor }]}
-                        onPress={handleSearch}
-                        activeOpacity={0.8}
-                      >
-                        <Ionicons name="search" size={20} color="#fff" />
-                        <Text style={styles.searchButtonText}>
-                          {selectedLocation ? 'Search properties' : 'Search all properties'}
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Calendar Modal */}
-            {isShortTerm ? (
-              <CalendarDatePicker
-                visible={showCalendar}
-                onClose={() => setShowCalendar(false)}
-                checkInDate={checkInDate}
-                checkOutDate={checkOutDate}
-                onCheckInChange={setCheckInDate}
-                onCheckOutChange={setCheckOutDate}
-                blockedDates={[]}
-                textColor={textColor}
-                tintColor={tintColor}
-                backgroundColor={backgroundColor}
-                borderColor={borderColor}
-                secondaryText={subtleText}
-                mode="range"
-              />
-            ) : (
-              <CalendarDatePicker
-                visible={showCalendar}
-                onClose={() => setShowCalendar(false)}
-                checkInDate={moveInDate}
-                checkOutDate=""
-                onCheckInChange={setMoveInDate}
-                onCheckOutChange={() => {}}
-                blockedDates={[]}
-                textColor={textColor}
-                tintColor={tintColor}
-                backgroundColor={backgroundColor}
-                borderColor={borderColor}
-                secondaryText={subtleText}
-                mode="single"
-                singleDateLabel="Move-in date"
-              />
+                    <TouchableOpacity style={[styles.flexBtn, { borderColor: border }]} onPress={() => { setSelectedLocation(null); setSearchQuery(''); setStep('when'); }}>
+                      <Ionicons name="globe-outline" size={18} color={tint} />
+                      <Text style={[styles.flexText, { color: text }]}>I'm flexible</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </>
             )}
-          </View>
-        </KeyboardAvoidingView>
+
+            {/* ====== WHEN ====== */}
+            {step === 'when' && (
+              <>
+                <Text style={[styles.heading, { color: text }]}>When's your trip?</Text>
+                <Text style={[styles.context, { color: subtle }]}>
+                  📍 {selectedLocation ? toTitleCase(selectedLocation.displayName) : 'Anywhere'}
+                </Text>
+
+                <View style={styles.dateRow}>
+                  <TouchableOpacity style={[styles.dateBox, { borderColor: checkIn ? tint : border, backgroundColor: checkIn ? `${tint}06` : card }]} onPress={() => setShowCalendar(true)}>
+                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-IN</Text>
+                    <Text style={[styles.dateVal, { color: checkIn ? text : subtle }]}>{checkIn ? formatDateShort(checkIn) : 'Add date'}</Text>
+                  </TouchableOpacity>
+                  <Ionicons name="arrow-forward" size={16} color={border} />
+                  <TouchableOpacity style={[styles.dateBox, { borderColor: checkOut ? tint : border, backgroundColor: checkOut ? `${tint}06` : card }]} onPress={() => setShowCalendar(true)}>
+                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-OUT</Text>
+                    <Text style={[styles.dateVal, { color: checkOut ? text : subtle }]}>{checkOut ? formatDateShort(checkOut) : 'Add date'}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.label, { color: subtle }]}>Quick select</Text>
+                <View style={styles.chipRow}>
+                  {[
+                    { label: 'Tonight', days: 1 },
+                    { label: 'Weekend', days: 2 },
+                    { label: 'Week', days: 7 },
+                    { label: 'Month', days: 30 },
+                  ].map(opt => {
+                    const active = checkIn && checkOut && Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000) === opt.days;
+                    return (
+                      <TouchableOpacity key={opt.label} style={[styles.chip, { borderColor: active ? tint : border, backgroundColor: active ? `${tint}10` : 'transparent' }]} onPress={() => {
+                        const d = new Date(); const e = new Date(d); e.setDate(e.getDate() + opt.days);
+                        setCheckIn(d.toISOString().split('T')[0]); setCheckOut(e.toISOString().split('T')[0]);
+                      }}>
+                        <Text style={[styles.chipText, { color: active ? tint : text }]}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Next button */}
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: text }]} onPress={() => setStep('who')}>
+                  <Text style={[styles.actionBtnText, { color: bg }]}>Next: Guests</Text>
+                  <Ionicons name="arrow-forward" size={16} color={bg} />
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* ====== WHO ====== */}
+            {step === 'who' && (
+              <>
+                <Text style={[styles.heading, { color: text }]}>Who's coming?</Text>
+                <Text style={[styles.context, { color: subtle }]}>
+                  📍 {selectedLocation ? toTitleCase(selectedLocation.displayName) : 'Anywhere'}
+                  {checkIn && checkOut ? `  ·  📅 ${formatDateShort(checkIn)} – ${formatDateShort(checkOut)}` : ''}
+                </Text>
+
+                <View style={[styles.guestCard, { backgroundColor: card, borderColor: border }]}>
+                  <View>
+                    <Text style={[styles.guestTitle, { color: text }]}>Guests</Text>
+                    <Text style={[styles.guestSub, { color: subtle }]}>How many people?</Text>
+                  </View>
+                  <View style={styles.counter}>
+                    <TouchableOpacity style={[styles.cBtn, { borderColor: guests <= 1 ? border : text }]} onPress={() => setGuests(Math.max(1, guests - 1))} disabled={guests <= 1}>
+                      <Ionicons name="remove" size={20} color={guests <= 1 ? border : text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.cNum, { color: text }]}>{guests}</Text>
+                    <TouchableOpacity style={[styles.cBtn, { borderColor: text }]} onPress={() => setGuests(Math.min(50, guests + 1))}>
+                      <Ionicons name="add" size={20} color={text} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* SEARCH BUTTON — right here after guests */}
+                <TouchableOpacity style={[styles.searchBtn, { backgroundColor: tint }]} onPress={handleSearch} activeOpacity={0.85}>
+                  <Ionicons name="search" size={20} color="#fff" />
+                  <Text style={styles.searchBtnText}>Search stays</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </ScrollView>
+
+          {/* Calendar */}
+          <CalendarDatePicker
+            visible={showCalendar}
+            onClose={() => setShowCalendar(false)}
+            checkInDate={checkIn}
+            checkOutDate={checkOut}
+            onCheckInChange={setCheckIn}
+            onCheckOutChange={setCheckOut}
+            blockedDates={[]}
+            textColor={text}
+            tintColor={tint}
+            backgroundColor={bg}
+            borderColor={border}
+            secondaryText={subtle}
+            mode="range"
+          />
+        </SafeAreaView>
       </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  } as const,
-  overlayTouchable: {
-    flex: 1,
-  },
-  modalContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-  } as const,
-  keyboardView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  dragHandleContainer: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#999',
-    borderRadius: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeButtonCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTabs: {
-    flexDirection: 'row',
-    gap: 24,
-  },
-  headerTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    position: 'relative',
-  },
-  headerTabText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  headerTabTextActive: {
-    fontWeight: '600',
-  },
-  headerTabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderRadius: 1,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  pillsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    gap: 8,
-  },
-  pillActive: {
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  pillIcon: {
-    marginRight: 2,
-  },
-  pillText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  pillTextActive: {
-    color: '#fff',
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  sectionLabel: {
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  clearSectionButton: {
-    padding: 4,
-  },
-  clearSectionText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  dateLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 12,
-    opacity: 0.8,
-  },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  locationList: {
-    marginTop: 20,
-    gap: 10,
-  },
-  locationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 14,
-  },
-  locationItemSelected: {
-    borderWidth: 2,
-  },
-  locationIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  locationName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 3,
-  },
-  locationType: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  emptySubtext: {
-    textAlign: 'center',
-    marginTop: 8,
-    fontSize: 14,
-  },
-  dateSection: {
-    marginBottom: 20,
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 18,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 14,
-  },
-  dateButtonSelected: {
-    borderWidth: 2,
-  },
-  dateButtonDisabled: {
-    opacity: 0.5,
-  },
-  dateIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-  },
-  dateButtonSubtext: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  helperText: {
-    fontSize: 13,
-    marginTop: 8,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  inlineSearchButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 18,
-    borderRadius: 14,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    marginTop: 32,
-    marginBottom: 40,
-  },
-  searchButtonDisabled: {
-    opacity: 0.5,
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  datePickerModal: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  datePickerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  datePickerContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
-  },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 20,
-    borderBottomWidth: 1,
-  },
-  datePickerButton: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' } as any,
+  sheet: { flex: 1 },
+  safe: { flex: 1 },
+
+  // Top bar
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  topBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  progress: { flexDirection: 'row', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+
+  // Body
+  body: { flex: 1 },
+  bodyInner: { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 60 },
+
+  // Type
+  heading: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginBottom: 16 },
+  context: { fontSize: 14, marginBottom: 20, lineHeight: 20 },
+  label: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 24, marginBottom: 12 },
+
+  // Field
+  field: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, borderWidth: 1.5 },
+  fieldInput: { flex: 1, fontSize: 16, fontWeight: '500' },
+
+  // Results
+  results: { marginTop: 8 },
+  resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: '#eee' },
+  resultIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  resultName: { fontSize: 15, fontWeight: '600' },
+  resultType: { fontSize: 12, marginTop: 1 },
+  noResults: { textAlign: 'center', paddingVertical: 24, fontSize: 14 },
+
+  // Destinations
+  destGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  destCard: { width: '47%' as any, paddingVertical: 16, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, alignItems: 'center', gap: 4 },
+  destEmoji: { fontSize: 26 },
+  destName: { fontSize: 13, fontWeight: '600' },
+  flexBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed' as any },
+  flexText: { fontSize: 14, fontWeight: '600' },
+
+  // Dates
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dateBox: { flex: 1, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5 },
+  dateLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 },
+  dateVal: { fontSize: 14, fontWeight: '600' },
+
+  // Chips
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5 },
+  chipText: { fontSize: 13, fontWeight: '600' },
+
+  // Action button (Next)
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 28, paddingVertical: 15, borderRadius: 12 },
+  actionBtnText: { fontSize: 15, fontWeight: '700' },
+
+  // Guest
+  guestCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 16, borderWidth: 1 },
+  guestTitle: { fontSize: 17, fontWeight: '600' },
+  guestSub: { fontSize: 13, marginTop: 2 },
+  counter: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  cBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  cNum: { fontSize: 20, fontWeight: '700', minWidth: 28, textAlign: 'center' },
+
+  // Search button (inline, prominent)
+  searchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 24, paddingVertical: 16, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
+  searchBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
 });

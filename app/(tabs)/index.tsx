@@ -1,709 +1,331 @@
-import PropertyCard from '@/components/property/PropertyCard';
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { usePropertyFavorites } from '@/hooks/useProperty';
-import { PropertyType, usePropertyTypeCache } from '@/hooks/usePropertyTypeCache';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Visual category cards
+const CATEGORIES = [
+  { id: 'stays', label: 'Nightly Stays', emoji: '🏠', param: 'NIGHTLY_STAY', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=500&auto=format&fit=crop' },
+  { id: 'beach', label: 'Beach', emoji: '🏖️', param: 'BEACH', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop' },
+  { id: 'safari', label: 'Safari', emoji: '🦁', param: 'SAFARI', img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=500&auto=format&fit=crop' },
+  { id: 'parties', label: 'Parties', emoji: '🎉', param: 'PARTY', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=500&auto=format&fit=crop' },
+  { id: 'photos', label: 'Photoshoot', emoji: '📸', param: 'PHOTOSHOOT', img: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?q=80&w=500&auto=format&fit=crop' },
+  { id: 'business', label: 'Business', emoji: '💼', param: 'MEETING', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=500&auto=format&fit=crop' },
+];
+
 export default function HomeScreen() {
-  const [rentalType, setRentalType] = useState<RentalType>(RentalType.LONG_TERM);
+  const router = useRouter();
+  const { width: W } = useWindowDimensions();
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('monthly');
-  const [selectedPropertyType, setSelectedPropertyType] = useState<PropertyType | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  
-  // Animated scroll value
   const scrollY = useRef(new Animated.Value(0)).current;
-  
-  // Initialize with default dates
+
   const today = new Date();
-  const oneWeekLater = new Date(today);
-  oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-  
+  const threeDays = new Date(today);
+  threeDays.setDate(threeDays.getDate() + 3);
+
   const [searchParams, setSearchParams] = useState<SearchParams>({
     checkInDate: today.toISOString().split('T')[0],
-    checkOutDate: oneWeekLater.toISOString().split('T')[0],
-    moveInDate: today.toISOString().split('T')[0],
+    checkOutDate: threeDays.toISOString().split('T')[0],
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [renderedSections, setRenderedSections] = useState<Set<number>>(new Set([0])); // Only render first section initially
-  const isRenderingSection = useRef(false); // Prevent multiple sections rendering at once
-  const { isAuthenticated } = useAuth();
-  
-  // Use the categorized properties hook with rental type (always public/CloudFront)
-  const { appData, isLoading, error, refetch } = useCategorizedProperties(
-    rentalType === RentalType.LONG_TERM ? 'LONG_TERM' : 'SHORT_TERM'
-  );
-  
-  // Use property type cache when a specific type is selected
-  const { 
-    data: propertyTypeData, 
-    isLoading: isLoadingPropertyType, 
-    error: propertyTypeError,
-    refetch: refetchPropertyType 
-  } = usePropertyTypeCache(selectedPropertyType);
-  
+
+  const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
   const { toggleFavorite, isFavorited } = usePropertyFavorites();
 
-  const backgroundColor = useThemeColor({ light: '#FAFAFA', dark: '#000000' }, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
-  const headerBg = useThemeColor({ light: '#FFFFFF', dark: '#000000' }, 'background');
-  const borderColor = useThemeColor({ light: '#EBEBEB', dark: '#2C2C2E' }, 'background');
-  const categoryBg = useThemeColor({ light: '#FFFFFF', dark: '#1C1C1E' }, 'background');
-  const cardBg = useThemeColor({ light: '#FFFFFF', dark: '#1C1C1E' }, 'background');
+  const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const text = useThemeColor({}, 'text');
+  const tint = useThemeColor({}, 'tint');
+  const border = useThemeColor({ light: '#f0f0f0', dark: '#222' }, 'background');
+  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
-  // Category filters - Airbnb style with rental types integrated
-  const categories = [
-    { id: 'monthly', label: 'Monthly', icon: 'calendar-outline', type: RentalType.LONG_TERM },
-    { id: 'nightly', label: 'Nightly', icon: 'moon-outline', type: RentalType.SHORT_TERM },
-    { id: 'house', label: 'Houses', icon: 'home-outline', propertyType: 'HOUSE' as PropertyType },
-    { id: 'hotel', label: 'Hotels', icon: 'business', propertyType: 'HOTEL' as PropertyType },
-    { id: 'apartment', label: 'Apartments', icon: 'business-outline', propertyType: 'APARTMENT' as PropertyType },
-    { id: 'guesthouse', label: 'Guesthouses', icon: 'home', propertyType: 'GUESTHOUSE' as PropertyType },
-    { id: 'room', label: 'Rooms', icon: 'bed', propertyType: 'ROOM' as PropertyType },
-    { id: 'cottage', label: 'Cottages', icon: 'leaf-outline', propertyType: 'COTTAGE' as PropertyType },
-    { id: 'commercial', label: 'Commercial', icon: 'storefront-outline', propertyType: 'COMMERCIAL' as PropertyType },
-    { id: 'villa', label: 'Villas', icon: 'bed-outline', propertyType: 'VILLA' as PropertyType },
-    { id: 'studio', label: 'Studios', icon: 'cube-outline', propertyType: 'STUDIO' as PropertyType },
-  ];
-
-  // Get properties organized by category with headers
-  const getPropertiesByCategory = () => {
-    // If a property type is selected, show property type data (both rental types combined)
-    if (selectedPropertyType && propertyTypeData) {
-      const longTermProperties = propertyTypeData.longTerm || [];
-      const shortTermProperties = propertyTypeData.shortTerm || [];
-      
-      // Combine both rental types
-      const allProperties = [...longTermProperties, ...shortTermProperties];
-      
-      
-      return [{
-        title: `${selectedPropertyType.charAt(0) + selectedPropertyType.slice(1).toLowerCase()}s`,
-        categoryName: selectedPropertyType.toLowerCase(),
-        properties: allProperties,
-        category: 'PROPERTY_TYPE' as const,
-      }];
-    }
-    
-    // Otherwise show categorized properties filtered by rental type
+  // Merge all properties into one feed, deduped
+  const feed = React.useMemo(() => {
     if (!appData) return [];
-    
-    // Both rental types use the same structure now
-    const sections = [
-      {
-        title: rentalType === RentalType.LONG_TERM ? 'Best Prices' : 'Best Nightly Rates',
-        categoryName: 'best prices',
-        properties: appData.categorizedProperties.lowestPrice?.properties || [],
-        category: 'LOWEST_PRICE' as const,
-      },
-      {
-        title: rentalType === RentalType.LONG_TERM ? 'Nearby' : 'Recent Stays',
-        categoryName: 'nearby',
-        properties: appData.categorizedProperties.nearby?.properties || [],
-        category: 'NEARBY' as const,
-      },
-      {
-        title: rentalType === RentalType.LONG_TERM ? 'Most Viewed' : 'Top Rated',
-        categoryName: 'most viewed',
-        properties: appData.categorizedProperties.mostViewed?.properties || [],
-        category: 'MOST_VIEWED' as const,
-      },
-      {
-        title: rentalType === RentalType.LONG_TERM ? 'Premium Properties' : 'Luxury Stays',
-        categoryName: 'premium',
-        properties: appData.categorizedProperties.more?.properties || [],
-        category: 'MORE' as const,
-      },
+    const all = [
+      ...(appData.categorizedProperties.lowestPrice?.properties || []),
+      ...(appData.categorizedProperties.mostViewed?.properties || []),
+      ...(appData.categorizedProperties.nearby?.properties || []),
+      ...(appData.categorizedProperties.more?.properties || []),
     ];
-  
-    return sections;
-  };
-
-  const categorizedProperties = getPropertiesByCategory();
-
-  // Debug: Check if images are using CloudFront or S3
-  useEffect(() => {
-    if (appData?.categorizedProperties.lowestPrice?.properties[0]) {
-      const firstProperty = appData.categorizedProperties.lowestPrice.properties[0];
-      const totalProperties = Object.values(appData.categorizedProperties)
-        .reduce((sum, cat) => sum + (cat?.properties?.length || 0), 0);
-      
-      console.log('[DEBUG] Sample thumbnail URL:', firstProperty.thumbnail);
-      console.log('[DEBUG] Total properties to render:', totalProperties);
-      
-      if (firstProperty.thumbnail?.includes('s3.amazonaws.com')) {
-        console.warn('⚠️ Images are loading from S3 directly - not using CloudFront!');
-        console.warn('⚠️ This is causing slow image loads. Images should use CloudFront domain.');
-      } else if (firstProperty.thumbnail?.includes('cloudfront.net')) {
-        console.log('✅ Images are using CloudFront');
-      } else {
-        console.log('[DEBUG] Image URL format:', firstProperty.thumbnail?.substring(0, 50));
-      }
-      
-      // Reset rendered sections when data changes
-      setRenderedSections(new Set([0]));
-    }
+    const seen = new Set<string>();
+    return all.filter((p: any) => { if (seen.has(p.propertyId)) return false; seen.add(p.propertyId); return true; });
   }, [appData]);
 
-  // Animated scale values for smooth shrinking
-  const searchBarScale = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.92],
-    extrapolate: 'clamp',
-  });
+  const handleRefresh = async () => { setIsRefreshing(true); await refetch(); setIsRefreshing(false); };
 
-  const categoriesScale = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.88],
-    extrapolate: 'clamp',
-  });
+  // Featured card — first property rendered big
+  const featured: any = feed[0];
+  const rest = feed.slice(1);
 
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
-    outputRange: [1, 0.95],
-    extrapolate: 'clamp',
-  });
+  // Image height for regular cards (landscape aspect, not too tall)
+  const CARD_IMG = W * 0.62;
 
-  const handleSearch = (params: SearchParams) => {
-    setSearchParams(params);
-    // TODO: Navigate to search results page with params
+  // Build a varied layout: pairs of small cards + full-width cards
+  const renderFeedItem = ({ item, index }: { item: any; index: number }) => {
+    // Pattern: every 3rd item (0-indexed: 2, 5, 8...) is full-width tall
+    // Others come in pairs (rendered together from even index)
+    const patternPos = index % 3;
+
+    if (patternPos === 2) {
+      // Full-width tall card
+      return renderWideCard(item);
+    }
+    // Pair cards — only render from even positions in the pair
+    if (patternPos === 1) return null; // handled by patternPos === 0
+    // patternPos === 0: render a row of 2 compact cards
+    const nextItem = rest[index + 1];
+    return (
+      <View style={styles.pairRow}>
+        {renderCompactCard(item)}
+        {nextItem ? renderCompactCard(nextItem) : <View style={styles.pairHalf} />}
+      </View>
+    );
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      if (selectedPropertyType) {
-        await refetchPropertyType();
-      } else {
-        await refetch();
-      }
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    { 
-      useNativeDriver: false,
-      listener: (event: any) => {
-        // Prevent rendering multiple sections at once
-        if (isRenderingSection.current) return;
-        
-        const offsetY = event.nativeEvent.contentOffset.y;
-        const layoutHeight = event.nativeEvent.layoutMeasurement.height;
-        const contentHeight = event.nativeEvent.contentSize.height;
-        
-        // Lazy render next section when user is 800px from bottom
-        if (contentHeight - offsetY - layoutHeight < 800) {
-          const maxSection = categorizedProperties.length - 1;
-          const currentMax = Math.max(...Array.from(renderedSections));
-          
-          // Only render next section if there is one
-          if (currentMax < maxSection) {
-            isRenderingSection.current = true;
-            
-            setRenderedSections(prev => {
-              const newSet = new Set(prev);
-              newSet.add(currentMax + 1);
-              console.log('[HomePage] Lazy rendering section:', currentMax + 1, 'of', maxSection);
-              return newSet;
-            });
-            
-            // Allow next section to render after a delay
-            setTimeout(() => {
-              isRenderingSection.current = false;
-            }, 500);
-          }
-        }
-      }
-    }
+  const renderWideCard = (p: any) => (
+    <TouchableOpacity style={styles.wideCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
+      <View style={[styles.wideImgWrap, { height: W * 0.55 }]}>
+        <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
+        <TouchableOpacity style={styles.heart} onPress={() => toggleFavorite(p.propertyId)}>
+          <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={20} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
+        </TouchableOpacity>
+        {p.averageRating > 0 && (
+          <View style={styles.wideRatingBadge}>
+            <Ionicons name="star" size={11} color="#fff" />
+            <Text style={styles.wideRatingText}>{p.averageRating.toFixed(1)}</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.cardMeta}>
+        <Text style={[styles.loc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
+        <Text style={[styles.title, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
+        <Text style={[styles.price, { color: text }]}>
+          {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
+          <Text style={{ color: subtle, fontWeight: '400' }}> night</Text>
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
-  const toggleSection = (sectionIndex: number) => {
-    const newExpanded = new Set(expandedSections);
-    const key = `section-${sectionIndex}`;
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key);
-    } else {
-      newExpanded.add(key);
-    }
-    setExpandedSections(newExpanded);
-  };
+  const renderCompactCard = (p: any) => (
+    <TouchableOpacity style={styles.compactCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
+      <View style={[styles.compactImgWrap, { height: (W - 44) / 2 * 1.1 }]}>
+        <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
+        <TouchableOpacity style={styles.heartSmall} onPress={() => toggleFavorite(p.propertyId)}>
+          <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={16} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.compactMeta}>
+        <Text style={[styles.compactLoc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
+        <Text style={[styles.compactTitle, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
+        <Text style={[styles.compactPrice, { color: text }]}>
+          {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
+          <Text style={{ color: subtle, fontWeight: '400' }}> /n</Text>
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
-  const INITIAL_DISPLAY_COUNT = 4; // Show 4 properties initially (2 rows) - optimized for fast render
+  // Header component with categories
+  const ListHeader = () => (
+    <>
+      {/* Featured Hero Card */}
+      {featured && (
+        <TouchableOpacity
+          style={styles.hero}
+          activeOpacity={0.9}
+          onPress={() => router.push(`/short-property/${featured.propertyId}`)}
+        >
+          <Image source={{ uri: featured.thumbnail || undefined }} style={[styles.fill, { height: W * 0.85 }]} contentFit="cover" transition={300} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroGradient} />
+          <TouchableOpacity style={styles.heroHeart} onPress={() => toggleFavorite(featured.propertyId)}>
+            <Ionicons name={isFavorited(featured.propertyId) ? 'heart' : 'heart-outline'} size={22} color={isFavorited(featured.propertyId) ? '#ff385c' : '#fff'} />
+          </TouchableOpacity>
+          <View style={styles.heroInfo}>
+            <Text style={styles.heroLoc}>{featured.district || featured.region}</Text>
+            <Text style={styles.heroTitle} numberOfLines={2}>{featured.title}</Text>
+            <Text style={styles.heroPrice}>
+              {featured.currency === 'TZS' ? 'Tshs' : featured.currency} {(featured.nightlyRate || 0).toLocaleString()}
+              <Text style={styles.heroPriceUnit}> /night</Text>
+            </Text>
+          </View>
+          {featured.averageRating > 0 && (
+            <View style={styles.heroRating}>
+              <Ionicons name="star" size={12} color="#fff" />
+              <Text style={styles.heroRatingText}>{featured.averageRating.toFixed(1)}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Categories Section */}
+      <View style={styles.catSection}>
+        <Text style={[styles.catTitle, { color: text }]}>Explore by occasion</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catScroll}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.catCard}
+              activeOpacity={0.85}
+              onPress={() => router.push(`/search?category=${cat.param}` as any)}
+            >
+              <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />
+              <View style={styles.catOverlay}>
+                <Text style={styles.catEmoji}>{cat.emoji}</Text>
+                <Text style={styles.catLabel}>{cat.label}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Section title for feed */}
+      {rest.length > 0 && (
+        <Text style={[styles.feedTitle, { color: text }]}>More stays to explore</Text>
+      )}
+    </>
+  );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      {/* Sticky Header with Gradient */}
-      <Animated.View 
-        style={[
-          styles.header, 
-          { 
-            backgroundColor: headerBg, 
-            borderBottomColor: borderColor,
-            opacity: headerOpacity,
-          }
-        ]}
-      >
-        {/* Search Bar */}
-        <Animated.View 
-          style={{ 
-            transform: [{ scale: searchBarScale }],
-          }}
-        >
-          <SearchBar 
-            onPress={() => setShowSearchModal(true)} 
-            rentalType={rentalType}
-            checkInDate={searchParams.checkInDate}
-            checkOutDate={searchParams.checkOutDate}
-            moveInDate={searchParams.moveInDate}
-          />
-        </Animated.View>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={['top']}>
+      {/* Sticky search bar */}
+      <View style={[styles.headerBar, { backgroundColor: bg, borderBottomColor: border }]}>
+        <SearchBar
+          onPress={() => setShowSearchModal(true)}
+          checkInDate={searchParams.checkInDate}
+          checkOutDate={searchParams.checkOutDate}
+        />
+      </View>
 
-        {/* Category Filters - Enhanced Airbnb Style */}
-        <Animated.ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-          style={[
-            styles.categoriesScroll,
-            { 
-              transform: [{ scale: categoriesScale }],
-            }
-          ]}
-        >
-          {categories.map((category) => {
-            const isSelected = selectedCategory === category.id;
-            return (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryItem,
-                  { 
-                    backgroundColor: isSelected ? categoryBg : 'transparent',
-                    borderColor: isSelected ? textColor : borderColor,
-                  }
-                ]}
-                onPress={() => {
-                  setSelectedCategory(category.id);
-                  if (category.type) {
-                    setRentalType(category.type);
-                    setSelectedPropertyType(null); // Clear property type filter
-                  } else if (category.propertyType) {
-                    setSelectedPropertyType(category.propertyType);
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons 
-                  name={category.icon as any} 
-                  size={18} 
-                  color={isSelected ? textColor : '#717171'} 
-                />
-                <Text style={[
-                  styles.categoryText,
-                  { color: isSelected ? textColor : '#717171' },
-                  isSelected && styles.categoryTextActive
-                ]}>
-                  {category.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </Animated.ScrollView>
-      </Animated.View>
-
-      {/* Search Modal */}
       <SearchModal
         visible={showSearchModal}
         onClose={() => setShowSearchModal(false)}
-        rentalType={rentalType}
-        onSearch={handleSearch}
-        onRentalTypeChange={setRentalType}
+        rentalType={RentalType.SHORT_TERM}
+        onSearch={setSearchParams}
+        onRentalTypeChange={() => {}}
       />
 
-      {/* Property Grid */}
-      <Animated.ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={tintColor}
-            colors={[tintColor]}
-          />
-        }
-      >
-        {(isLoading || isLoadingPropertyType) ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={tintColor} />
-            <Text style={[styles.loadingText, { color: textColor }]}>Loading properties...</Text>
-          </View>
-        ) : (error || propertyTypeError) ? (
-          <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-            <Text style={styles.errorText}>{error || propertyTypeError}</Text>
-            <TouchableOpacity 
-              style={[styles.retryButton, { backgroundColor: tintColor }]}
-              onPress={() => selectedPropertyType ? refetchPropertyType() : refetch()}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            {/* Empty State for Property Type Filter */}
-            {selectedPropertyType && categorizedProperties.every(s => s.properties.length === 0) && (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="home-outline" size={64} color={textColor} style={{ opacity: 0.3 }} />
-                <Text style={[styles.emptyTitle, { color: textColor }]}>
-                  No {selectedPropertyType.toLowerCase()}s available
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
-                  There are currently no properties of this type. Try browsing other property types or check back later.
-                </Text>
-                <TouchableOpacity
-                  style={[styles.emptyButton, { backgroundColor: tintColor }]}
-                  onPress={() => {
-                    setSelectedPropertyType(null);
-                    setSelectedCategory(rentalType === RentalType.LONG_TERM ? 'monthly' : 'nightly');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.emptyButtonText}>Browse All Properties</Text>
-                </TouchableOpacity>
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={tint} />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="wifi-outline" size={36} color={subtle} />
+          <Text style={[styles.errTitle, { color: text }]}>Couldn't connect</Text>
+          <Text style={[styles.errSub, { color: subtle }]}>{error}</Text>
+          <TouchableOpacity style={[styles.retryBtn, { backgroundColor: text }]} onPress={refetch}>
+            <Text style={[styles.retryTxt, { color: bg }]}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={rest}
+          keyExtractor={(p: any) => p.propertyId}
+          renderItem={renderFeedItem}
+          ListHeaderComponent={ListHeader}
+          contentContainerStyle={styles.feedContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={tint} />}
+          ListEmptyComponent={
+            !featured ? (
+              <View style={styles.center}>
+                <Ionicons name="bed-outline" size={36} color={subtle} />
+                <Text style={[styles.errTitle, { color: text }]}>No stays yet</Text>
+                <Text style={[styles.errSub, { color: subtle }]}>Check back soon</Text>
               </View>
-            )}
-            
-            {/* Property Sections with Headers - Lazy Rendered */}
-            {categorizedProperties.map((section, sectionIndex) => {
-              if (section.properties.length === 0) return null;
-              
-              // Only render sections that have been scrolled to
-              if (!renderedSections.has(sectionIndex)) {
-                // Render placeholder to maintain scroll position
-                return (
-                  <View key={sectionIndex} style={[styles.section, styles.sectionPlaceholder]}>
-                    <View style={styles.sectionHeader}>
-                      <View style={styles.sectionTitleContainer}>
-                        <Text style={[styles.sectionTitle, { color: textColor }]}>
-                          {section.title}
-                        </Text>
-                        <View style={[styles.sectionAccent, { backgroundColor: tintColor }]} />
-                      </View>
-                    </View>
-                    <View style={styles.loadingSection}>
-                      <ActivityIndicator size="small" color={tintColor} />
-                      <Text style={[styles.loadingText, { color: textColor }]}>
-                        Scroll to load...
-                      </Text>
-                    </View>
-                  </View>
-                );
-              }
-              
-              const isExpanded = expandedSections.has(`section-${sectionIndex}`);
-              const displayProperties = isExpanded 
-                ? section.properties 
-                : section.properties.slice(0, INITIAL_DISPLAY_COUNT);
-              const hasMoreToShow = section.properties.length > INITIAL_DISPLAY_COUNT;
-              
-              return (
-                <View key={sectionIndex} style={styles.section}>
-                  {/* Section Header with Gradient Accent */}
-                  <View style={styles.sectionHeader}>
-                    <View style={styles.sectionTitleContainer}>
-                      <Text style={[styles.sectionTitle, { color: textColor }]}>
-                        {section.title}
-                      </Text>
-                      <View style={[styles.sectionAccent, { backgroundColor: tintColor }]} />
-                    </View>
-                  </View>
-
-                  {/* Property Grid */}
-                  <View style={styles.propertyGrid}>
-                    {displayProperties.map((property: any) => {
-                      // Determine rental type based on context
-                      let isLongTerm: boolean;
-                      
-                      if (section.category === 'PROPERTY_TYPE') {
-                        // For property type filter view, check the actual property data
-                        // A property is long-term ONLY if it has monthlyRent but NO nightlyRate
-                        const hasMonthlyRent = property.monthlyRent !== undefined && property.monthlyRent !== null && property.monthlyRent > 0;
-                        const hasNightlyRate = property.nightlyRate !== undefined && property.nightlyRate !== null && property.nightlyRate > 0;
-                        
-                        if (hasNightlyRate) {
-                          // Has nightly rate = short-term
-                          isLongTerm = false;
-                        } else if (hasMonthlyRent) {
-                          // Has monthly rent but no nightly rate = long-term
-                          isLongTerm = true;
-                        } else {
-                          // Fallback to rental type state
-                          isLongTerm = rentalType === RentalType.LONG_TERM;
-                        }
-                      } else {
-                        // For categorized views, use the current rental type tab
-                        isLongTerm = rentalType === RentalType.LONG_TERM;
-                      }
-                      
-                      const price = isLongTerm ? property.monthlyRent : property.nightlyRate;
-                      const priceUnit = isLongTerm ? 'month' : 'night';
-                      
-                      
-                      return (
-                        <PropertyCard
-                          key={property.propertyId}
-                          propertyId={property.propertyId}
-                          title={property.title}
-                          location={property.district || property.region}
-                          price={price}
-                          currency={property.currency}
-                          rating={property.averageRating}
-                          thumbnail={property.thumbnail}
-                          bedrooms={property.bedrooms || property.maxGuests}
-                          propertyType={property.propertyType}
-                          priceUnit={priceUnit}
-                          onFavoritePress={() => toggleFavorite(property.propertyId)}
-                          isFavorited={isFavorited(property.propertyId)}
-                        />
-                      );
-                    })}
-                  </View>
-
-                  {/* Show All / Show Less Button */}
-                  {hasMoreToShow && (
-                    <TouchableOpacity
-                      style={[styles.showAllButton, { borderColor: borderColor }]}
-                      onPress={() => toggleSection(sectionIndex)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.showAllText, { color: textColor }]}>
-                        {isExpanded 
-                          ? 'Show less' 
-                          : `Show all ${section.categoryName}`}
-                      </Text>
-                      <Ionicons 
-                        name={isExpanded ? "chevron-up" : "chevron-forward"} 
-                        size={20} 
-                        color={textColor} 
-                      />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            })}
-          </>
-        )}
-      </Animated.ScrollView>
+            ) : null
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    borderBottomWidth: 1,
-    paddingTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  categoriesScroll: {
-    paddingBottom: 4,
-  },
-  categoriesContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1.5,
-    gap: 6,
-  },
-  categoryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.1,
-  },
-  categoryTextActive: {
-    fontWeight: '700',
-  },
-  scrollContent: {
-    paddingBottom: 32,
-    paddingTop: 20,
-  },
-  section: {
-    marginBottom: 40,
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionTitleContainer: {
-    position: 'relative',
-  },
-  sectionTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.8,
-    marginBottom: 8,
-  },
-  sectionAccent: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 4,
-  },
-  propertyGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100,
-    paddingHorizontal: 40,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#ef4444',
-    marginTop: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  retryButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  loadMoreButton: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-  },
-  loadMoreText: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  showAllButton: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-  },
-  showAllText: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  bottomLoader: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 100,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 24,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  emptyButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  emptyButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  sectionPlaceholder: {
-    minHeight: 200,
-  },
-  loadingSection: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    gap: 12,
-  },
+  container: { flex: 1 },
+  headerBar: { borderBottomWidth: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 100 },
+  errTitle: { fontSize: 16, fontWeight: '600', marginTop: 10 },
+  errSub: { fontSize: 13, marginTop: 4, textAlign: 'center' },
+  retryBtn: { marginTop: 14, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  retryTxt: { fontSize: 14, fontWeight: '600' },
+  fill: { width: '100%', height: '100%' },
+  feedContainer: { paddingBottom: 40 },
+
+  // Hero
+  hero: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, overflow: 'hidden', position: 'relative' },
+  heroGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%' },
+  heroHeart: { position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
+  heroInfo: { position: 'absolute', bottom: 20, left: 18, right: 18 },
+  heroLoc: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: -0.3, lineHeight: 28 },
+  heroPrice: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8 },
+  heroPriceUnit: { fontWeight: '400', color: 'rgba(255,255,255,0.8)' },
+  heroRating: { position: 'absolute', top: 16, left: 16, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  heroRatingText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // Categories
+  catSection: { marginTop: 28, marginBottom: 8 },
+  catTitle: { fontSize: 19, fontWeight: '700', marginBottom: 14, paddingHorizontal: 20, letterSpacing: -0.3 },
+  catScroll: { paddingHorizontal: 16 },
+  catCard: { width: 130, height: 160, borderRadius: 14, overflow: 'hidden', marginRight: 10, position: 'relative' },
+  catImg: { width: '100%', height: '100%' },
+  catGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%' },
+  catOverlay: { position: 'absolute', bottom: 12, left: 10 },
+  catEmoji: { fontSize: 20, marginBottom: 2 },
+  catLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // Feed
+  feedTitle: { fontSize: 19, fontWeight: '700', paddingHorizontal: 20, marginTop: 28, marginBottom: 14, letterSpacing: -0.3 },
+
+  // Wide full-width card
+  wideCard: { marginHorizontal: 16, marginBottom: 24 },
+  wideImgWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  wideRatingBadge: { position: 'absolute', bottom: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  wideRatingText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Pair row (two compact cards side by side)
+  pairRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 20, gap: 12 },
+  pairHalf: { flex: 1 },
+
+  // Compact card (half-width)
+  compactCard: { flex: 1 },
+  compactImgWrap: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  heartSmall: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
+  compactMeta: { paddingTop: 6 },
+  compactLoc: { fontSize: 13, fontWeight: '600' },
+  compactTitle: { fontSize: 12, marginTop: 1 },
+  compactPrice: { fontSize: 13, fontWeight: '600', marginTop: 3 },
+
+  // Shared card styles
+  card: { marginHorizontal: 16, marginBottom: 24 },
+  cardImgWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  heart: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
+  cardMeta: { paddingTop: 8 },
+  loc: { fontSize: 15, fontWeight: '600', flex: 1 },
+  title: { fontSize: 14, marginTop: 2 },
+  price: { fontSize: 15, fontWeight: '600', marginTop: 4 },
 });

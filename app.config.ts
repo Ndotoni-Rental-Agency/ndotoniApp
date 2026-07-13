@@ -5,12 +5,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w";
 
   return {
-    name: "ndotoni",
-    slug: "ndotoniApp",
+    name: "ndotoni Stays",
+    slug: "ndotoniStays",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "ndotoniapp",
+    scheme: "ndotonistays",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
@@ -18,18 +18,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       config: {
         googleMapsApiKey,
       },
-      bundleIdentifier: "com.ndotoni.app",
+      bundleIdentifier: "com.ndotoni.stays",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationWhenInUseUsageDescription:
-          "This app needs access to your location to help you set property coordinates on the map.",
+          "This app needs access to your location to find stays near you and set property coordinates.",
         NSLocationAlwaysAndWhenInUseUsageDescription:
-          "This app needs access to your location to help you set property coordinates on the map.",
+          "This app needs access to your location to find stays near you and set property coordinates.",
       },
     },
     android: {
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
+        backgroundColor: "#f0fdf4",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           apiKey: googleMapsApiKey,
         },
       },
-      package: "com.ndotoni.app",
+      package: "com.ndotoni.stays",
       permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
     },
     web: {
@@ -55,7 +55,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           image: "./assets/images/splash-icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f0fdf4",
           dark: {
             backgroundColor: "#000000",
           },

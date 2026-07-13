@@ -7,7 +7,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 /**
  * OAuth callback route handler for Android.
- * On Android, the OAuth redirect (ndotoniapp://auth/callback?code=...)
+ * On Android, the OAuth redirect (ndotonistays://auth/callback?code=...)
  * is handled by Expo Router as a deep link. This route catches it,
  * exchanges the auth code for tokens, reloads auth state, and
  * navigates back to the main app — all seamlessly.

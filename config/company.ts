@@ -5,10 +5,10 @@
 
 export const COMPANY_INFO = {
   // Basic Information
-  name: 'ndotoni',
-  fullName: 'ndotoni Property Solutions',
-  tagline: 'Your Gateway to Quality Housing',
-  description: 'Tanzania\'s leading property rental platform connecting quality tenants with verified landlords.',
+  name: 'ndotoni Stays',
+  fullName: 'ndotoni Stays',
+  tagline: 'Short-Term Rentals in Tanzania',
+  description: 'Book nightly stays, party venues, photoshoot locations, and event spaces across Tanzania. Instant booking, flexible cancellation.',
   
   // Contact Information
   contact: {
@@ -63,9 +63,9 @@ export const COMPANY_INFO = {
   },
 
   // Mission & Vision
-  mission: 'To revolutionize the property rental experience in Tanzania by connecting quality tenants with verified landlords through innovative technology and exceptional service.',
+  mission: 'To make short-term stays in Tanzania effortless — connecting guests with unique spaces for every occasion, from nightly getaways to celebrations and business events.',
   
-  vision: 'To become East Africa\'s most trusted property rental platform, making quality housing accessible to everyone.',
+  vision: 'To become Tanzania\'s go-to platform for short-term stays, making unique spaces accessible to everyone.',
 
   // Core Values
   values: [

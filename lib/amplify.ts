@@ -12,8 +12,8 @@ const getConfig = (): ResourcesConfig => {
   const userPoolId = process.env.EXPO_PUBLIC_USER_POOL_ID || 'us-west-2_N7XRQtTla';
   const userPoolClientId = process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID || 'djgqjttrjucdoah5ap41ojcjh';
   const cognitoDomain = process.env.EXPO_PUBLIC_COGNITO_DOMAIN || 'auth-beta.ndotoni.com';
-  const redirectSignIn = process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotoniapp://';
-  const redirectSignOut = process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotoniapp://';
+  const redirectSignIn = process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotonistays://';
+  const redirectSignOut = process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotonistays://';
   const graphqlEndpoint = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 'https://otp4pddzjjhvzdwcexgxcuopp4.appsync-api.us-west-2.amazonaws.com/graphql';
   const graphqlRegion = process.env.EXPO_PUBLIC_GRAPHQL_REGION || 'us-west-2';
   const apiKey = process.env.EXPO_PUBLIC_API_KEY || 'da2-ncvexbs4sfc7jol4gzs2ts3fdm';

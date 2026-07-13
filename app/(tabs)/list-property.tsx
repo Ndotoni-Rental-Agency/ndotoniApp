@@ -75,7 +75,7 @@ export default function ListPropertyScreen() {
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const [formData, setFormData] = useState({
-    rentalType: 'LONG_TERM', // 'LONG_TERM' or 'SHORT_TERM'
+    rentalType: 'SHORT_TERM', // Always short-term for ndotoni Stays
     title: 'Beautiful Home Available',
     propertyType: 'HOUSE',
     shortTermPropertyType: 'HOUSE',
@@ -341,7 +341,7 @@ export default function ListPropertyScreen() {
           text: 'OK',
           onPress: () => {
             setFormData({
-              rentalType: 'LONG_TERM',
+              rentalType: 'SHORT_TERM',
               title: '',
               propertyType: 'HOUSE',
               shortTermPropertyType: 'HOUSE',
@@ -395,113 +395,7 @@ export default function ListPropertyScreen() {
             </View>
           </View>
 
-          {/* Rental Type Selector */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>
-              Rental Type <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.rentalTypeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.rentalTypeButton,
-                  { 
-                    borderColor,
-                    backgroundColor: formData.rentalType === 'LONG_TERM' ? tintColor : inputBg,
-                  },
-                  formData.rentalType === 'LONG_TERM' && {
-                    borderColor: tintColor,
-                  },
-                ]}
-                onPress={() => setFormData({ ...formData, rentalType: 'LONG_TERM' })}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.iconCircle,
-                  { 
-                    backgroundColor: formData.rentalType === 'LONG_TERM' 
-                      ? 'rgba(255,255,255,0.2)' 
-                      : `${tintColor}15`,
-                  }
-                ]}>
-                  <Ionicons 
-                    name="home" 
-                    size={20} 
-                    color={formData.rentalType === 'LONG_TERM' ? '#fff' : tintColor} 
-                  />
-                </View>
-                <View style={styles.rentalTypeTextContainer}>
-                  <Text
-                    style={[
-                      styles.rentalTypeText,
-                      { color: textColor },
-                      formData.rentalType === 'LONG_TERM' && styles.rentalTypeTextActive,
-                    ]}
-                  >
-                    Long-term
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rentalTypeSubtext,
-                      { color: placeholderColor },
-                      formData.rentalType === 'LONG_TERM' && { color: 'rgba(255,255,255,0.8)' },
-                    ]}
-                  >
-                    Monthly rent
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.rentalTypeButton,
-                  { 
-                    borderColor,
-                    backgroundColor: formData.rentalType === 'SHORT_TERM' ? tintColor : inputBg,
-                  },
-                  formData.rentalType === 'SHORT_TERM' && {
-                    borderColor: tintColor,
-                  },
-                ]}
-                onPress={() => setFormData({ ...formData, rentalType: 'SHORT_TERM' })}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.iconCircle,
-                  { 
-                    backgroundColor: formData.rentalType === 'SHORT_TERM' 
-                      ? 'rgba(255,255,255,0.2)' 
-                      : `${tintColor}15`,
-                  }
-                ]}>
-                  <Ionicons 
-                    name="calendar" 
-                    size={20} 
-                    color={formData.rentalType === 'SHORT_TERM' ? '#fff' : tintColor} 
-                  />
-                </View>
-                <View style={styles.rentalTypeTextContainer}>
-                  <Text
-                    style={[
-                      styles.rentalTypeText,
-                      { color: textColor },
-                      formData.rentalType === 'SHORT_TERM' && styles.rentalTypeTextActive,
-                    ]}
-                  >
-                    Short-term
-                  </Text>
-                  <Text
-                    style={[
-                      styles.rentalTypeSubtext,
-                      { color: placeholderColor },
-                      formData.rentalType === 'SHORT_TERM' && { color: 'rgba(255,255,255,0.8)' },
-                    ]}
-                  >
-                    Nightly rate
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* Rental Type - hidden, always short-term for ndotoni Stays */}
 
           {/* Title */}
           <View style={styles.section}>

@@ -2,8 +2,8 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { RentalType } from '@/hooks/useRentalType';
 import { formatDateShort } from '@/lib/utils/common';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface SearchBarProps {
   onPress?: () => void;
@@ -11,155 +11,128 @@ interface SearchBarProps {
   selectedLocation?: string;
   checkInDate?: string;
   checkOutDate?: string;
-  moveInDate?: string;
+  guests?: number;
 }
 
-export default function SearchBar({ 
-  onPress, 
-  rentalType = RentalType.LONG_TERM,
+const PLACEHOLDERS = [
+  'Find a place tonight',
+  'Book a party venue',
+  'Get a photoshoot spot',
+  'Plan a weekend getaway',
+  'Reserve a meeting space',
+];
+
+export default function SearchBar({
+  onPress,
+  rentalType = RentalType.SHORT_TERM,
   selectedLocation,
   checkInDate,
   checkOutDate,
-  moveInDate,
+  guests,
 }: SearchBarProps) {
-  const backgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1C1C1E' }, 'background');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
   const textColor = useThemeColor({}, 'text');
-  const cardBg = backgroundColor;
-  const borderColor = useThemeColor({ light: '#DDDDDD', dark: '#2C2C2E' }, 'background');
-  const iconColor = useThemeColor({ light: '#222222', dark: '#9CA3AF' }, 'text');
+  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#333' }, 'background');
+  const subtleColor = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  
-  const isShortTerm = rentalType === RentalType.SHORT_TERM;
-  
-  const getLocationText = () => {
-    // Always show "Search destinations" - don't display selected location
-    return 'Search destinations';
-  };
 
-  const getDateText = () => {
-    if (isShortTerm) {
-      if (checkInDate && checkOutDate) {
-        return `${formatDateShort(checkInDate)} - ${formatDateShort(checkOutDate)}`;
-      }
-      if (checkInDate) {
-        return `From ${formatDateShort(checkInDate)}`;
-      }
-      return 'Add dates';
-    } else {
-      if (moveInDate) {
-        return formatDateShort(moveInDate);
-      }
-      return 'Anytime';
-    }
-  };
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const hasSearchCriteria = checkInDate || checkOutDate || moveInDate;
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fade out + slide up
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: -8, duration: 200, useNativeDriver: true }),
+      ]).start(() => {
+        setPlaceholderIdx((i) => (i + 1) % PLACEHOLDERS.length);
+        slideAnim.setValue(8);
+        // Fade in + slide down
+        Animated.parallel([
+          Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+          Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
+        ]).start();
+      });
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const dateSummary = checkInDate && checkOutDate
+    ? `${formatDateShort(checkInDate)} – ${formatDateShort(checkOutDate)}`
+    : null;
 
   return (
-    <TouchableOpacity 
-      style={[styles.searchBar, { backgroundColor: cardBg, borderColor }]} 
-      onPress={onPress} 
-      activeOpacity={0.8}
+    <TouchableOpacity
+      style={[styles.bar, { backgroundColor: cardBg, borderColor }]}
+      onPress={onPress}
+      activeOpacity={0.9}
     >
-      <View style={styles.searchContent}>
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={22} color={iconColor} style={styles.searchIcon} />
-          <View style={styles.searchTextContainer}>
-            <Text 
-              style={[
-                styles.searchTitle, 
-                { color: hasSearchCriteria ? textColor : iconColor }
-              ]} 
-              numberOfLines={1}
-            >
-              {getLocationText()}
-            </Text>
-            <View style={styles.searchMetaRow}>
-              <Text style={[styles.searchSubtitle, { color: iconColor }]}>
-                {getDateText()}
-              </Text>
-              {hasSearchCriteria && (
-                <>
-                  <View style={[styles.dot, { backgroundColor: iconColor }]} />
-                  <Text style={[styles.searchSubtitle, { color: iconColor }]}>
-                    {isShortTerm ? 'Stays' : 'Rentals'}
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
-        </View>
+      {/* Colored search icon */}
+      <View style={[styles.iconWrap, { backgroundColor: tintColor }]}>
+        <Ionicons name="search" size={16} color="#fff" />
       </View>
-      <View style={[styles.searchButton, { backgroundColor: tintColor }]}>
-        <Ionicons name="search" size={18} color="#fff" />
+
+      {/* Text area */}
+      <View style={styles.textArea}>
+        <Animated.Text
+          style={[
+            styles.mainText,
+            { color: textColor, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+          ]}
+          numberOfLines={1}
+        >
+          {PLACEHOLDERS[placeholderIdx]}
+        </Animated.Text>
+        <Text style={[styles.subText, { color: subtleColor }]} numberOfLines={1}>
+          {dateSummary ? `${dateSummary} · Add guests` : 'Anywhere · Any week · Add guests'}
+        </Text>
+      </View>
+
+      {/* Filter icon */}
+      <View style={[styles.filterBtn, { borderColor }]}>
+        <Ionicons name="options-outline" size={16} color={textColor} />
       </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  searchBar: {
+  bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 16,
-    paddingLeft: 20,
+    marginVertical: 10,
+    paddingLeft: 10,
     paddingRight: 8,
-    paddingVertical: 14,
-    borderRadius: 50,
+    paddingVertical: 10,
+    borderRadius: 36,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  searchContent: {
-    flex: 1,
-  },
-  searchRow: {
-    flexDirection: 'row',
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
-  searchIcon: {
-    marginRight: 14,
-  },
-  searchTextContainer: {
-    flex: 1,
-  },
-  searchTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  searchMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  searchSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  textArea: { flex: 1, justifyContent: 'center' },
+  mainText: { fontSize: 14, fontWeight: '600', marginBottom: 1 },
+  subText: { fontSize: 12 },
+  filterBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
 });

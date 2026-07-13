@@ -30,7 +30,7 @@ const getRedirectUri = () => {
   }
   
   // In production or EAS Build
-  return 'ndotoniapp://auth/callback';
+  return 'ndotonistays://auth/callback';
 };
 
 const getLogoutUri = () => {
@@ -38,7 +38,7 @@ const getLogoutUri = () => {
     return 'exp://127.0.0.1:8081';
   }
   
-  return 'ndotoniapp://';
+  return 'ndotonistays://';
 };
 
 // OIDC Configuration

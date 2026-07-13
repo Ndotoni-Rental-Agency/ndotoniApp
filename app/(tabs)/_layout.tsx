@@ -19,36 +19,36 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size || 28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="list-property"
-        options={{
-          title: 'Add Property',
-          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size || 28} color={color} />,
+          title: 'Explore',
+          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'My Properties',
-          tabBarIcon: ({ color, size }) => <Ionicons name="business" size={size || 28} color={color} />,
+          title: 'Host',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size || 28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="list-property"
+        options={{
+          title: 'List',
+          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" size={size || 28} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size || 28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size || 28} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size || 28} color={color} />,
         }}
       />
     </Tabs>

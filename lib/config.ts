@@ -8,8 +8,8 @@ export const amplifyConfig = {
         oauth: {
           domain: process.env.EXPO_PUBLIC_COGNITO_DOMAIN || 'rental-app-dev-055929692194.auth.us-west-2.amazoncognito.com',
           scopes: ['openid', 'email', 'profile'],
-          redirectSignIn: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotoniapp://'],
-          redirectSignOut: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotoniapp://'],
+          redirectSignIn: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotonistays://'],
+          redirectSignOut: [process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotonistays://'],
           responseType: 'code'
         }
       }

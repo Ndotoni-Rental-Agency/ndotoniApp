@@ -79,7 +79,7 @@ export function usePropertyContact(
             : 'the landlord';
           
           // Set appropriate suggested message for tenant inquiries with property link
-          const propertyUrl = `https://ndotoni.com/property/${propertyId}`; // Use production URL for React Native
+          const propertyUrl = `https://ndotonistays.com/property/${propertyId}`;
           const suggested = `Hi ${landLordFirstName || ''}! I'm interested in your property "${propertyTitle}". Could you please provide more information about viewing arrangements?\n\nProperty link: ${propertyUrl}`;
           setSuggestedMessage(suggested);
           

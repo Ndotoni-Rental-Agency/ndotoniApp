@@ -157,7 +157,7 @@ export default function ProfileScreen() {
               <Ionicons name="person" size={48} color={tintColor} />
             </View>
             <Text style={[styles.unauthTitle, { color: textColor }]}>
-              Welcome to Ndotoni
+              Welcome to ndotoni Stays
             </Text>
             <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
               Sign in or create an account to access your profile, bookings, and more

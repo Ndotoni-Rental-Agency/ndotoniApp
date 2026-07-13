@@ -1,42 +1,78 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * ndotoni Stays color palette and typography.
+ * Brand colors aligned with ndotonistays web app (green/emerald brand).
  */
 
 import { Platform } from 'react-native';
 
-// Emerald color scheme matching the web app
-const tintColorLight = '#059669'; // emerald-600
-const tintColorDark = '#10b981'; // emerald-500
+// Brand green matching ndotonistays tailwind config
+const tintColorLight = '#16a34a'; // brand-600
+const tintColorDark = '#22c55e'; // brand-500
 
 export const Colors = {
   light: {
-    text: '#11181C',
+    text: '#0f172a', // ink-900
     background: '#fff',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#64748b', // ink-500
+    tabIconDefault: '#64748b',
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
+    text: '#f1f5f9', // ink-100
     background: '#000000',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#94a3b8', // ink-400
+    tabIconDefault: '#94a3b8',
     tabIconSelected: tintColorDark,
   },
 };
 
+// Extended brand palette for component usage
+export const Brand = {
+  50: '#f0fdf4',
+  100: '#dcfce7',
+  200: '#bbf7d0',
+  300: '#86efac',
+  400: '#4ade80',
+  500: '#22c55e',
+  600: '#16a34a',
+  700: '#15803d',
+  800: '#166534',
+  900: '#14532d',
+};
+
+export const Secondary = {
+  50: '#FFF1F2',
+  100: '#FFE4E6',
+  200: '#FECDD3',
+  300: '#FDA4AF',
+  400: '#FB7185',
+  500: '#F43F5E',
+  600: '#E11D48',
+  700: '#BE123C',
+  800: '#9F1239',
+  900: '#881337',
+};
+
+export const Ink = {
+  50: '#f8fafc',
+  100: '#f1f5f9',
+  200: '#e2e8f0',
+  300: '#cbd5e1',
+  400: '#94a3b8',
+  500: '#64748b',
+  600: '#475569',
+  700: '#334155',
+  800: '#1e293b',
+  900: '#0f172a',
+};
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -52,4 +88,3 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
-
