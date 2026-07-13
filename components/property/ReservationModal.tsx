@@ -1,26 +1,26 @@
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
-import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
-import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { createBooking } from '@/lib/graphql/mutations';
-import { getBlockedDates } from '@/lib/graphql/queries';
+import { createBooking, initiatePayment } from '@/lib/graphql/mutations';
+import { calculateBookingPrice, getBlockedDates, getPayment } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import CalendarDatePicker from './CalendarDatePicker';
 
 interface ReservationModalProps {
@@ -32,7 +32,13 @@ interface ReservationModalProps {
   currency?: string;
   minimumStay?: number;
   propertyImage?: string;
+  instantBookEnabled?: boolean;
+  cleaningFee?: number;
+  serviceFeePercentage?: number;
+  maxGuests?: number;
 }
+
+type BookingStep = 'dates' | 'confirm' | 'payment' | 'processing' | 'success' | 'failed';
 
 export default function ReservationModal({
   visible,
@@ -43,568 +49,372 @@ export default function ReservationModal({
   currency = 'TZS',
   minimumStay = 1,
   propertyImage,
+  instantBookEnabled = false,
+  cleaningFee = 0,
+  serviceFeePercentage = 0,
+  maxGuests = 10,
 }: ReservationModalProps) {
-  const { isAuthenticated } = useAuth();
-  const [checkInDate, setCheckInDate] = useState<string>('');
-  const [checkOutDate, setCheckOutDate] = useState<string>('');
+  const { user, isAuthenticated } = useAuth();
+  const [step, setStep] = useState<BookingStep>('dates');
+  const [checkInDate, setCheckInDate] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
+  const [guests, setGuests] = useState(1);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
-  const [isLoadingDates, setIsLoadingDates] = useState(false);
-  const [isBooking, setIsBooking] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [error, setError] = useState('');
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const bg = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const tint = useThemeColor({}, 'tint');
+  const card = useThemeColor({ light: '#f9f9f9', dark: '#1c1c1e' }, 'background');
+  const border = useThemeColor({ light: '#e5e5e5', dark: '#333' }, 'background');
+  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
   useEffect(() => {
-    if (visible) {
-      fetchBlockedDates();
-    }
-  }, [visible, propertyId, isAuthenticated]);
+    if (visible) { fetchBlockedDates(); setStep('dates'); setError(''); }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [visible]);
 
   const fetchBlockedDates = async () => {
-    // Only fetch blocked dates if user is authenticated
-    // Guests can still select dates and will be prompted to sign in when reserving
-    if (!isAuthenticated) {
-      setIsLoadingDates(false);
-      return;
-    }
-
-    setIsLoadingDates(true);
     try {
       const today = new Date();
-      const sixMonthsLater = new Date();
-      sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-
-      const response = await GraphQLClient.executeAuthenticated<any>(getBlockedDates, {
-        propertyId,
-        startDate: today.toISOString().split('T')[0],
-        endDate: sixMonthsLater.toISOString().split('T')[0],
-      });
-
-      const dates = response.getBlockedDates?.dates || [];
-      setBlockedDates(dates);
-    } catch (error) {
-      console.error('[ReservationModal] Error fetching blocked dates:', error);
-      // Don't show error to user, just continue without blocked dates info
-    } finally {
-      setIsLoadingDates(false);
-    }
+      const future = new Date(); future.setMonth(future.getMonth() + 6);
+      const exec = isAuthenticated ? GraphQLClient.executeAuthenticated.bind(GraphQLClient) : GraphQLClient.executePublic.bind(GraphQLClient);
+      const res = await exec<any>(getBlockedDates, { propertyId, startDate: today.toISOString().split('T')[0], endDate: future.toISOString().split('T')[0] });
+      setBlockedDates(res.getBlockedDates?.dates || []);
+    } catch {}
   };
 
-  const formatDateDisplay = (dateStr: string) => {
-    if (!dateStr) return 'Add date';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const nights = checkInDate && checkOutDate ? Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000) : 0;
+  const subtotal = nights * pricePerNight;
+  const serviceFee = Math.round(subtotal * (serviceFeePercentage / 100));
+  const total = subtotal + cleaningFee + serviceFee;
+  const fmt = (n: number) => n.toLocaleString();
+  const cur = currency === 'TZS' ? 'Tshs' : currency;
+
+  const handleProceed = () => {
+    if (!isAuthenticated) { setShowSignIn(true); return; }
+    if (!checkInDate || !checkOutDate) { Alert.alert('Select dates'); return; }
+    if (nights < minimumStay) { Alert.alert('Minimum stay', `Minimum ${minimumStay} nights required`); return; }
+    setStep('confirm');
   };
 
-  const calculateNights = () => {
-    if (!checkInDate || !checkOutDate) return 0;
-    const start = new Date(checkInDate);
-    const end = new Date(checkOutDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const calculateTotalPrice = () => {
-    const nights = calculateNights();
-    return nights * pricePerNight;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('en-US');
-  };
-
-  const isDateBlocked = (dateString: string) => {
-    return blockedDates.includes(dateString);
-  };
-
-  const isDateRangeBlocked = () => {
-    if (!checkInDate || !checkOutDate) return false;
-    
-    const start = new Date(checkInDate);
-    const end = new Date(checkOutDate);
-    const current = new Date(start);
-    
-    while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
-      if (isDateBlocked(dateStr)) {
-        return true;
-      }
-      current.setDate(current.getDate() + 1);
-    }
-    
-    return false;
-  };
-
-  const handleReserve = async () => {
-    if (!isAuthenticated) {
-      setShowSignInModal(true);
-      return;
-    }
-
-    if (!checkInDate || !checkOutDate) {
-      Alert.alert('Select Dates', 'Please select check-in and check-out dates.');
-      return;
-    }
-
-    // Check if dates are in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkIn = new Date(checkInDate);
-    
-    if (checkIn < today) {
-      Alert.alert('Invalid Date', 'Check-in date cannot be in the past.');
-      return;
-    }
-
-    // Check if checkout is after checkin
-    const checkOut = new Date(checkOutDate);
-    if (checkOut <= checkIn) {
-      Alert.alert('Invalid Dates', 'Check-out date must be after check-in date.');
-      return;
-    }
-
-    // Check if any dates in range are blocked
-    if (isDateRangeBlocked()) {
-      Alert.alert('Dates Unavailable', 'Some dates in your selected range are already booked. Please choose different dates.');
-      return;
-    }
-
-    const nights = calculateNights();
-    if (nights < minimumStay) {
-      Alert.alert('Minimum Stay', `This property requires a minimum stay of ${minimumStay} night${minimumStay > 1 ? 's' : ''}.`);
-      return;
-    }
-
-    setIsBooking(true);
+  const handleCreateBooking = async () => {
+    setIsLoading(true); setError('');
     try {
-      const response = await GraphQLClient.executeAuthenticated<any>(createBooking, {
+      const res = await GraphQLClient.executeAuthenticated<any>(createBooking, {
         input: {
           propertyId,
           checkInDate,
           checkOutDate,
-          numberOfGuests: 1, // You might want to add a guest selector
-          totalPrice: calculateTotalPrice(),
+          numberOfGuests: guests,
+          numberOfAdults: guests,
+          numberOfChildren: 0,
+          numberOfInfants: 0,
+          paymentMethodId: 'snippe_mpesa',
+          guestName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Guest',
+          guestEmail: user?.email || '',
         },
       });
+      const booking = res.createBooking?.booking;
+      if (!booking) throw new Error(res.createBooking?.message || 'Failed to create booking');
+      setBookingId(booking.bookingId);
 
-      if (response.createBooking?.success) {
-        Alert.alert('Success', 'Your reservation has been submitted!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              onClose();
-              // Navigate to bookings page or show confirmation
-            },
-          },
-        ]);
+      if (instantBookEnabled && booking.status === 'CONFIRMED') {
+        setStep('payment');
       } else {
-        Alert.alert('Error', response.createBooking?.message || 'Failed to create reservation.');
+        // Request to book — host needs to confirm
+        setStep('success');
       }
-    } catch (error) {
-      console.error('[ReservationModal] Error creating booking:', error);
-      Alert.alert('Error', 'Failed to create reservation. Please try again.');
+    } catch (err: any) {
+      setError(err?.errors?.[0]?.message || err?.message || 'Booking failed');
+      setStep('failed');
     } finally {
-      setIsBooking(false);
+      setIsLoading(false);
     }
   };
 
-  const nights = calculateNights();
-  const totalPrice = calculateTotalPrice();
+  const handlePay = async () => {
+    const phone = phoneNumber.replace(/\D/g, '');
+    if (phone.length < 10) { Alert.alert('Invalid number', 'Enter a valid phone number'); return; }
+    setIsLoading(true); setError(''); setStep('processing');
+    try {
+      const res = await GraphQLClient.executeAuthenticated<any>(initiatePayment, { input: { bookingId, phoneNumber: phone } });
+      const result = res.initiatePayment;
+      if (result.status === 'PENDING') {
+        pollPaymentStatus(result.reference);
+      } else if (result.status === 'COMPLETED' || result.status === 'CAPTURED') {
+        setStep('success');
+      } else {
+        setError(result.message || 'Payment failed');
+        setStep('failed');
+      }
+    } catch (err: any) {
+      setError(err?.errors?.[0]?.message || err?.message || 'Payment failed');
+      setStep('failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const pollPaymentStatus = (ref: string) => {
+    let attempts = 0;
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await GraphQLClient.executeAuthenticated<any>(getPayment, { paymentId: ref });
+        if (res.getPayment?.status === 'CAPTURED' || res.getPayment?.status === 'AUTHORIZED') {
+          clearInterval(pollRef.current!); setStep('success');
+        } else if (res.getPayment?.status === 'FAILED') {
+          clearInterval(pollRef.current!); setError('Payment failed'); setStep('failed');
+        }
+      } catch {}
+      if (attempts >= 30) { clearInterval(pollRef.current!); setError('Payment timeout — check your phone'); setStep('failed'); }
+    }, 10000);
+  };
+
+  const resetAndClose = () => { setStep('dates'); setCheckInDate(''); setCheckOutDate(''); setGuests(1); setPhoneNumber(''); setError(''); setBookingId(null); onClose(); };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={[styles.container, { backgroundColor }]}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={resetAndClose}>
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={['top', 'bottom']}>
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: borderColor }]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={textColor} />
+        <View style={[styles.header, { borderBottomColor: border }]}>
+          <TouchableOpacity onPress={resetAndClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="close" size={24} color={text} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: textColor }]}>Reserve</Text>
-          <View style={styles.placeholder} />
+          <Text style={[styles.headerTitle, { color: text }]}>
+            {step === 'dates' ? 'Select dates' : step === 'confirm' ? 'Confirm booking' : step === 'payment' ? 'Payment' : step === 'processing' ? 'Processing' : step === 'success' ? 'Confirmed' : 'Error'}
+          </Text>
+          <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Property Info */}
-          <View style={[styles.propertyInfo, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.propertyContent}>
-              {propertyImage && (
-                <Image
-                  source={{ uri: propertyImage }}
-                  style={styles.propertyImage}
-                  resizeMode="cover"
-                />
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+
+          {/* ═══ STEP: DATES ═══ */}
+          {step === 'dates' && (
+            <>
+              {/* Property card */}
+              <View style={[styles.propCard, { backgroundColor: card, borderColor: border }]}>
+                {propertyImage && <Image source={{ uri: propertyImage }} style={styles.propImg} />}
+                <View style={styles.propInfo}>
+                  <Text style={[styles.propName, { color: text }]} numberOfLines={2}>{propertyTitle}</Text>
+                  <Text style={[styles.propPrice, { color: text }]}>{cur} {fmt(pricePerNight)} <Text style={{ color: subtle, fontWeight: '400' }}>/ night</Text></Text>
+                  {instantBookEnabled && (
+                    <View style={styles.instantRow}>
+                      <Ionicons name="flash" size={12} color={tint} />
+                      <Text style={{ fontSize: 12, color: tint, fontWeight: '600' }}>Instant Book</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Date selection */}
+              <Text style={[styles.label, { color: text }]}>Dates</Text>
+              <TouchableOpacity style={[styles.dateRow, { borderColor: border }]} onPress={() => setShowCalendar(true)}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-IN</Text>
+                  <Text style={[styles.dateVal, { color: checkInDate ? text : subtle }]}>{checkInDate ? new Date(checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Add date'}</Text>
+                </View>
+                <Ionicons name="arrow-forward" size={14} color={border} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-OUT</Text>
+                  <Text style={[styles.dateVal, { color: checkOutDate ? text : subtle }]}>{checkOutDate ? new Date(checkOutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Add date'}</Text>
+                </View>
+                <Ionicons name="calendar-outline" size={20} color={tint} />
+              </TouchableOpacity>
+
+              {/* Guest selector */}
+              <Text style={[styles.label, { color: text }]}>Guests</Text>
+              <View style={[styles.guestRow, { borderColor: border }]}>
+                <Text style={[{ fontSize: 15, color: text }]}>{guests} guest{guests !== 1 ? 's' : ''}</Text>
+                <View style={styles.counter}>
+                  <TouchableOpacity style={[styles.cBtn, { borderColor: guests <= 1 ? border : text }]} onPress={() => setGuests(Math.max(1, guests - 1))} disabled={guests <= 1}>
+                    <Ionicons name="remove" size={18} color={guests <= 1 ? border : text} />
+                  </TouchableOpacity>
+                  <Text style={[styles.cNum, { color: text }]}>{guests}</Text>
+                  <TouchableOpacity style={[styles.cBtn, { borderColor: text }]} onPress={() => setGuests(Math.min(maxGuests, guests + 1))}>
+                    <Ionicons name="add" size={18} color={text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Price preview */}
+              {nights > 0 && (
+                <View style={[styles.priceBox, { backgroundColor: card, borderColor: border }]}>
+                  <View style={styles.priceRow}><Text style={{ color: subtle }}>{cur} {fmt(pricePerNight)} × {nights} nights</Text><Text style={{ color: text, fontWeight: '600' }}>{cur} {fmt(subtotal)}</Text></View>
+                  {cleaningFee > 0 && <View style={styles.priceRow}><Text style={{ color: subtle }}>Cleaning fee</Text><Text style={{ color: text, fontWeight: '600' }}>{cur} {fmt(cleaningFee)}</Text></View>}
+                  {serviceFee > 0 && <View style={styles.priceRow}><Text style={{ color: subtle }}>Service fee</Text><Text style={{ color: text, fontWeight: '600' }}>{cur} {fmt(serviceFee)}</Text></View>}
+                  <View style={[styles.divider, { backgroundColor: border }]} />
+                  <View style={styles.priceRow}><Text style={{ color: text, fontSize: 16, fontWeight: '700' }}>Total</Text><Text style={{ color: text, fontSize: 16, fontWeight: '700' }}>{cur} {fmt(total)}</Text></View>
+                </View>
               )}
-              <View style={styles.propertyTextContent}>
-                <Text style={[styles.propertyTitle, { color: textColor }]} numberOfLines={2}>
-                  {propertyTitle}
-                </Text>
-                <Text style={[styles.priceText, { color: textColor }]}>
-                  {currency === 'TZS' ? 'Tshs' : currency} {formatCurrency(pricePerNight)} per night
-                </Text>
+
+              {/* Action */}
+              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint, opacity: nights > 0 ? 1 : 0.4 }]} onPress={handleProceed} disabled={nights <= 0}>
+                {instantBookEnabled && <Ionicons name="flash" size={16} color="#fff" />}
+                <Text style={styles.mainBtnText}>{instantBookEnabled ? 'Reserve & Pay' : 'Request to Book'}</Text>
+              </TouchableOpacity>
+              {!instantBookEnabled && <Text style={[styles.hint, { color: subtle }]}>You won't be charged yet. The host will confirm your request.</Text>}
+            </>
+          )}
+
+          {/* ═══ STEP: CONFIRM ═══ */}
+          {step === 'confirm' && (
+            <>
+              <Text style={[styles.heading, { color: text }]}>Confirm your booking</Text>
+              <View style={[styles.summaryCard, { backgroundColor: card, borderColor: border }]}>
+                <Text style={[styles.summaryLine, { color: text }]}>📍 {propertyTitle}</Text>
+                <Text style={[styles.summaryLine, { color: subtle }]}>📅 {new Date(checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(checkOutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {nights} night{nights > 1 ? 's' : ''}</Text>
+                <Text style={[styles.summaryLine, { color: subtle }]}>👥 {guests} guest{guests > 1 ? 's' : ''}</Text>
+                <View style={[styles.divider, { backgroundColor: border }]} />
+                <Text style={[styles.summaryTotal, { color: text }]}>Total: {cur} {fmt(total)}</Text>
               </View>
+              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint }]} onPress={handleCreateBooking} disabled={isLoading}>
+                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainBtnText}>Confirm</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setStep('dates')} style={{ marginTop: 12, alignItems: 'center' }}>
+                <Text style={{ color: subtle, fontWeight: '600' }}>← Back to dates</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* ═══ STEP: PAYMENT ═══ */}
+          {step === 'payment' && (
+            <>
+              <Text style={[styles.heading, { color: text }]}>Pay with Mobile Money</Text>
+              <Text style={[styles.sub, { color: subtle }]}>All Tanzanian networks: Vodacom, Airtel, Tigo, Halotel</Text>
+              <Text style={[styles.amountBig, { color: text }]}>{cur} {fmt(total)}</Text>
+
+              <Text style={[styles.label, { color: text }]}>Phone number</Text>
+              <TextInput
+                style={[styles.phoneInput, { color: text, borderColor: border, backgroundColor: card }]}
+                value={phoneNumber}
+                onChangeText={(t) => { let v = t.replace(/\D/g, ''); if (v.startsWith('0')) v = '255' + v.substring(1); else if (v.startsWith('7') || v.startsWith('6')) v = '255' + v; setPhoneNumber(v.slice(0, 12)); }}
+                placeholder="0712 345 678"
+                placeholderTextColor={subtle}
+                keyboardType="phone-pad"
+              />
+
+              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint }]} onPress={handlePay} disabled={isLoading}>
+                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainBtnText}>Pay {cur} {fmt(total)}</Text>}
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* ═══ STEP: PROCESSING ═══ */}
+          {step === 'processing' && (
+            <View style={styles.centerContent}>
+              <ActivityIndicator size="large" color={tint} />
+              <Text style={[styles.heading, { color: text, marginTop: 20 }]}>Processing payment</Text>
+              <Text style={[styles.sub, { color: subtle }]}>Check your phone and confirm the M-Pesa prompt</Text>
+              <Text style={[styles.hint, { color: subtle, marginTop: 12 }]}>This may take up to a minute</Text>
             </View>
-          </View>
+          )}
 
-          {/* Calendar Date Picker */}
-          <View style={styles.dateSelectionContainer}>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Select dates</Text>
-            
-            {isLoadingDates && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color={tintColor} />
+          {/* ═══ STEP: SUCCESS ═══ */}
+          {step === 'success' && (
+            <View style={styles.centerContent}>
+              <View style={[styles.successCircle, { backgroundColor: `${tint}15` }]}>
+                <Ionicons name="checkmark-circle" size={56} color={tint} />
               </View>
-            )}
-            
-            <TouchableOpacity
-              style={[styles.dateSelector, { backgroundColor: cardBg, borderColor }]}
-              onPress={() => setShowCalendar(true)}
-            >
-              <View style={styles.dateSelectorContent}>
-                <View style={styles.dateColumn}>
-                  <Text style={[styles.dateLabel, { color: secondaryText }]}>Check-in</Text>
-                  <Text style={[styles.dateValue, { color: checkInDate ? textColor : '#999' }]}>
-                    {formatDateDisplay(checkInDate)}
-                  </Text>
-                </View>
-                
-                <Ionicons name="arrow-forward" size={20} color={secondaryText} />
-                
-                <View style={styles.dateColumn}>
-                  <Text style={[styles.dateLabel, { color: secondaryText }]}>Check-out</Text>
-                  <Text style={[styles.dateValue, { color: checkOutDate ? textColor : '#999' }]}>
-                    {formatDateDisplay(checkOutDate)}
-                  </Text>
-                </View>
-              </View>
-              
-              <Ionicons name="calendar-outline" size={24} color={tintColor} />
-            </TouchableOpacity>
-            
-            {!isAuthenticated && (
-              <View style={[styles.infoBox, { backgroundColor: `${tintColor}15`, borderColor: `${tintColor}40` }]}>
-                <Ionicons name="information-circle-outline" size={18} color={tintColor} />
-                <Text style={[styles.infoText, { color: textColor }]}>
-                  Sign in to see real-time availability
-                </Text>
-              </View>
-            )}
-          </View>
+              <Text style={[styles.heading, { color: text, marginTop: 16 }]}>
+                {instantBookEnabled ? 'Booking Confirmed!' : 'Request Sent!'}
+              </Text>
+              <Text style={[styles.sub, { color: subtle, textAlign: 'center' }]}>
+                {instantBookEnabled
+                  ? 'Your stay is booked. The host will share check-in details via WhatsApp.'
+                  : 'The host will review your request and confirm. You\'ll be notified once confirmed.'}
+              </Text>
+              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint, marginTop: 24 }]} onPress={resetAndClose}>
+                <Text style={styles.mainBtnText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-          {/* Price Summary */}
-          {checkInDate && checkOutDate && nights > 0 && (
-            <View style={[styles.priceSummary, { backgroundColor: cardBg, borderColor }]}>
-              <Text style={[styles.summaryTitle, { color: textColor }]}>Price details</Text>
-              
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: textColor }]}>
-                  {currency === 'TZS' ? 'Tshs' : currency} {formatCurrency(pricePerNight)} x {nights} night{nights > 1 ? 's' : ''}
-                </Text>
-                <Text style={[styles.summaryValue, { color: textColor }]}>
-                  {currency === 'TZS' ? 'Tshs' : currency} {formatCurrency(totalPrice)}
-                </Text>
+          {/* ═══ STEP: FAILED ═══ */}
+          {step === 'failed' && (
+            <View style={styles.centerContent}>
+              <View style={[styles.successCircle, { backgroundColor: '#fef2f2' }]}>
+                <Ionicons name="close-circle" size={56} color="#ef4444" />
               </View>
-              
-              <View style={[styles.divider, { backgroundColor: borderColor }]} />
-              
-              <View style={styles.summaryRow}>
-                <Text style={[styles.totalLabel, { color: textColor }]}>Total</Text>
-                <Text style={[styles.totalValue, { color: textColor }]}>
-                  {currency === 'TZS' ? 'Tshs' : currency} {formatCurrency(totalPrice)}
-                </Text>
-              </View>
+              <Text style={[styles.heading, { color: text, marginTop: 16 }]}>Something went wrong</Text>
+              <Text style={[styles.sub, { color: subtle, textAlign: 'center' }]}>{error}</Text>
+              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint, marginTop: 24 }]} onPress={() => setStep(bookingId ? 'payment' : 'dates')}>
+                <Text style={styles.mainBtnText}>Try Again</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
 
-        {/* Reserve Button */}
-        <View style={[styles.footer, { borderTopColor: borderColor, backgroundColor }]}>
-          <TouchableOpacity
-            style={[
-              styles.reserveButton,
-              { backgroundColor: tintColor },
-              (!checkInDate || !checkOutDate || isBooking) && styles.reserveButtonDisabled,
-            ]}
-            onPress={handleReserve}
-            disabled={!checkInDate || !checkOutDate || isBooking}
-          >
-            {isBooking ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.reserveButtonText}>
-                {!isAuthenticated ? 'Sign in to reserve' : 'Reserve'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+        {/* Calendar */}
+        <CalendarDatePicker visible={showCalendar} onClose={() => setShowCalendar(false)} checkInDate={checkInDate} checkOutDate={checkOutDate} onCheckInChange={setCheckInDate} onCheckOutChange={setCheckOutDate} blockedDates={blockedDates} textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border} secondaryText={subtle} mode="range" />
 
-      {/* Sign In Modal */}
-      <SignInModal
-        visible={showSignInModal}
-        onClose={() => setShowSignInModal(false)}
-        onSwitchToSignUp={() => {
-          setShowSignInModal(false);
-          setShowSignUpModal(true);
-        }}
-        onForgotPassword={() => {
-          setShowSignInModal(false);
-          setShowForgotPasswordModal(true);
-        }}
-        onNeedsVerification={(email) => {
-          setShowSignInModal(false);
-          setVerificationEmail(email);
-          setShowVerifyEmailModal(true);
-        }}
-      />
-
-      <SignUpModal
-        visible={showSignUpModal}
-        onClose={() => setShowSignUpModal(false)}
-        onSwitchToSignIn={() => {
-          setShowSignUpModal(false);
-          setShowSignInModal(true);
-        }}
-        onNeedsVerification={(email) => {
-          setShowSignUpModal(false);
-          setVerificationEmail(email);
-          setShowVerifyEmailModal(true);
-        }}
-      />
-
-      <VerifyEmailModal
-        visible={showVerifyEmailModal}
-        onClose={() => setShowVerifyEmailModal(false)}
-        email={verificationEmail}
-        onVerified={() => {
-          setShowVerifyEmailModal(false);
-          setShowSignInModal(true);
-        }}
-      />
-
-      <ForgotPasswordModal
-        visible={showForgotPasswordModal}
-        onClose={() => setShowForgotPasswordModal(false)}
-        onCodeSent={(email) => {
-          setShowForgotPasswordModal(false);
-          setVerificationEmail(email);
-          setShowResetPasswordModal(true);
-        }}
-      />
-
-      <ResetPasswordModal
-        visible={showResetPasswordModal}
-        onClose={() => setShowResetPasswordModal(false)}
-        email={verificationEmail}
-        onReset={() => {
-          setShowResetPasswordModal(false);
-          setShowSignInModal(true);
-        }}
-      />
-
-      {/* Calendar Modal */}
-      <CalendarDatePicker
-        visible={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        checkInDate={checkInDate}
-        checkOutDate={checkOutDate}
-        onCheckInChange={setCheckInDate}
-        onCheckOutChange={setCheckOutDate}
-        blockedDates={blockedDates}
-        textColor={textColor}
-        tintColor={tintColor}
-        backgroundColor={backgroundColor}
-        borderColor={borderColor}
-        secondaryText={secondaryText}
-      />
+        {/* Auth modals */}
+        <SignInModal visible={showSignIn} onClose={() => setShowSignIn(false)} onSwitchToSignUp={() => { setShowSignIn(false); setShowSignUp(true); }} onForgotPassword={() => {}} onNeedsVerification={() => {}} />
+        <SignUpModal visible={showSignUp} onClose={() => setShowSignUp(false)} onSwitchToSignIn={() => { setShowSignUp(false); setShowSignIn(true); }} onNeedsVerification={() => {}} />
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  closeButton: {
-    padding: 4,
-    width: 36,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 36,
-  },
-  content: {
-    flex: 1,
-  },
-  propertyInfo: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  propertyContent: {
-    flexDirection: 'row',
-    padding: 12,
-    gap: 12,
-  },
-  propertyImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-  },
-  propertyTextContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  propertyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 22,
-  },
-  priceText: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  dateSelectionContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 10,
-  },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  dateSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 16,
-  },
-  dateColumn: {
-    flex: 1,
-  },
-  dateLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  dateValue: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.8,
-  },
-  priceSummary: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    flex: 1,
-  },
-  summaryValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    marginLeft: 16,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  totalLabel: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  totalValue: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  footer: {
-    padding: 20,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-  },
-  reserveButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-  },
-  reserveButtonDisabled: {
-    opacity: 0.5,
-  },
-  reserveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 16, fontWeight: '600' },
+  body: { flex: 1 },
+  bodyContent: { padding: 20, paddingBottom: 40 },
+
+  // Property card
+  propCard: { flexDirection: 'row', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 24, gap: 12 },
+  propImg: { width: 80, height: 80, borderRadius: 10 },
+  propInfo: { flex: 1, justifyContent: 'center' },
+  propName: { fontSize: 15, fontWeight: '600', lineHeight: 20, marginBottom: 4 },
+  propPrice: { fontSize: 14, fontWeight: '600' },
+  instantRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+
+  // Labels
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  heading: { fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+  sub: { fontSize: 14, marginTop: 4, lineHeight: 20 },
+  hint: { fontSize: 13, textAlign: 'center', marginTop: 10, lineHeight: 18 },
+
+  // Date row
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 12, borderWidth: 1 },
+  dateLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  dateVal: { fontSize: 15, fontWeight: '600', marginTop: 3 },
+
+  // Guest row
+  guestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 12, borderWidth: 1 },
+  counter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  cNum: { fontSize: 17, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+
+  // Price box
+  priceBox: { marginTop: 20, padding: 16, borderRadius: 14, borderWidth: 1 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  divider: { height: 1, marginVertical: 10 },
+
+  // Main button
+  mainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 12, marginTop: 20 },
+  mainBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+
+  // Summary
+  summaryCard: { padding: 16, borderRadius: 14, borderWidth: 1, marginTop: 16 },
+  summaryLine: { fontSize: 15, paddingVertical: 4 },
+  summaryTotal: { fontSize: 18, fontWeight: '700' },
+
+  // Payment
+  amountBig: { fontSize: 32, fontWeight: '800', marginTop: 16, marginBottom: 8 },
+  phoneInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '600', letterSpacing: 1 },
+
+  // Center content
+  centerContent: { alignItems: 'center', paddingTop: 40 },
+  successCircle: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
 });

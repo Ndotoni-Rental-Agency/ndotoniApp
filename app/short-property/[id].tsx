@@ -1,5 +1,4 @@
 import PropertyAmenities from '@/components/property/PropertyAmenities';
-import PropertyContactSection from '@/components/property/PropertyContactSection';
 import PropertyDescription from '@/components/property/PropertyDescription';
 import PropertyHost from '@/components/property/PropertyHost';
 import PropertyLocation from '@/components/property/PropertyLocation';
@@ -171,7 +170,15 @@ export default function ShortTermPropertyDetailsScreen() {
 
           {/* Title block */}
           <View style={styles.titleBlock}>
-            <Text style={[styles.propType, { color: tint }]}>{property.propertyType}</Text>
+            <View style={styles.typeRow}>
+              <Text style={[styles.propType, { color: tint }]}>{property.propertyType}</Text>
+              {property.instantBookEnabled && (
+                <View style={[styles.instantBadge, { backgroundColor: `${tint}12` }]}>
+                  <Ionicons name="flash" size={12} color={tint} />
+                  <Text style={[styles.instantText, { color: tint }]}>Instant Book</Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.propTitle, { color: text }]}>{property.title}</Text>
             <View style={styles.metaLine}>
               <Ionicons name="location-outline" size={14} color={subtle} />
@@ -189,6 +196,12 @@ export default function ShortTermPropertyDetailsScreen() {
                   {(property.ratingSummary?.totalReviews ?? 0) > 0 && (
                     <Text style={[styles.statTextSub, { color: subtle }]}>({property.ratingSummary?.totalReviews} reviews)</Text>
                   )}
+                </View>
+              )}
+              {property.minimumStay && property.minimumStay > 1 && (
+                <View style={styles.stat}>
+                  <Ionicons name="moon-outline" size={16} color={text} />
+                  <Text style={[styles.statText, { color: text }]}>{property.minimumStay} min nights</Text>
                 </View>
               )}
             </View>
@@ -209,21 +222,19 @@ export default function ShortTermPropertyDetailsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.hostedBy, { color: text }]}>Hosted by {property.host.firstName}</Text>
-                  <Text style={[styles.hostSub, { color: subtle }]}>Superhost</Text>
+                  {property.instantBookEnabled ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <Ionicons name="shield-checkmark" size={12} color={tint} />
+                      <Text style={[styles.hostSub, { color: tint }]}>Instant booking available</Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.hostSub, { color: subtle }]}>Usually responds within a few hours</Text>
+                  )}
                 </View>
               </View>
               <View style={[styles.sep, { backgroundColor: border }]} />
             </>
           )}
-
-          {/* Contact */}
-          <PropertyContactSection
-            propertyId={property.propertyId}
-            propertyTitle={property.title}
-            hostWhatsappNumber={property.host?.whatsappNumber}
-            textColor={text} tintColor={tint} secondaryText={subtle} backgroundColor={bg} borderColor={border}
-          />
-          <View style={[styles.sep, { backgroundColor: border }]} />
 
           {/* Details */}
           <ShortTermPropertyDetails
@@ -312,7 +323,10 @@ export default function ShortTermPropertyDetailsScreen() {
           <Text style={[styles.barUnit, { color: subtle }]}>per night</Text>
         </View>
         <TouchableOpacity style={[styles.reserveBtn, { backgroundColor: tint }]} onPress={() => setShowReservation(true)} activeOpacity={0.85}>
-          <Text style={styles.reserveText}>Reserve</Text>
+          {property.instantBookEnabled && <Ionicons name="flash" size={16} color="#fff" style={{ marginRight: 4 }} />}
+          <Text style={styles.reserveText}>
+            {property.instantBookEnabled ? 'Reserve & Pay' : 'Request to Book'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -332,6 +346,10 @@ export default function ShortTermPropertyDetailsScreen() {
           currency={property.currency}
           minimumStay={property.minimumStay ?? 1}
           propertyImage={property.thumbnail || property.images?.[0]}
+          instantBookEnabled={property.instantBookEnabled ?? false}
+          cleaningFee={property.cleaningFee ?? 0}
+          serviceFeePercentage={property.serviceFeePercentage ?? 0}
+          maxGuests={property.maxGuests ?? 10}
         />
       )}
     </View>
@@ -403,7 +421,10 @@ const styles = StyleSheet.create({
 
   // Title
   titleBlock: { paddingHorizontal: 20, paddingBottom: 20 },
-  propType: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
+  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  propType: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  instantBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  instantText: { fontSize: 11, fontWeight: '700' },
   propTitle: { fontSize: 24, fontWeight: '800', lineHeight: 30, letterSpacing: -0.3 },
   metaLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   metaText: { fontSize: 14 },
@@ -432,7 +453,7 @@ const styles = StyleSheet.create({
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 6 },
   barPrice: { fontSize: 18, fontWeight: '800' },
   barUnit: { fontSize: 13, marginTop: 1 },
-  reserveBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 12 },
+  reserveBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
   reserveText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   // Gallery modal
