@@ -102,24 +102,27 @@ export default function ReservationModal({
     if (!isAuthenticated) { setShowSignIn(true); return; }
     if (!checkInDate || !checkOutDate) { Alert.alert('Select dates'); return; }
     if (nights < minimumStay) { Alert.alert('Minimum stay', `Minimum ${minimumStay} nights required`); return; }
-    setStep('confirm');
+    // Skip confirmation step — go straight to booking creation
+    handleCreateBooking();
   };
 
   const handleCreateBooking = async () => {
     setIsLoading(true); setError('');
     try {
+      // Format dates as YYYY-MM-DD (AWSDate) — strip any time component
+      const formattedCheckIn = checkInDate.split('T')[0];
+      const formattedCheckOut = checkOutDate.split('T')[0];
+      
       const res = await GraphQLClient.executeAuthenticated<any>(createBooking, {
         input: {
           propertyId,
-          checkInDate,
-          checkOutDate,
+          checkInDate: formattedCheckIn,
+          checkOutDate: formattedCheckOut,
           numberOfGuests: guests,
           numberOfAdults: guests,
           numberOfChildren: 0,
           numberOfInfants: 0,
           paymentMethodId: 'snippe_mpesa',
-          guestName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Guest',
-          guestEmail: user?.email || '',
         },
       });
       const booking = res.createBooking?.booking;
@@ -190,7 +193,7 @@ export default function ReservationModal({
             <Ionicons name="close" size={24} color={text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: text }]}>
-            {step === 'dates' ? 'Select dates' : step === 'confirm' ? 'Confirm booking' : step === 'payment' ? 'Payment' : step === 'processing' ? 'Processing' : step === 'success' ? 'Confirmed' : 'Error'}
+            {step === 'dates' ? 'Book your stay' : step === 'payment' ? 'Payment' : step === 'processing' ? 'Processing' : step === 'success' ? 'Done' : 'Error'}
           </Text>
           <View style={{ width: 24 }} />
         </View>
@@ -262,26 +265,6 @@ export default function ReservationModal({
                 <Text style={styles.mainBtnText}>{instantBookEnabled ? 'Reserve & Pay' : 'Request to Book'}</Text>
               </TouchableOpacity>
               {!instantBookEnabled && <Text style={[styles.hint, { color: subtle }]}>You won't be charged yet. The host will confirm your request.</Text>}
-            </>
-          )}
-
-          {/* ═══ STEP: CONFIRM ═══ */}
-          {step === 'confirm' && (
-            <>
-              <Text style={[styles.heading, { color: text }]}>Confirm your booking</Text>
-              <View style={[styles.summaryCard, { backgroundColor: card, borderColor: border }]}>
-                <Text style={[styles.summaryLine, { color: text }]}>📍 {propertyTitle}</Text>
-                <Text style={[styles.summaryLine, { color: subtle }]}>📅 {new Date(checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(checkOutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {nights} night{nights > 1 ? 's' : ''}</Text>
-                <Text style={[styles.summaryLine, { color: subtle }]}>👥 {guests} guest{guests > 1 ? 's' : ''}</Text>
-                <View style={[styles.divider, { backgroundColor: border }]} />
-                <Text style={[styles.summaryTotal, { color: text }]}>Total: {cur} {fmt(total)}</Text>
-              </View>
-              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: tint }]} onPress={handleCreateBooking} disabled={isLoading}>
-                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainBtnText}>Confirm</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setStep('dates')} style={{ marginTop: 12, alignItems: 'center' }}>
-                <Text style={{ color: subtle, fontWeight: '600' }}>← Back to dates</Text>
-              </TouchableOpacity>
             </>
           )}
 

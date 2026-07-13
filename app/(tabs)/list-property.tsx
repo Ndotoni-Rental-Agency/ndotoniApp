@@ -1,836 +1,510 @@
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
+import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
-import LocationSelector from '@/components/location/LocationSelector';
-import PropertyMapView from '@/components/map/PropertyMapView';
-import MediaSelector from '@/components/media/MediaSelector';
-import CoordinatesInput from '@/components/property/CoordinatesInput';
-import { MAPS_CONFIG } from '@/config/maps';
+import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { geocodeLocation } from '@/lib/geocoding-service';
-import { GraphQLClient } from '@/lib/graphql-client';
-import { createPropertyDraft, createShortTermPropertyDraft } from '@/lib/graphql/mutations';
+import { useChatDeletion } from '@/hooks/useChatDeletion';
+import { useConversationSearch } from '@/hooks/useConversationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, FlatList, PanResponder, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const PROPERTY_TYPES = [
-  { value: 'HOUSE', label: 'House' },
-  { value: 'APARTMENT', label: 'Apartment' },
-  { value: 'STUDIO', label: 'Studio' },
-  { value: 'ROOM', label: 'Room' },
-  { value: 'COMMERCIAL', label: 'Commercial' },
-];
+interface SwipeableConversationCardProps {
+  conversation: any;
+  onPress: () => void;
+  onDelete: () => void;
+  backgroundColor: string;
+  textColor: string;
+  secondaryText: string;
+  tintColor: string;
+  formatTime: (timestamp: string) => string;
+  onSwipeStart?: () => void;
+  onSwipeEnd?: () => void;
+}
 
-const SHORT_TERM_PROPERTY_TYPES = [
-  { value: 'HOUSE', label: 'House' },
-  { value: 'APARTMENT', label: 'Apartment' },
-  { value: 'VILLA', label: 'Villa' },
-  { value: 'STUDIO', label: 'Studio' },
-  { value: 'ROOM', label: 'Room' },
-  { value: 'GUESTHOUSE', label: 'Guesthouse' },
-  { value: 'HOTEL', label: 'Hotel' },
-  { value: 'COTTAGE', label: 'Cottage' },
-];
+function SwipeableConversationCard({
+  conversation,
+  onPress,
+  onDelete,
+  backgroundColor,
+  textColor,
+  secondaryText,
+  tintColor,
+  formatTime,
+  onSwipeStart,
+  onSwipeEnd,
+}: SwipeableConversationCardProps) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const [isOpen, setIsOpen] = useState(false);
 
-const STAY_CATEGORIES = [
-  { value: 'NIGHTLY_STAY', label: 'Nightly Stay', icon: '🏠' },
-  { value: 'PARTY', label: 'Party & Events', icon: '🎉' },
-  { value: 'PHOTOSHOOT', label: 'Photoshoot', icon: '📸' },
-  { value: 'MEETING', label: 'Meeting & Work', icon: '💼' },
-  { value: 'GETAWAY', label: 'Getaway', icon: '🌊' },
-  { value: 'GROUP_TRIP', label: 'Group Trip', icon: '👥' },
-  { value: 'WEDDING', label: 'Wedding', icon: '💒' },
-  { value: 'FILMING', label: 'Filming', icon: '🎬' },
-  { value: 'SAFARI', label: 'Safari', icon: '🦁' },
-  { value: 'BEACH', label: 'Beach', icon: '🏖️' },
-  { value: 'NATURE', label: 'Nature', icon: '🌿' },
-  { value: 'ROMANTIC', label: 'Romantic', icon: '💕' },
-  { value: 'CITY_LIFE', label: 'City Life', icon: '🌃' },
-  { value: 'RETREAT', label: 'Retreat', icon: '🧘' },
-];
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only capture horizontal swipes, let vertical scrolling pass through
+        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold for faster response
+        return isHorizontal && isSignificant;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        // Aggressively capture horizontal swipes to prevent scroll
+        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold
+        
+        if (isHorizontal && isSignificant) {
+          // Immediately disable scroll when horizontal swipe detected
+          onSwipeStart?.();
+          return true;
+        }
+        return false;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow swiping left
+        if (gestureState.dx < 0) {
+          // Cap at -80
+          const newValue = Math.max(gestureState.dx, -80);
+          translateX.setValue(newValue);
+        } else if (isOpen) {
+          // Allow closing by swiping right
+          const newValue = Math.min(gestureState.dx - 80, 0);
+          translateX.setValue(newValue);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Re-enable scroll immediately
+        onSwipeEnd?.();
+        
+        // Determine if we should open or close
+        if (gestureState.dx < -40 || (isOpen && gestureState.dx < 20)) {
+          // Open
+          Animated.spring(translateX, {
+            toValue: -80,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+          }).start();
+          setIsOpen(true);
+        } else {
+          // Close
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 0,
+            speed: 20,
+          }).start();
+          setIsOpen(false);
+        }
+      },
+      onPanResponderTerminate: () => {
+        // Re-enable scroll if gesture is terminated
+        onSwipeEnd?.();
+      },
+    })
+  ).current;
 
-export default function ListPropertyScreen() {
+  const handleDelete = () => {
+    // Close first, then delete
+    Animated.timing(translateX, {
+      toValue: -400,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      onDelete();
+      translateX.setValue(0);
+      setIsOpen(false);
+    });
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      {/* Delete Button - Always visible behind */}
+      <View style={styles.deleteBackground}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="trash" size={21} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable Card */}
+      <Animated.View
+        style={[
+          styles.cardWrapper,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          style={[styles.messageCard, { backgroundColor }]}
+          onPress={onPress}
+          activeOpacity={0.95}
+        >
+          {/* Avatar */}
+          <View style={[styles.avatar, { backgroundColor: tintColor }]}>
+            {conversation.otherPartyImage ? (
+              <Text style={styles.avatarText}>
+                {conversation.otherPartyName.charAt(0).toUpperCase()}
+              </Text>
+            ) : (
+              <Ionicons name="person" size={26} color="#fff" />
+            )}
+          </View>
+
+          {/* Message Content */}
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
+                {conversation.otherPartyName}
+              </Text>
+              <Text style={[styles.messageTime, { color: secondaryText }]}>
+                {formatTime(conversation.lastMessageTime)}
+              </Text>
+            </View>
+
+            {conversation.propertyTitle && (
+              <View style={styles.propertyRow}>
+                <Ionicons name="home" size={13} color={secondaryText} />
+                <Text style={[styles.propertyTitle, { color: secondaryText }]} numberOfLines={1}>
+                  {conversation.propertyTitle}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.previewRow}>
+              <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
+                {conversation.lastMessage}
+              </Text>
+              {conversation.unreadCount > 0 && (
+                <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
+                  <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Chevron */}
+          <Ionicons name="chevron-forward" size={20} color={secondaryText} style={styles.chevron} />
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+}
+
+export default function MessagesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const inputBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
+  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
-  const [formData, setFormData] = useState({
-    rentalType: 'SHORT_TERM', // Always short-term for ndotoni Stays
-    title: 'Beautiful Home Available',
-    propertyType: 'HOUSE',
-    shortTermPropertyType: 'HOUSE',
-    stayCategories: ['NIGHTLY_STAY'] as string[],
-    region: '',
-    district: '',
-    ward: '',
-    street: '',
-    monthlyRent: '',
-    nightlyRate: '',
-    cleaningFee: '',
-    maxGuests: '2',
-    minimumStay: '1',
-    bedrooms: '1',
-    bathrooms: '1',
-    coordinates: null as { latitude: number; longitude: number } | null,
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { conversations, loadConversations, loadingConversations } = useChat();
+  const { deleteConversation, isDeletingConversation } = useChatDeletion();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+
+  // Use conversation search hook
+  const { filteredConversations } = useConversationSearch({
+    conversations,
+    searchQuery,
   });
 
-  const [selectedMedia, setSelectedMedia] = useState<string[]>([]);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
-  const [showMediaSelector, setShowMediaSelector] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [showPropertyTypePicker, setShowPropertyTypePicker] = useState(false);
-  const [showTitleGenerator, setShowTitleGenerator] = useState(false);
-  const [mapCoordinates, setMapCoordinates] = useState<{ latitude: number; longitude: number }>({
-    latitude: -6.369028,
-    longitude: 34.888822,
-  });
-
-  // Geocode location when region/district/ward changes
-  useEffect(() => {
-    const updateMapLocation = async () => {
-      if (!formData.region) return;
-
-      try {
-        // Don't pass saved coordinates - we want fresh geocoding for the new location
-        const result = await geocodeLocation(
-          {
-            region: formData.region,
-            district: formData.district,
-            ward: formData.ward,
-          },
-          null // Force fresh geocoding
-        );
-        
-        console.log('[ListProperty] Geocoded location:', result);
-        setMapCoordinates(result.coordinates);
-        
-        // Auto-update coordinates field with geocoded location
-        // User can override by manually entering or using current location
-        setFormData(prev => ({ ...prev, coordinates: result.coordinates }));
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        setMapCoordinates(MAPS_CONFIG.TANZANIA_CENTER);
-      }
-    };
-
-    updateMapLocation();
-  }, [formData.region, formData.district, formData.ward]);
-
-  // Generate multiple title variations
-  const generateTitleOptions = () => {
-    const titles: string[] = [];
-    
-    const bedrooms = formData.bedrooms && parseInt(formData.bedrooms) > 0 ? formData.bedrooms : null;
-    const propertyType = formData.rentalType === 'LONG_TERM' 
-      ? PROPERTY_TYPES.find(t => t.value === formData.propertyType)?.label
-      : SHORT_TERM_PROPERTY_TYPES.find(t => t.value === formData.shortTermPropertyType)?.label;
-    const location = formData.ward || formData.district || formData.region;
-    
-    if (!propertyType || !location) {
-      return [
-        'Modern Property for Rent',
-        'Beautiful Home Available',
-        'Spacious Living Space',
-        'Comfortable Accommodation',
-        'Quality Property Available',
-      ];
-    }
-
-    // Template variations
-    if (bedrooms) {
-      titles.push(`${bedrooms} Bedroom ${propertyType} in ${location}`);
-      titles.push(`Spacious ${bedrooms} Bedroom ${propertyType} - ${location}`);
-      titles.push(`Modern ${bedrooms}BR ${propertyType} | ${location}`);
-      titles.push(`Beautiful ${bedrooms} Bed ${propertyType}, ${location}`);
-      titles.push(`${bedrooms}BR ${propertyType} Available in ${location}`);
-      titles.push(`Cozy ${bedrooms} Bedroom ${propertyType} - ${location}`);
-      titles.push(`${location}: ${bedrooms} Bedroom ${propertyType}`);
-      titles.push(`Lovely ${bedrooms}BR ${propertyType} in ${location}`);
-      titles.push(`${bedrooms} Bedroom ${propertyType} | ${location} Area`);
-      titles.push(`Quality ${bedrooms}BR ${propertyType} - ${location}`);
-    } else {
-      titles.push(`${propertyType} in ${location}`);
-      titles.push(`Modern ${propertyType} - ${location}`);
-      titles.push(`Beautiful ${propertyType} | ${location}`);
-      titles.push(`Spacious ${propertyType}, ${location}`);
-      titles.push(`${propertyType} Available in ${location}`);
-      titles.push(`Cozy ${propertyType} - ${location}`);
-      titles.push(`${location}: ${propertyType}`);
-      titles.push(`Lovely ${propertyType} in ${location}`);
-      titles.push(`${propertyType} | ${location} Area`);
-      titles.push(`Quality ${propertyType} - ${location}`);
-    }
-    
-    return titles.slice(0, 10);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadConversations();
+    setRefreshing(false);
   };
 
-  const handleSubmit = async () => {
-    // Validation
-    if (!formData.title.trim()) {
-      Alert.alert('Error', 'Please enter a property title');
-      return;
-    }
-    if (!formData.region) {
-      Alert.alert('Error', 'Please select a region');
-      return;
-    }
-    if (!formData.district) {
-      Alert.alert('Error', 'Please select a district');
-      return;
-    }
-
-    // Validate pricing based on rental type
-    if (formData.rentalType === 'LONG_TERM') {
-      if (!formData.monthlyRent || parseFloat(formData.monthlyRent) <= 0) {
-        Alert.alert('Error', 'Please enter a valid monthly rent');
-        return;
-      }
-      if (parseFloat(formData.monthlyRent) > 2000000) {
-        Alert.alert('Error', 'Monthly rent cannot exceed TZS 2,000,000');
-        return;
-      }
-    } else {
-      if (!formData.nightlyRate || parseFloat(formData.nightlyRate) <= 0) {
-        Alert.alert('Error', 'Please enter a valid nightly rate');
-        return;
-      }
-      if (parseFloat(formData.nightlyRate) > 2000000) {
-        Alert.alert('Error', 'Nightly rate cannot exceed TZS 2,000,000');
-        return;
-      }
-    }
-
-    // Check authentication - show modal if not signed in
-    if (!user) {
-      Alert.alert(
-        'Sign In Required',
-        'Please sign in to list a property',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => setShowSignIn(true) },
-        ]
-      );
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      if (formData.rentalType === 'LONG_TERM') {
-        await handleLongTermSubmit();
-      } else {
-        await handleShortTermSubmit();
-      }
-    } catch (error: any) {
-      console.error('[ListProperty] Error:', error);
-      Alert.alert('Error', error?.message || 'Failed to create property');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleLongTermSubmit = async () => {
-    const hasMedia = selectedMedia.length > 0;
-    
-    const input: any = {
-      title: formData.title.trim(),
-      propertyType: formData.propertyType,
-      region: formData.region,
-      district: formData.district,
-      monthlyRent: parseFloat(formData.monthlyRent),
-      currency: 'TZS',
-      available: hasMedia, // Publish if has media, draft otherwise
-      latitude: formData.coordinates?.latitude || 0.0,
-      longitude: formData.coordinates?.longitude || 0.0,
-    };
-
-    if (formData.ward) input.ward = formData.ward;
-    if (formData.street) input.street = formData.street;
-    if (formData.bedrooms) input.bedrooms = parseInt(formData.bedrooms);
-    if (formData.bathrooms) input.bathrooms = parseInt(formData.bathrooms);
-    if (selectedImages.length > 0) input.images = selectedImages;
-    if (selectedVideos.length > 0) input.videos = selectedVideos;
-
-    const data = await GraphQLClient.executeAuthenticated<{ createPropertyDraft: any }>(
-      createPropertyDraft,
-      { input }
-    );
-
-    if (data.createPropertyDraft?.success) {
-      const message = hasMedia 
-        ? 'Property published successfully!' 
-        : 'Long-term rental draft created successfully!';
-      showSuccessAndReset(message);
-    } else {
-      Alert.alert('Error', data.createPropertyDraft?.message || 'Failed to create property');
-    }
-  };
-
-  const handleShortTermSubmit = async () => {
-    const hasMedia = selectedMedia.length > 0;
-    
-    const input: any = {
-      title: formData.title.trim(),
-      propertyType: formData.shortTermPropertyType,
-      stayCategories: formData.stayCategories,
-      region: formData.region,
-      district: formData.district,
-      nightlyRate: parseFloat(formData.nightlyRate),
-      currency: 'TZS',
-      latitude: formData.coordinates?.latitude || 0.0,
-      longitude: formData.coordinates?.longitude || 0.0,
-    };
-
-    // Optional fields - only include if provided
-    if (formData.cleaningFee) input.cleaningFee = parseFloat(formData.cleaningFee);
-    if (formData.maxGuests) input.maxGuests = parseInt(formData.maxGuests);
-    if (formData.minimumStay) input.minimumStay = parseInt(formData.minimumStay);
-    if (formData.bedrooms) input.bedrooms = parseInt(formData.bedrooms);
-    if (formData.bathrooms) input.bathrooms = parseInt(formData.bathrooms);
-    if (selectedImages.length > 0) input.images = selectedImages;
-    if (selectedVideos.length > 0) input.videos = selectedVideos;
-
-    const data = await GraphQLClient.executeAuthenticated<{ createShortTermPropertyDraft: any }>(
-      createShortTermPropertyDraft,
-      { input }
-    );
-
-    if (data.createShortTermPropertyDraft?.success) {
-      const message = hasMedia 
-        ? 'Property published successfully!' 
-        : 'Short-term rental draft created successfully!';
-      showSuccessAndReset(message);
-    } else {
-      Alert.alert('Error', data.createShortTermPropertyDraft?.message || 'Failed to create property');
-    }
-  };
-
-  const showSuccessAndReset = (message: string) => {
-    const hasMedia = selectedMedia.length > 0;
-    const detailMessage = hasMedia 
-      ? 'Your property is now live and visible to potential tenants!'
-      : 'You can add more details, photos, and videos later.';
-    
+  const handleDeleteConversation = (conversationId: string, conversationName: string) => {
     Alert.alert(
-      'Success!',
-      message + ' ' + detailMessage,
+      'Delete Conversation',
+      `Are you sure you want to delete this conversation with ${conversationName}?`,
       [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'OK',
-          onPress: () => {
-            setFormData({
-              rentalType: 'SHORT_TERM',
-              title: '',
-              propertyType: 'HOUSE',
-              shortTermPropertyType: 'HOUSE',
-              stayCategories: ['NIGHTLY_STAY'],
-              region: '',
-              district: '',
-              ward: '',
-              street: '',
-              monthlyRent: '',
-              nightlyRate: '',
-              cleaningFee: '',
-              maxGuests: '2',
-              minimumStay: '1',
-              bedrooms: '1',
-              bathrooms: '1',
-              coordinates: null,
-            });
-            setSelectedMedia([]);
-            setSelectedImages([]);
-            setSelectedVideos([]);
-            router.push('/(tabs)/profile');
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteConversation(conversationId);
+            if (success) {
+              // Reload conversations after deletion
+              await loadConversations();
+            }
           },
         },
       ]
     );
   };
 
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  if (authLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tintColor} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show authentication screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+        <View style={styles.unauthContainer}>
+          {/* Header */}
+          <View style={styles.unauthHeader}>
+            <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
+              <Ionicons name="chatbubbles" size={48} color={tintColor} />
+            </View>
+            <Text style={[styles.unauthTitle, { color: textColor }]}>
+              Your Messages
+            </Text>
+            <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
+              Sign in to view and send messages
+            </Text>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.authButtons}>
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: tintColor }]}
+              onPress={() => setShowSignInModal(true)}
+            >
+              <Text style={styles.primaryButtonText}>Sign In</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.secondaryButton, { borderColor: tintColor }]}
+              onPress={() => setShowSignUpModal(true)}
+            >
+              <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
+                Create Account
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Features */}
+          <View style={styles.features}>
+            <View style={styles.featureItem}>
+              <Ionicons name="chatbubble-ellipses" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                Chat with property owners
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="notifications" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                Get instant notifications
+              </Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="time" size={24} color={tintColor} />
+              <Text style={[styles.featureText, { color: textColor }]}>
+                View message history
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Modals */}
+        <SignInModal
+          visible={showSignInModal}
+          onClose={() => setShowSignInModal(false)}
+          onSwitchToSignUp={() => {
+            setShowSignInModal(false);
+            setShowSignUpModal(true);
+          }}
+          onForgotPassword={() => {
+            setShowSignInModal(false);
+            setShowForgotPasswordModal(true);
+          }}
+          onNeedsVerification={(email) => {
+            setPendingEmail(email);
+            setShowSignInModal(false);
+            setShowVerifyEmailModal(true);
+          }}
+        />
+        <SignUpModal
+          visible={showSignUpModal}
+          onClose={() => setShowSignUpModal(false)}
+          onSwitchToSignIn={() => {
+            setShowSignUpModal(false);
+            setShowSignInModal(true);
+          }}
+          onNeedsVerification={(email) => {
+            setPendingEmail(email);
+            setShowSignUpModal(false);
+            setShowVerifyEmailModal(true);
+          }}
+        />
+        <ForgotPasswordModal
+          visible={showForgotPasswordModal}
+          onClose={() => setShowForgotPasswordModal(false)}
+          onCodeSent={(email) => {
+            setPendingEmail(email);
+            setShowForgotPasswordModal(false);
+            setShowResetPasswordModal(true);
+          }}
+        />
+        <VerifyEmailModal
+          visible={showVerifyEmailModal}
+          onClose={() => setShowVerifyEmailModal(false)}
+          email={pendingEmail}
+          onVerified={() => {
+            setShowVerifyEmailModal(false);
+            setShowSignInModal(true);
+          }}
+        />
+        <ResetPasswordModal
+          visible={showResetPasswordModal}
+          onClose={() => setShowResetPasswordModal(false)}
+          email={pendingEmail}
+          onReset={() => {
+            setShowResetPasswordModal(false);
+            setShowSignInModal(true);
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView 
-          style={styles.scrollView} 
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerContent}>
-              <View style={[styles.headerIcon, { backgroundColor: `${tintColor}15` }]}>
-                <View style={[styles.headerIconInner, { backgroundColor: tintColor }]}>
-                  <Ionicons name="add" size={32} color="#fff" />
-                </View>
-              </View>
-              <View style={styles.headerText}>
-                <Text style={[styles.title, { color: textColor }]}>List Your Property</Text>
-                <Text style={[styles.subtitle, { color: placeholderColor }]}>
-                  Quick draft • Add details later
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Rental Type - hidden, always short-term for ndotoni Stays */}
-
-          {/* Title */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>
-              Property Title <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.titleInputContainer}>
-              <TextInput
-                style={[styles.titleInput, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                placeholder="e.g., 2 Bedroom Apartment in Ilala"
-                placeholderTextColor={placeholderColor}
-                value={formData.title}
-                onChangeText={(text) => setFormData({ ...formData, title: text })}
-              />
-              <TouchableOpacity
-                style={[styles.generateIconButton, { backgroundColor: tintColor }]}
-                onPress={() => setShowTitleGenerator(true)}
-              >
-                <Ionicons name="sparkles" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Property Type */}
-          <View style={styles.section}>
-            <Text style={[styles.label, { color: textColor }]}>
-              Property Type <Text style={styles.required}>*</Text>
-            </Text>
-            <TouchableOpacity
-              style={[styles.selector, { backgroundColor: inputBg, borderColor }]}
-              onPress={() => setShowPropertyTypePicker(true)}
-            >
-              <Text style={[styles.selectorText, { color: textColor }]}>
-                {formData.rentalType === 'LONG_TERM'
-                  ? PROPERTY_TYPES.find(t => t.value === formData.propertyType)?.label
-                  : SHORT_TERM_PROPERTY_TYPES.find(t => t.value === formData.shortTermPropertyType)?.label}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={placeholderColor} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Stay Categories - Short-term only */}
-          {formData.rentalType === 'SHORT_TERM' && (
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: textColor }]}>
-                What's this space great for?
-              </Text>
-              <Text style={[styles.sublabel, { color: placeholderColor }]}>
-                Select all that apply
-              </Text>
-              <View style={styles.categoryChips}>
-                {STAY_CATEGORIES.map((cat) => {
-                  const isSelected = formData.stayCategories.includes(cat.value);
-                  return (
-                    <TouchableOpacity
-                      key={cat.value}
-                      style={[
-                        styles.categoryChip,
-                        { 
-                          borderColor: isSelected ? tintColor : borderColor,
-                          backgroundColor: isSelected ? `${tintColor}15` : inputBg,
-                        },
-                      ]}
-                      onPress={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          stayCategories: isSelected
-                            ? prev.stayCategories.filter(c => c !== cat.value)
-                            : [...prev.stayCategories, cat.value],
-                        }));
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.categoryChipIcon}>{cat.icon}</Text>
-                      <Text style={[
-                        styles.categoryChipText,
-                        { color: isSelected ? tintColor : textColor },
-                      ]}>
-                        {cat.label}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={16} color={tintColor} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Location */}
-          <LocationSelector
-            value={{
-              region: formData.region,
-              district: formData.district,
-              ward: formData.ward,
-              street: formData.street,
+      <FlatList
+        data={filteredConversations}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <SwipeableConversationCard
+            conversation={item}
+            onPress={() => {
+              console.log('[Messages] Opening conversation:', {
+                id: item.id,
+                hasHash: item.id.includes('#'),
+                propertyTitle: item.propertyTitle
+              });
+              const encodedId = encodeURIComponent(item.id);
+              router.push(`/conversation/${encodedId}`);
             }}
-            onChange={(location) => setFormData({ ...formData, ...location })}
-            required
+            onDelete={() => handleDeleteConversation(item.id, item.otherPartyName)}
+            onSwipeStart={() => setScrollEnabled(false)}
+            onSwipeEnd={() => setScrollEnabled(true)}
+            backgroundColor={cardBg}
+            textColor={textColor}
+            secondaryText={secondaryText}
+            tintColor={tintColor}
+            formatTime={formatTime}
           />
+        )}
+        scrollEnabled={scrollEnabled}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: textColor }]}>Messages</Text>
+            </View>
 
-          {/* GPS Coordinates - Only show when region is selected */}
-          {formData.region && (
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: textColor }]}>GPS Coordinates (optional)</Text>
-              
-              {/* Always show map - updates based on region/district or manual coordinates */}
-              <View style={styles.mapPreview}>
-                <PropertyMapView
-                  key={`${formData.coordinates?.latitude || mapCoordinates.latitude}-${formData.coordinates?.longitude || mapCoordinates.longitude}`}
-                  latitude={formData.coordinates?.latitude || mapCoordinates.latitude}
-                  longitude={formData.coordinates?.longitude || mapCoordinates.longitude}
-                  title={formData.title || 'Property Location'}
-                />
+            {/* Search Bar */}
+            {conversations.length > 0 && (
+              <View style={styles.searchContainer}>
+                <View style={[styles.searchBar, { backgroundColor: useThemeColor({ light: '#f3f4f6', dark: cardBg }, 'background') }]}>
+                  <Ionicons name="search" size={18} color={secondaryText} />
+                  <TextInput
+                    style={[styles.searchInput, { color: textColor }]}
+                    placeholder="Search"
+                    placeholderTextColor={secondaryText}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={18} color={secondaryText} />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-              
-              <CoordinatesInput
-                value={formData.coordinates}
-                onChange={(coords) => setFormData({ ...formData, coordinates: coords })}
-              />
-            </View>
-          )}
-
-          {/* Pricing */}
-          {formData.rentalType === 'LONG_TERM' ? (
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: textColor }]}>
-                Monthly Rent (TZS) <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                placeholder="e.g., 500000"
-                placeholderTextColor={placeholderColor}
-                value={formData.monthlyRent}
-                onChangeText={(text) => setFormData({ ...formData, monthlyRent: text })}
-                keyboardType="numeric"
-              />
-            </View>
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          !loadingConversations ? (
+            conversations.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubbles-outline" size={64} color={secondaryText} />
+                <Text style={[styles.emptyTitle, { color: textColor }]}>
+                  No Messages
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
+                  Start a conversation with property owners
+                </Text>
+              </View>
+            ) : searchQuery.length > 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={64} color={secondaryText} />
+                <Text style={[styles.emptyTitle, { color: textColor }]}>
+                  No Results
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
+                  Try a different search term
+                </Text>
+              </View>
+            ) : null
           ) : (
-            <>
-              <View style={styles.section}>
-                <Text style={[styles.label, { color: textColor }]}>
-                  Nightly Rate (TZS) <Text style={styles.required}>*</Text>
-                </Text>
-                <TextInput
-                  style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                  placeholder="e.g., 50000"
-                  placeholderTextColor={placeholderColor}
-                  value={formData.nightlyRate}
-                  onChangeText={(text) => setFormData({ ...formData, nightlyRate: text })}
-                  keyboardType="numeric"
-                />
-              </View>
-
-              <View style={styles.row}>
-                <View style={[styles.section, styles.halfWidth]}>
-                  <Text style={[styles.label, { color: textColor }]}>Cleaning Fee (optional)</Text>
-                  <TextInput
-                    style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                    placeholder="e.g., 10000"
-                    placeholderTextColor={placeholderColor}
-                    value={formData.cleaningFee}
-                    onChangeText={(text) => setFormData({ ...formData, cleaningFee: text })}
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                <View style={[styles.section, styles.halfWidth]}>
-                  <Text style={[styles.label, { color: textColor }]}>Min. Stay (nights)</Text>
-                  <TextInput
-                    style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                    value={formData.minimumStay}
-                    onChangeText={(text) => setFormData({ ...formData, minimumStay: text })}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </>
-          )}
-
-          {/* Bedrooms & Bathrooms */}
-          <View style={styles.row}>
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>
-                Bedrooms <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                value={formData.bedrooms}
-                onChangeText={(text) => setFormData({ ...formData, bedrooms: text })}
-                keyboardType="numeric"
-              />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={tintColor} />
             </View>
-
-            <View style={[styles.section, styles.halfWidth]}>
-              <Text style={[styles.label, { color: textColor }]}>
-                {formData.rentalType === 'SHORT_TERM' ? 'Max Guests' : 'Bathrooms'}
-              </Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                value={formData.rentalType === 'SHORT_TERM' ? formData.maxGuests : formData.bathrooms}
-                onChangeText={(text) => {
-                  if (formData.rentalType === 'SHORT_TERM') {
-                    setFormData({ ...formData, maxGuests: text });
-                  } else {
-                    setFormData({ ...formData, bathrooms: text });
-                  }
-                }}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-
-          {formData.rentalType === 'SHORT_TERM' && (
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: textColor }]}>Bathrooms</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                value={formData.bathrooms}
-                onChangeText={(text) => setFormData({ ...formData, bathrooms: text })}
-                keyboardType="numeric"
-              />
-            </View>
-          )}
-
-          {/* Media Selector */}
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={[
-                styles.mediaSelectorToggle,
-                { 
-                  backgroundColor: showMediaSelector ? `${tintColor}10` : inputBg,
-                  borderColor: showMediaSelector ? tintColor : borderColor,
-                }
-              ]}
-              onPress={() => setShowMediaSelector(!showMediaSelector)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.mediaSelectorHeader}>
-                <View style={styles.mediaSelectorLeft}>
-                  <Ionicons 
-                    name={showMediaSelector ? "images" : "images-outline"} 
-                    size={20} 
-                    color={tintColor} 
-                  />
-                  <Text style={[styles.mediaSelectorText, { color: tintColor }]}>
-                    {showMediaSelector ? 'Hide' : 'Add'} photos & videos
-                  </Text>
-                </View>
-                <Ionicons 
-                  name={showMediaSelector ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color={tintColor} 
-                />
-              </View>
-              {selectedMedia.length > 0 && (
-                <Text style={[styles.mediaCount, { color: placeholderColor }]}>
-                  {selectedMedia.length} {selectedMedia.length === 1 ? 'file' : 'files'} selected
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            {showMediaSelector && (
-              <MediaSelector
-                selectedMedia={selectedMedia}
-                onMediaChange={(mediaUrls, images, videos) => {
-                  setSelectedMedia(mediaUrls);
-                  setSelectedImages(images);
-                  setSelectedVideos(videos);
-                }}
-                maxSelection={10}
-                onAuthRequired={() => setShowSignIn(true)}
-              />
-            )}
-          </View>
-
-          {/* Info Note */}
-          <View style={[styles.infoBox, { backgroundColor: inputBg, borderColor }]}>
-            <Ionicons name="information-circle" size={20} color={tintColor} />
-            <Text style={[styles.infoText, { color: placeholderColor }]}>
-              You can add photos, videos, and more details later using Edit Property
-            </Text>
-          </View>
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: tintColor }]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-            activeOpacity={0.8}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <View style={styles.submitButtonContent}>
-                <Text style={styles.submitButtonText}>
-                  {selectedMedia.length > 0 ? 'Publish Property' : 'Save Draft'}
-                </Text>
-                <Ionicons 
-                  name={selectedMedia.length > 0 ? "checkmark-done-circle" : "checkmark-circle"} 
-                  size={22} 
-                  color="#fff" 
-                />
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-      </TouchableWithoutFeedback>
-
-      {/* Property Type Picker Modal */}
-      <Modal visible={showPropertyTypePicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Property Type</Text>
-              <TouchableOpacity onPress={() => setShowPropertyTypePicker(false)}>
-                <Ionicons name="close" size={24} color={textColor} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalList}>
-              {(formData.rentalType === 'LONG_TERM' ? PROPERTY_TYPES : SHORT_TERM_PROPERTY_TYPES).map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={[
-                    styles.modalListItem,
-                    { borderBottomColor: borderColor },
-                    (formData.rentalType === 'LONG_TERM' 
-                      ? formData.propertyType === type.value 
-                      : formData.shortTermPropertyType === type.value) && { 
-                      backgroundColor: `${tintColor}15` 
-                    },
-                  ]}
-                  onPress={() => {
-                    if (formData.rentalType === 'LONG_TERM') {
-                      setFormData({ ...formData, propertyType: type.value });
-                    } else {
-                      setFormData({ ...formData, shortTermPropertyType: type.value });
-                    }
-                    setShowPropertyTypePicker(false);
-                  }}
-                >
-                  <Text style={[styles.modalListItemText, { color: textColor }]}>
-                    {type.label}
-                  </Text>
-                  {(formData.rentalType === 'LONG_TERM' 
-                    ? formData.propertyType === type.value 
-                    : formData.shortTermPropertyType === type.value) && (
-                    <Ionicons name="checkmark-circle" size={22} color={tintColor} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Title Generator Modal */}
-      <Modal visible={showTitleGenerator} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderLeft}>
-                <Ionicons name="sparkles" size={22} color={tintColor} />
-                <Text style={[styles.modalTitle, { color: textColor }]}>Generate Title</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowTitleGenerator(false)}>
-                <Ionicons name="close" size={24} color={textColor} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalList}>
-              {generateTitleOptions().map((title, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.titleOption,
-                    { borderBottomColor: borderColor },
-                    formData.title === title && { backgroundColor: `${tintColor}15` },
-                  ]}
-                  onPress={() => {
-                    setFormData({ ...formData, title });
-                    setShowTitleGenerator(false);
-                  }}
-                >
-                  <Text 
-                    style={[
-                      styles.titleOptionText, 
-                      { color: textColor },
-                      formData.title === title && { fontWeight: '600' },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {title}
-                  </Text>
-                  {formData.title === title && (
-                    <Ionicons name="checkmark-circle" size={22} color={tintColor} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Authentication Modals */}
-      <SignInModal
-        visible={showSignIn}
-        onClose={() => setShowSignIn(false)}
-        onSwitchToSignUp={() => {
-          setShowSignIn(false);
-          setShowSignUp(true);
-        }}
-        onForgotPassword={() => {
-          // TODO: Implement forgot password flow
-          Alert.alert('Forgot Password', 'Password reset functionality coming soon!');
-        }}
-        onNeedsVerification={(email) => {
-          // TODO: Implement email verification flow
-          Alert.alert('Verify Email', `Please check ${email} for verification code`);
-        }}
-      />
-      <SignUpModal
-        visible={showSignUp}
-        onClose={() => setShowSignUp(false)}
-        onSwitchToSignIn={() => {
-          setShowSignUp(false);
-          setShowSignIn(true);
-        }}
-        onNeedsVerification={(email) => {
-          // TODO: Implement email verification flow
-          Alert.alert('Verify Email', `Please check ${email} for verification code`);
-        }}
+          )
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={tintColor}
+          />
+        }
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: borderColor }]} />}
       />
     </SafeAreaView>
   );
@@ -840,334 +514,225 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  listContent: {
+    flexGrow: 1,
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
-  content: {
-    padding: 20,
+  unauthContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
   },
-  header: {
-    marginBottom: 32,
-    paddingTop: 8,
+  unauthHeader: {
+    alignItems: 'center',
+    marginBottom: 48,
   },
-  headerContent: {
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  unauthTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  unauthSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  authButtons: {
+    gap: 16,
+    marginBottom: 48,
+  },
+  primaryButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    backgroundColor: 'transparent',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  features: {
+    gap: 24,
+  },
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
   },
-  headerIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  headerIconInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  headerText: {
+  featureText: {
+    fontSize: 16,
     flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   title: {
-    fontSize: 26,
+    fontSize: 34,
     fontWeight: '700',
-    marginBottom: 4,
-    letterSpacing: -0.5,
+    letterSpacing: 0.4,
   },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.7,
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
-  section: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 10,
-    letterSpacing: -0.2,
-  },
-  sublabel: {
-    fontSize: 13,
-    marginBottom: 10,
-    marginTop: -4,
-  },
-  categoryChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryChip: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    borderRadius: 10,
+    gap: 8,
   },
-  categoryChipIcon: {
-    fontSize: 16,
-  },
-  categoryChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  required: {
-    color: '#ef4444',
-    fontSize: 15,
-  },
-  titleInputContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-  },
-  titleInput: {
+  searchInput: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    fontSize: 16,
-    borderWidth: 1.5,
+    fontSize: 17,
+    padding: 0,
   },
-  generateIconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
+  separator: {
+    height: 0.5,
+    marginLeft: 90,
+  },
+  swipeableContainer: {
+    position: 'relative',
+    height: 88,
+  },
+  deleteBackground: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    backgroundColor: '#ff3b30',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    fontSize: 16,
-    borderWidth: 1.5,
-  },
-  selector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
-  selectorText: {
-    fontSize: 16,
-  },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 2,
-  },
-  typeButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    minWidth: 100,
     alignItems: 'center',
   },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+  deleteButton: {
+    width: 80,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  typeButtonTextActive: {
+  cardWrapper: {
+    flex: 1,
+  },
+  messageCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    height: 88,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
     color: '#fff',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  halfWidth: {
-    flex: 1,
-  },
-  mediaSelectorToggle: {
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: 12,
-  },
-  mediaSelectorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  mediaSelectorLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  mediaSelectorText: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '600',
-    letterSpacing: -0.2,
   },
-  mediaCount: {
-    fontSize: 13,
-    marginTop: 6,
-    marginLeft: 30,
-  },
-  mapPreview: {
-    marginBottom: 16,
-  },
-  infoBox: {
-    flexDirection: 'row',
-    padding: 18,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: 28,
-    gap: 14,
-    alignItems: 'flex-start',
-  },
-  infoText: {
+  messageContent: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.8,
+    justifyContent: 'center',
   },
-  submitButton: {
-    paddingVertical: 18,
-    borderRadius: 14,
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 2,
   },
-  submitButtonContent: {
+  senderName: {
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  messageTime: {
+    fontSize: 15,
+  },
+  propertyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  propertyTitle: {
+    fontSize: 14,
+    flex: 1,
+  },
+  previewRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  rentalTypeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  rentalTypeButton: {
+  messagePreview: {
+    fontSize: 15,
+    lineHeight: 20,
     flex: 1,
-    flexDirection: 'row',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 2,
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  chevron: {
+    marginLeft: 8,
+    opacity: 0.3,
+  },
+  emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 40,
   },
-  rentalTypeTextContainer: {
-    flex: 1,
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
   },
-  rentalTypeText: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  rentalTypeSubtext: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  rentalTypeTextActive: {
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-    maxHeight: '60%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-  },
-  modalHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  modalList: {
-    maxHeight: 400,
-  },
-  modalListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-  },
-  modalListItemText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  titleOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    gap: 12,
-  },
-  titleOptionText: {
-    flex: 1,
-    fontSize: 15,
+  emptySubtitle: {
+    fontSize: 17,
+    textAlign: 'center',
     lineHeight: 22,
   },
 });

@@ -1,738 +1,248 @@
-import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
-import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
-import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useChatDeletion } from '@/hooks/useChatDeletion';
-import { useConversationSearch } from '@/hooks/useConversationSearch';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { listMyBookings } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, PanResponder, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface SwipeableConversationCardProps {
-  conversation: any;
-  onPress: () => void;
-  onDelete: () => void;
-  backgroundColor: string;
-  textColor: string;
-  secondaryText: string;
-  tintColor: string;
-  formatTime: (timestamp: string) => string;
-  onSwipeStart?: () => void;
-  onSwipeEnd?: () => void;
-}
+type TripTab = 'going' | 'awaiting_payment' | 'past' | 'cancelled';
 
-function SwipeableConversationCard({
-  conversation,
-  onPress,
-  onDelete,
-  backgroundColor,
-  textColor,
-  secondaryText,
-  tintColor,
-  formatTime,
-  onSwipeStart,
-  onSwipeEnd,
-}: SwipeableConversationCardProps) {
-  const translateX = useRef(new Animated.Value(0)).current;
-  const [isOpen, setIsOpen] = useState(false);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only capture horizontal swipes, let vertical scrolling pass through
-        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold for faster response
-        return isHorizontal && isSignificant;
-      },
-      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        // Aggressively capture horizontal swipes to prevent scroll
-        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-        const isSignificant = Math.abs(gestureState.dx) > 5; // Lower threshold
-        
-        if (isHorizontal && isSignificant) {
-          // Immediately disable scroll when horizontal swipe detected
-          onSwipeStart?.();
-          return true;
-        }
-        return false;
-      },
-      onPanResponderTerminationRequest: () => false,
-      onShouldBlockNativeResponder: () => true,
-      onPanResponderGrant: () => {
-        translateX.stopAnimation();
-      },
-      onPanResponderMove: (_, gestureState) => {
-        // Only allow swiping left
-        if (gestureState.dx < 0) {
-          // Cap at -80
-          const newValue = Math.max(gestureState.dx, -80);
-          translateX.setValue(newValue);
-        } else if (isOpen) {
-          // Allow closing by swiping right
-          const newValue = Math.min(gestureState.dx - 80, 0);
-          translateX.setValue(newValue);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        // Re-enable scroll immediately
-        onSwipeEnd?.();
-        
-        // Determine if we should open or close
-        if (gestureState.dx < -40 || (isOpen && gestureState.dx < 20)) {
-          // Open
-          Animated.spring(translateX, {
-            toValue: -80,
-            useNativeDriver: true,
-            bounciness: 0,
-            speed: 20,
-          }).start();
-          setIsOpen(true);
-        } else {
-          // Close
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 0,
-            speed: 20,
-          }).start();
-          setIsOpen(false);
-        }
-      },
-      onPanResponderTerminate: () => {
-        // Re-enable scroll if gesture is terminated
-        onSwipeEnd?.();
-      },
-    })
-  ).current;
-
-  const handleDelete = () => {
-    // Close first, then delete
-    Animated.timing(translateX, {
-      toValue: -400,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      onDelete();
-      translateX.setValue(0);
-      setIsOpen(false);
-    });
+interface Booking {
+  bookingId: string;
+  status: string;
+  checkInDate: string;
+  checkOutDate: string;
+  totalPrice: number;
+  numberOfGuests: number;
+  property: {
+    propertyId: string;
+    title: string;
+    thumbnail?: string;
+    images?: string[];
+    currency?: string;
+    district?: string;
+    region?: string;
   };
-
-  return (
-    <View style={styles.swipeableContainer}>
-      {/* Delete Button - Always visible behind */}
-      <View style={styles.deleteBackground}>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDelete}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="trash" size={21} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Swipeable Card */}
-      <Animated.View
-        style={[
-          styles.cardWrapper,
-          {
-            transform: [{ translateX }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={[styles.messageCard, { backgroundColor }]}
-          onPress={onPress}
-          activeOpacity={0.95}
-        >
-          {/* Avatar */}
-          <View style={[styles.avatar, { backgroundColor: tintColor }]}>
-            {conversation.otherPartyImage ? (
-              <Text style={styles.avatarText}>
-                {conversation.otherPartyName.charAt(0).toUpperCase()}
-              </Text>
-            ) : (
-              <Ionicons name="person" size={26} color="#fff" />
-            )}
-          </View>
-
-          {/* Message Content */}
-          <View style={styles.messageContent}>
-            <View style={styles.messageHeader}>
-              <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
-                {conversation.otherPartyName}
-              </Text>
-              <Text style={[styles.messageTime, { color: secondaryText }]}>
-                {formatTime(conversation.lastMessageTime)}
-              </Text>
-            </View>
-
-            {conversation.propertyTitle && (
-              <View style={styles.propertyRow}>
-                <Ionicons name="home" size={13} color={secondaryText} />
-                <Text style={[styles.propertyTitle, { color: secondaryText }]} numberOfLines={1}>
-                  {conversation.propertyTitle}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.previewRow}>
-              <Text style={[styles.messagePreview, { color: secondaryText }]} numberOfLines={2}>
-                {conversation.lastMessage}
-              </Text>
-              {conversation.unreadCount > 0 && (
-                <View style={[styles.unreadBadge, { backgroundColor: tintColor }]}>
-                  <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Chevron */}
-          <Ionicons name="chevron-forward" size={20} color={secondaryText} style={styles.chevron} />
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
-  );
 }
 
-export default function MessagesScreen() {
+export default function TripsScreen() {
   const router = useRouter();
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
-
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { conversations, loadConversations, loadingConversations } = useChat();
-  const { deleteConversation, isDeletingConversation } = useChatDeletion();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState('');
+  const [activeTab, setActiveTab] = useState<TripTab>('going');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
 
-  // Use conversation search hook
-  const { filteredConversations } = useConversationSearch({
-    conversations,
-    searchQuery,
-  });
+  const bg = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const tint = useThemeColor({}, 'tint');
+  const card = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
+  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadConversations();
-    setRefreshing(false);
+  useEffect(() => {
+    if (isAuthenticated) fetchBookings();
+  }, [isAuthenticated, activeTab]);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      // "going" = confirmed AND paid, "awaiting_payment" = confirmed but not paid
+      // Both are CONFIRMED status from backend — we separate by paymentStatus
+      const statusMap: Record<TripTab, string> = {
+        going: 'CONFIRMED',
+        awaiting_payment: 'CONFIRMED',
+        past: 'COMPLETED',
+        cancelled: 'CANCELLED',
+      };
+      const res = await GraphQLClient.executeAuthenticated<any>(listMyBookings, { status: statusMap[activeTab], limit: 50 });
+      let list = res?.listMyBookings?.bookings;
+      list = Array.isArray(list) ? list : [];
+
+      // Separate paid vs unpaid for confirmed bookings
+      if (activeTab === 'going') {
+        list = list.filter((b: any) => b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED');
+      } else if (activeTab === 'awaiting_payment') {
+        list = list.filter((b: any) => b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED');
+      }
+
+      setBookings(list);
+    } catch (err) {
+      console.error('[Trips] Error:', err);
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteConversation = (conversationId: string, conversationName: string) => {
-    Alert.alert(
-      'Delete Conversation',
-      `Are you sure you want to delete this conversation with ${conversationName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await deleteConversation(conversationId);
-            if (success) {
-              // Reload conversations after deletion
-              await loadConversations();
-            }
-          },
-        },
-      ]
-    );
+  const handleRefresh = async () => { setRefreshing(true); await fetchBookings(); setRefreshing(false); };
+
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const getNights = (ci: string, co: string) => Math.ceil((new Date(co).getTime() - new Date(ci).getTime()) / 86400000);
+
+  const getStatusColor = (s: string) => {
+    if (s === 'CONFIRMED') return tint;
+    if (s === 'PENDING') return '#f59e0b';
+    if (s === 'CANCELLED') return '#ef4444';
+    return subtle;
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+  // ─── NOT AUTH ───
+  if (authLoading) return <View style={[styles.fill, { backgroundColor: bg }]}><ActivityIndicator style={{ flex: 1 }} color={tint} /></View>;
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  if (authLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Show authentication screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-        <View style={styles.unauthContainer}>
-          {/* Header */}
-          <View style={styles.unauthHeader}>
-            <View style={[styles.logoCircle, { backgroundColor: `${tintColor}20` }]}>
-              <Ionicons name="chatbubbles" size={48} color={tintColor} />
-            </View>
-            <Text style={[styles.unauthTitle, { color: textColor }]}>
-              Your Messages
-            </Text>
-            <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
-              Sign in to view and send messages
-            </Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.authButtons}>
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: tintColor }]}
-              onPress={() => setShowSignInModal(true)}
-            >
-              <Text style={styles.primaryButtonText}>Sign In</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryButton, { borderColor: tintColor }]}
-              onPress={() => setShowSignUpModal(true)}
-            >
-              <Text style={[styles.secondaryButtonText, { color: tintColor }]}>
-                Create Account
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Features */}
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Ionicons name="chatbubble-ellipses" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                Chat with property owners
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="notifications" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                Get instant notifications
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="time" size={24} color={tintColor} />
-              <Text style={[styles.featureText, { color: textColor }]}>
-                View message history
-              </Text>
-            </View>
-          </View>
+      <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
+        <View style={styles.centerWrap}>
+          <Ionicons name="airplane-outline" size={44} color={subtle} />
+          <Text style={[styles.emptyTitle, { color: text }]}>My Trips</Text>
+          <Text style={[styles.emptySub, { color: subtle }]}>Sign in to see your upcoming and past stays</Text>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: tint }]} onPress={() => setShowSignIn(true)}>
+            <Text style={styles.btnText}>Sign In</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Modals */}
-        <SignInModal
-          visible={showSignInModal}
-          onClose={() => setShowSignInModal(false)}
-          onSwitchToSignUp={() => {
-            setShowSignInModal(false);
-            setShowSignUpModal(true);
-          }}
-          onForgotPassword={() => {
-            setShowSignInModal(false);
-            setShowForgotPasswordModal(true);
-          }}
-          onNeedsVerification={(email) => {
-            setPendingEmail(email);
-            setShowSignInModal(false);
-            setShowVerifyEmailModal(true);
-          }}
-        />
-        <SignUpModal
-          visible={showSignUpModal}
-          onClose={() => setShowSignUpModal(false)}
-          onSwitchToSignIn={() => {
-            setShowSignUpModal(false);
-            setShowSignInModal(true);
-          }}
-          onNeedsVerification={(email) => {
-            setPendingEmail(email);
-            setShowSignUpModal(false);
-            setShowVerifyEmailModal(true);
-          }}
-        />
-        <ForgotPasswordModal
-          visible={showForgotPasswordModal}
-          onClose={() => setShowForgotPasswordModal(false)}
-          onCodeSent={(email) => {
-            setPendingEmail(email);
-            setShowForgotPasswordModal(false);
-            setShowResetPasswordModal(true);
-          }}
-        />
-        <VerifyEmailModal
-          visible={showVerifyEmailModal}
-          onClose={() => setShowVerifyEmailModal(false)}
-          email={pendingEmail}
-          onVerified={() => {
-            setShowVerifyEmailModal(false);
-            setShowSignInModal(true);
-          }}
-        />
-        <ResetPasswordModal
-          visible={showResetPasswordModal}
-          onClose={() => setShowResetPasswordModal(false)}
-          email={pendingEmail}
-          onReset={() => {
-            setShowResetPasswordModal(false);
-            setShowSignInModal(true);
-          }}
-        />
+        <SignInModal visible={showSignIn} onClose={() => setShowSignIn(false)} onSwitchToSignUp={() => { setShowSignIn(false); setShowSignUp(true); }} onForgotPassword={() => {}} onNeedsVerification={() => {}} />
+        <SignUpModal visible={showSignUp} onClose={() => setShowSignUp(false)} onSwitchToSignIn={() => { setShowSignUp(false); setShowSignIn(true); }} onNeedsVerification={() => {}} />
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <FlatList
-        data={filteredConversations}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <SwipeableConversationCard
-            conversation={item}
-            onPress={() => {
-              console.log('[Messages] Opening conversation:', {
-                id: item.id,
-                hasHash: item.id.includes('#'),
-                propertyTitle: item.propertyTitle
-              });
-              const encodedId = encodeURIComponent(item.id);
-              router.push(`/conversation/${encodedId}`);
-            }}
-            onDelete={() => handleDeleteConversation(item.id, item.otherPartyName)}
-            onSwipeStart={() => setScrollEnabled(false)}
-            onSwipeEnd={() => setScrollEnabled(true)}
-            backgroundColor={cardBg}
-            textColor={textColor}
-            secondaryText={secondaryText}
-            tintColor={tintColor}
-            formatTime={formatTime}
-          />
-        )}
-        scrollEnabled={scrollEnabled}
-        ListHeaderComponent={
-          <>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={[styles.title, { color: textColor }]}>Messages</Text>
-            </View>
+  // ─── TRIPS ───
+  const renderTrip = ({ item: b }: { item: Booking }) => {
+    const img = b.property?.thumbnail || b.property?.images?.[0];
+    const nights = getNights(b.checkInDate, b.checkOutDate);
+    const cur = (b.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : b.property?.currency;
 
-            {/* Search Bar */}
-            {conversations.length > 0 && (
-              <View style={styles.searchContainer}>
-                <View style={[styles.searchBar, { backgroundColor: useThemeColor({ light: '#f3f4f6', dark: cardBg }, 'background') }]}>
-                  <Ionicons name="search" size={18} color={secondaryText} />
-                  <TextInput
-                    style={[styles.searchInput, { color: textColor }]}
-                    placeholder="Search"
-                    placeholderTextColor={secondaryText}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                  {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')}>
-                      <Ionicons name="close-circle" size={18} color={secondaryText} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            )}
-          </>
-        }
-        ListEmptyComponent={
-          !loadingConversations ? (
-            conversations.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="chatbubbles-outline" size={64} color={secondaryText} />
-                <Text style={[styles.emptyTitle, { color: textColor }]}>
-                  No Messages
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
-                  Start a conversation with property owners
-                </Text>
-              </View>
-            ) : searchQuery.length > 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="search-outline" size={64} color={secondaryText} />
-                <Text style={[styles.emptyTitle, { color: textColor }]}>
-                  No Results
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: secondaryText }]}>
-                  Try a different search term
-                </Text>
-              </View>
-            ) : null
-          ) : (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
+    return (
+      <TouchableOpacity style={[styles.tripCard, { backgroundColor: card, borderColor: border }]} activeOpacity={0.9} onPress={() => router.push(`/bookings/${b.bookingId}` as any)}>
+        {img && <Image source={{ uri: img }} style={styles.tripImg} contentFit="cover" transition={200} />}
+        <View style={styles.tripBody}>
+          <View style={styles.tripRow}>
+            <Text style={[styles.tripTitle, { color: text }]} numberOfLines={1}>{b.property?.title || 'Property'}</Text>
+            <View style={[styles.statusPill, { backgroundColor: `${getStatusColor(b.status)}15` }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(b.status) }]}>{b.status}</Text>
             </View>
-          )
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={tintColor}
-          />
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: borderColor }]} />}
-      />
+          </View>
+          {b.property?.district && (
+            <Text style={[styles.tripLoc, { color: subtle }]}>{b.property.district}, {b.property.region}</Text>
+          )}
+          <View style={styles.tripDetails}>
+            <Text style={[styles.tripDate, { color: text }]}>
+              {formatDate(b.checkInDate)} – {formatDate(b.checkOutDate)}
+            </Text>
+            <Text style={[styles.tripMeta, { color: subtle }]}>
+              {nights} night{nights !== 1 ? 's' : ''} · {b.numberOfGuests || 1} guest{(b.numberOfGuests || 1) !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <Text style={[styles.tripPrice, { color: text }]}>
+            {cur} {(b.totalPrice || 0).toLocaleString()}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const TABS: { key: TripTab; label: string }[] = [
+    { key: 'going', label: 'Going' },
+    { key: 'awaiting_payment', label: 'Awaiting Pay' },
+    { key: 'past', label: 'Past' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
+  return (
+    <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: text }]}>My Trips</Text>
+      </View>
+
+      {/* Tabs */}
+      <View style={[styles.tabBar, { borderBottomColor: border }]}>
+        {TABS.map(t => (
+          <TouchableOpacity key={t.key} style={[styles.tab, activeTab === t.key && { borderBottomColor: tint, borderBottomWidth: 2 }]} onPress={() => setActiveTab(t.key)}>
+            <Text style={[styles.tabLabel, { color: activeTab === t.key ? tint : subtle }]}>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* List */}
+      {loading ? (
+        <View style={styles.centerWrap}><ActivityIndicator size="large" color={tint} /></View>
+      ) : (
+        <FlatList
+          data={bookings}
+          keyExtractor={(b) => b.bookingId}
+          renderItem={renderTrip}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}
+          ListEmptyComponent={
+            <View style={styles.centerWrap}>
+              <Ionicons name={activeTab === 'going' ? 'airplane-outline' : activeTab === 'awaiting_payment' ? 'card-outline' : activeTab === 'past' ? 'checkmark-circle-outline' : 'close-circle-outline'} size={40} color={subtle} />
+              <Text style={[styles.emptyTitle, { color: text }]}>
+                {activeTab === 'going' ? 'No confirmed trips' : activeTab === 'awaiting_payment' ? 'No pending payments' : activeTab === 'past' ? 'No past trips' : 'No cancellations'}
+              </Text>
+              <Text style={[styles.emptySub, { color: subtle }]}>
+                {activeTab === 'going' ? 'Trips you\'ve paid for will appear here' : activeTab === 'awaiting_payment' ? 'Confirmed bookings awaiting your payment' : 'Your travel history will appear here'}
+              </Text>
+              {activeTab === 'going' && (
+                <TouchableOpacity style={[styles.btn, { backgroundColor: tint }]} onPress={() => router.push('/(tabs)/' as any)}>
+                  <Text style={styles.btnText}>Explore stays</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  unauthContainer: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  unauthHeader: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  unauthTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  unauthSubtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  authButtons: {
-    gap: 16,
-    marginBottom: 48,
-  },
-  primaryButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    backgroundColor: 'transparent',
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  features: {
-    gap: 24,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  featureText: {
-    fontSize: 16,
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 17,
-    padding: 0,
-  },
-  separator: {
-    height: 0.5,
-    marginLeft: 90,
-  },
-  swipeableContainer: {
-    position: 'relative',
-    height: 88,
-  },
-  deleteBackground: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 80,
-    backgroundColor: '#ff3b30',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButton: {
-    width: 80,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardWrapper: {
-    flex: 1,
-  },
-  messageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    height: 88,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  messageContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  senderName: {
-    fontSize: 17,
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 8,
-  },
-  messageTime: {
-    fontSize: 15,
-  },
-  propertyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  propertyTitle: {
-    fontSize: 14,
-    flex: 1,
-  },
-  previewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  messagePreview: {
-    fontSize: 15,
-    lineHeight: 20,
-    flex: 1,
-  },
-  unreadBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  chevron: {
-    marginLeft: 8,
-    opacity: 0.3,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 17,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  fill: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
+  headerTitle: { fontSize: 24, fontWeight: '800' },
+
+  // Tabs
+  tabBar: { flexDirection: 'row', borderBottomWidth: 1, paddingHorizontal: 20 },
+  tab: { marginRight: 24, paddingVertical: 12 },
+  tabLabel: { fontSize: 14, fontWeight: '600' },
+
+  // List
+  list: { padding: 16 },
+  tripCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 16 },
+  tripImg: { width: '100%', height: 160 },
+  tripBody: { padding: 14 },
+  tripRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  tripTitle: { fontSize: 16, fontWeight: '600', flex: 1, marginRight: 8 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  tripLoc: { fontSize: 13, marginTop: 3 },
+  tripDetails: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  tripDate: { fontSize: 14, fontWeight: '500' },
+  tripMeta: { fontSize: 13 },
+  tripPrice: { fontSize: 16, fontWeight: '700', marginTop: 8 },
+
+  // States
+  centerWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, paddingVertical: 60 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginTop: 12 },
+  emptySub: { fontSize: 14, textAlign: 'center', marginTop: 4, lineHeight: 20 },
+  btn: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
+  btnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

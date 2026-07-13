@@ -160,7 +160,7 @@ export default function BookingsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={textColor} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: textColor }]}>My Bookings</Text>
+          <Text style={[styles.headerTitle, { color: textColor }]}>My Trips</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.emptyContainer}>
@@ -181,7 +181,7 @@ export default function BookingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={textColor} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: textColor }]}>My Bookings</Text>
+        <Text style={[styles.headerTitle, { color: textColor }]}>My Trips</Text>
         <View style={styles.placeholder} />
       </View>
 

@@ -160,7 +160,7 @@ export default function ProfileScreen() {
               Welcome to ndotoni Stays
             </Text>
             <Text style={[styles.unauthSubtitle, { color: secondaryText }]}>
-              Sign in or create an account to access your profile, bookings, and more
+              Sign in or create an account to access your profile, trips, and more
             </Text>
           </View>
 
@@ -194,7 +194,7 @@ export default function ProfileScreen() {
             <View style={styles.featureItem}>
               <Ionicons name="calendar" size={24} color={tintColor} />
               <Text style={[styles.featureText, { color: textColor }]}>
-                Manage your bookings
+                Manage your trips
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -319,7 +319,7 @@ export default function ProfileScreen() {
   const menuItems = [
     { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/explore' },
     { id: 'favorites', label: 'Favorites', icon: 'heart' },
-    { id: 'bookings', label: 'My Bookings', icon: 'calendar', route: '/bookings' },
+    { id: 'bookings', label: 'My Trips', icon: 'airplane', route: '/bookings' },
     { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/messages' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
     { id: 'help', label: 'Help & Support', icon: 'help-circle' },
