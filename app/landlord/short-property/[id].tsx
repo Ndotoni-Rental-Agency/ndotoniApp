@@ -105,6 +105,17 @@ export default function EditShortTermPropertyScreen() {
   const upd = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
   const toggleCat = (c: string) => setForm(f => ({ ...f, stayCategories: f.stayCategories.includes(c) ? f.stayCategories.filter(x => x !== c) : [...f.stayCategories, c] }));
 
+  const saveSec = async (label: string, input: Partial<UpdateShortTermPropertyInput>) => {
+    setSaving(true);
+    try {
+      const result = await updateShortProperty(propertyId, input as UpdateShortTermPropertyInput);
+      if (result.success) Alert.alert('✅ Saved', `${label} updated`);
+      else Alert.alert('Error', result.message);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to save');
+    } finally { setSaving(false); }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -189,12 +200,12 @@ export default function EditShortTermPropertyScreen() {
         {/* ═══ DETAILS ═══ */}
         {tab === 'details' && (
           <>
+            {/* --- Title & Description --- */}
+            <SectionTitle t={text}>Basic info</SectionTitle>
             <Label t={text}>Title</Label>
             <Input val={form.title} set={v => upd('title', v)} border={border} text={text} subtle={subtle} placeholder="Property title" />
-
             <Label t={text}>Description</Label>
             <Input val={form.description} set={v => upd('description', v)} border={border} text={text} subtle={subtle} placeholder="Describe your place..." multiline />
-
             <Label t={text}>Stay categories</Label>
             <View style={styles.chipGrid}>
               {STAY_CATEGORIES.map(c => {
@@ -202,10 +213,14 @@ export default function EditShortTermPropertyScreen() {
                 return <TouchableOpacity key={c.value} style={[styles.chip, { borderColor: sel ? tint : border, backgroundColor: sel ? `${tint}08` : 'transparent' }]} onPress={() => toggleCat(c.value)}><Text style={{ fontSize: 16 }}>{c.icon}</Text><Text style={[styles.chipLabel, { color: sel ? tint : text }]}>{c.label}</Text></TouchableOpacity>;
               })}
             </View>
+            <SaveSectionBtn label="Save basic info" saving={saving} tint={tint} onPress={() => saveSec('Basic info', { title: form.title, description: form.description || undefined })} />
 
-            <Label t={text}>Location</Label>
+            {/* --- Location --- */}
+            <SectionTitle t={text}>Location</SectionTitle>
             <LocationSelector value={{ region: form.region, district: form.district }} onChange={(loc: any) => { upd('region', loc.region); upd('district', loc.district); }} />
+            <SaveSectionBtn label="Save location" saving={saving} tint={tint} onPress={() => saveSec('Location', { region: form.region, district: form.district })} />
 
+            {/* --- Pricing --- */}
             <SectionTitle t={text}>Pricing</SectionTitle>
             <View style={styles.row}>
               <View style={styles.col}><Label t={text}>Nightly ({form.currency})</Label><Input val={form.nightlyRate} set={v => upd('nightlyRate', v.replace(/\D/g, ''))} border={border} text={text} subtle={subtle} num /></View>
@@ -215,7 +230,9 @@ export default function EditShortTermPropertyScreen() {
               <View style={styles.col}><Label t={text}>Service %</Label><Input val={form.serviceFeePercentage} set={v => upd('serviceFeePercentage', v)} border={border} text={text} subtle={subtle} num /></View>
               <View style={styles.col}><Label t={text}>Currency</Label><Input val={form.currency} set={v => upd('currency', v)} border={border} text={text} subtle={subtle} /></View>
             </View>
+            <SaveSectionBtn label="Save pricing" saving={saving} tint={tint} onPress={() => saveSec('Pricing', { nightlyRate: parseFloat(form.nightlyRate) || 0, cleaningFee: parseFloat(form.cleaningFee) || undefined, serviceFeePercentage: parseFloat(form.serviceFeePercentage) || undefined, currency: form.currency })} />
 
+            {/* --- Capacity --- */}
             <SectionTitle t={text}>Capacity</SectionTitle>
             <View style={styles.row}>
               <View style={styles.col}><Label t={text}>Max guests</Label><Input val={form.maxGuests} set={v => upd('maxGuests', v)} border={border} text={text} subtle={subtle} num /></View>
@@ -229,7 +246,9 @@ export default function EditShortTermPropertyScreen() {
               <View style={styles.col}><Label t={text}>Bedrooms</Label><Input val={form.bedrooms} set={v => upd('bedrooms', v)} border={border} text={text} subtle={subtle} num /></View>
               <View style={styles.col}><Label t={text}>Bathrooms</Label><Input val={form.bathrooms} set={v => upd('bathrooms', v)} border={border} text={text} subtle={subtle} num /></View>
             </View>
+            <SaveSectionBtn label="Save capacity" saving={saving} tint={tint} onPress={() => saveSec('Capacity', { maxGuests: parseInt(form.maxGuests) || 1, maxAdults: parseInt(form.maxAdults) || undefined, maxChildren: parseInt(form.maxChildren) || undefined, maxInfants: parseInt(form.maxInfants) || undefined })} />
 
+            {/* --- Stay duration --- */}
             <SectionTitle t={text}>Stay duration</SectionTitle>
             <View style={styles.row}>
               <View style={styles.col}><Label t={text}>Min nights</Label><Input val={form.minimumStay} set={v => upd('minimumStay', v)} border={border} text={text} subtle={subtle} num /></View>
@@ -237,12 +256,17 @@ export default function EditShortTermPropertyScreen() {
             </View>
             <Label t={text}>Advance booking (days)</Label>
             <Input val={form.advanceBookingDays} set={v => upd('advanceBookingDays', v)} border={border} text={text} subtle={subtle} num placeholder="e.g. 90" />
+            <SaveSectionBtn label="Save duration" saving={saving} tint={tint} onPress={() => saveSec('Duration', { minimumStay: parseInt(form.minimumStay) || 1, maximumStay: parseInt(form.maximumStay) || undefined, advanceBookingDays: parseInt(form.advanceBookingDays) || undefined })} />
 
+            {/* --- Amenities --- */}
             <SectionTitle t={text}>Amenities</SectionTitle>
             <AmenitiesSelector selectedAmenities={form.amenities} onAmenitiesChange={a => upd('amenities', a)} propertyType="short-term" />
+            <SaveSectionBtn label="Save amenities" saving={saving} tint={tint} onPress={() => saveSec('Amenities', { amenities: form.amenities })} />
 
+            {/* --- House rules --- */}
             <SectionTitle t={text}>House rules</SectionTitle>
             <Input val={form.houseRules} set={v => upd('houseRules', v)} border={border} text={text} subtle={subtle} placeholder="One rule per line" multiline />
+            <SaveSectionBtn label="Save rules" saving={saving} tint={tint} onPress={() => saveSec('Rules', { houseRules: form.houseRules.split('\n').filter(r => r.trim()) })} />
           </>
         )}
 
@@ -252,6 +276,7 @@ export default function EditShortTermPropertyScreen() {
             <SectionTitle t={text}>Photos & Videos</SectionTitle>
             <Text style={{ color: subtle, fontSize: 13, marginBottom: 14 }}>First photo is the cover. Add up to 10.</Text>
             <MediaSelector selectedMedia={images} onMediaChange={(_, imgs) => setImages(imgs)} />
+            <SaveSectionBtn label="Save photos" saving={saving} tint={tint} onPress={() => saveSec('Photos', { images })} />
           </>
         )}
 
@@ -288,6 +313,12 @@ export default function EditShortTermPropertyScreen() {
 
             <Label t={text}>Additional notes</Label>
             <Input val={form.ciNotes} set={v => upd('ciNotes', v)} border={border} text={text} subtle={subtle} placeholder="Anything else guests should know..." multiline />
+            <SaveSectionBtn label="Save check-in info" saving={saving} tint={tint} onPress={() => saveSec('Check-in', {
+              checkInTime: form.checkInTime || undefined, checkOutTime: form.checkOutTime || undefined,
+              ...(form.ciWifi || form.ciWifiPassword || form.ciAccessCode || form.ciDirections || form.ciParking || form.ciContactPhone || form.ciContactName || form.ciNotes ? {
+                checkInInstructions: JSON.stringify({ wifiName: form.ciWifi || undefined, wifiPassword: form.ciWifiPassword || undefined, accessCode: form.ciAccessCode || undefined, directions: form.ciDirections || undefined, parkingInfo: form.ciParking || undefined, contactPhone: form.ciContactPhone || undefined, contactName: form.ciContactName || undefined, additionalNotes: form.ciNotes || undefined })
+              } : {}),
+            })} />
           </>
         )}
 
@@ -317,6 +348,7 @@ export default function EditShortTermPropertyScreen() {
               <Ionicons name="eye-off-outline" size={18} color="#ef4444" />
               <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>Deactivate listing</Text>
             </TouchableOpacity>
+            <SaveSectionBtn label="Save settings" saving={saving} tint={tint} onPress={() => saveSec('Settings', { instantBookEnabled: form.instantBookEnabled, allowsPets: form.allowsPets, allowsSmoking: form.allowsSmoking, allowsChildren: form.allowsChildren, allowsInfants: form.allowsInfants, cancellationPolicy: form.cancellationPolicy as any })} />
           </>
         )}
 
@@ -327,6 +359,14 @@ export default function EditShortTermPropertyScreen() {
 }
 
 // ─── Helper components ───
+function SaveSectionBtn({ label, saving, tint, onPress }: { label: string; saving: boolean; tint: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={[styles.secSaveBtn, { backgroundColor: tint, opacity: saving ? 0.5 : 1 }]} onPress={onPress} disabled={saving}>
+      {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.secSaveBtnText}>{label}</Text>}
+    </TouchableOpacity>
+  );
+}
+
 function Label({ t, children }: { t: string; children: React.ReactNode }) {
   return <Text style={[styles.label, { color: t }]}>{children}</Text>;
 }
@@ -372,4 +412,6 @@ const styles = StyleSheet.create({
   policyName: { fontSize: 14, fontWeight: '600' },
   policyDesc: { fontSize: 12, marginTop: 3, lineHeight: 16 },
   dangerBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 },
+  secSaveBtn: { marginTop: 16, marginBottom: 8, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  secSaveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });
