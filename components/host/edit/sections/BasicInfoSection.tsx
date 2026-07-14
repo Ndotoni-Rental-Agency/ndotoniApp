@@ -16,7 +16,6 @@ const STAY_CATEGORIES = [
 export default function BasicInfoSection({ form, upd, toggleCat, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
   return (
     <View style={s.section}>
-      <Text style={[s.title, { color: text }]}>Basic info</Text>
       <Text style={[s.label, { color: text }]}>Title</Text>
       <TextInput style={[s.input, { color: text, borderColor: border }]} value={form.title} onChangeText={v => upd('title', v)} placeholder="Property title" placeholderTextColor={subtle} />
       <Text style={[s.label, { color: text }]}>Description</Text>

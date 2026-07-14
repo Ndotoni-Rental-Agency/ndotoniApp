@@ -6,7 +6,6 @@ import { EditTabProps } from '../types';
 export default function LocationSection({ form, upd, saving, saveSec, text, tint, border }: EditTabProps) {
   return (
     <View style={s.section}>
-      <Text style={[s.title, { color: text }]}>Location</Text>
       <LocationSelector value={{ region: form.region, district: form.district }} onChange={(loc: any) => { upd('region', loc.region); upd('district', loc.district); }} />
       <TouchableOpacity style={[s.saveBtn, { backgroundColor: tint, opacity: saving ? 0.5 : 1 }]} onPress={() => saveSec('Location', { region: form.region, district: form.district })} disabled={saving}>
         {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Save location</Text>}

@@ -5,7 +5,6 @@ import { EditTabProps } from '../types';
 export default function PricingSection({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
   return (
     <View style={s.section}>
-      <Text style={[s.title, { color: text }]}>Pricing</Text>
       <View style={s.row}>
         <View style={s.col}><Text style={[s.label, { color: text }]}>Nightly ({form.currency})</Text><TextInput style={[s.input, { color: text, borderColor: border }]} value={form.nightlyRate} onChangeText={v => upd('nightlyRate', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="50000" placeholderTextColor={subtle} /></View>
         <View style={s.col}><Text style={[s.label, { color: text }]}>Cleaning fee</Text><TextInput style={[s.input, { color: text, borderColor: border }]} value={form.cleaningFee} onChangeText={v => upd('cleaningFee', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="0" placeholderTextColor={subtle} /></View>

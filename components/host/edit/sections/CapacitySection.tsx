@@ -5,7 +5,6 @@ import { EditTabProps } from '../types';
 export default function CapacitySection({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
   return (
     <View style={s.section}>
-      <Text style={[s.title, { color: text }]}>Capacity & Duration</Text>
       <View style={s.row}>
         <View style={s.col}><Text style={[s.label, { color: text }]}>Max guests</Text><TextInput style={[s.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.maxGuests} onChangeText={v => upd('maxGuests', v)} keyboardType="number-pad" /></View>
         <View style={s.col}><Text style={[s.label, { color: text }]}>Bedrooms</Text><TextInput style={[s.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.bedrooms} onChangeText={v => upd('bedrooms', v)} keyboardType="number-pad" /></View>
