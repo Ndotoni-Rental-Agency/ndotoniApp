@@ -1,5 +1,6 @@
 import MediaSelector from '@/components/media/MediaSelector';
 import AmenitiesSelector from '@/components/property/AmenitiesSelector';
+import LocationSelector from '@/components/location/LocationSelector';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUpdateProperty } from '@/hooks/useUpdateProperty';
@@ -20,7 +21,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Tab = 'details' | 'photos' | 'settings';
+type Tab = 'details' | 'photos' | 'checkin' | 'settings';
+
+const STAY_CATEGORIES = [
+  { value: 'NIGHTLY_STAY', icon: '🏠', label: 'Nightly Stay' },
+  { value: 'PARTY', icon: '🎉', label: 'Party' },
+  { value: 'PHOTOSHOOT', icon: '📸', label: 'Photoshoot' },
+  { value: 'MEETING', icon: '💼', label: 'Meeting' },
+  { value: 'GETAWAY', icon: '🌊', label: 'Getaway' },
+  { value: 'SAFARI', icon: '🦁', label: 'Safari' },
+  { value: 'BEACH', icon: '🏖️', label: 'Beach' },
+  { value: 'WEDDING', icon: '💒', label: 'Wedding' },
+];
 
 export default function EditShortTermPropertyScreen() {
   const params = useLocalSearchParams();
@@ -39,37 +51,59 @@ export default function EditShortTermPropertyScreen() {
 
   const [tab, setTab] = useState<Tab>('details');
   const [saving, setSaving] = useState(false);
+
+  // Form state
   const [form, setForm] = useState({
-    title: '', description: '', propertyType: '', nightlyRate: '', cleaningFee: '',
-    currency: 'TZS', maxGuests: '', bedrooms: '', bathrooms: '',
-    minimumStay: '', maximumStay: '', instantBookEnabled: false,
-    checkInTime: '', checkOutTime: '', checkInInstructions: '',
+    title: '', description: '', propertyType: '', stayCategories: [] as string[],
+    region: '', district: '',
+    nightlyRate: '', cleaningFee: '', serviceFeePercentage: '', currency: 'TZS',
+    maxGuests: '', maxAdults: '', maxChildren: '', maxInfants: '',
+    bedrooms: '', bathrooms: '',
+    minimumStay: '', maximumStay: '', advanceBookingDays: '',
+    instantBookEnabled: false,
+    checkInTime: '', checkOutTime: '',
+    // Check-in instructions (structured)
+    ciWifi: '', ciWifiPassword: '', ciAccessCode: '', ciDirections: '',
+    ciParking: '', ciContactPhone: '', ciContactName: '', ciNotes: '',
+    // Policies
     cancellationPolicy: 'MODERATE',
     allowsPets: false, allowsSmoking: false, allowsChildren: true, allowsInfants: true,
-    amenities: [] as string[], houseRules: [] as string[],
+    houseRules: '',
+    amenities: [] as string[],
   });
   const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (!property) return;
+    const ci = property.checkInInstructions as any;
     setForm({
       title: property.title || '', description: property.description || '',
-      propertyType: property.propertyType || '', nightlyRate: property.nightlyRate?.toString() || '',
-      cleaningFee: property.cleaningFee?.toString() || '', currency: property.currency || 'TZS',
-      maxGuests: property.maxGuests?.toString() || '', bedrooms: (property as any).bedrooms?.toString() || '',
-      bathrooms: (property as any).bathrooms?.toString() || '', minimumStay: property.minimumStay?.toString() || '1',
-      maximumStay: property.maximumStay?.toString() || '', instantBookEnabled: property.instantBookEnabled ?? false,
+      propertyType: property.propertyType || '', stayCategories: (property as any).stayCategories || ['NIGHTLY_STAY'],
+      region: property.region || '', district: property.district || '',
+      nightlyRate: property.nightlyRate?.toString() || '', cleaningFee: property.cleaningFee?.toString() || '',
+      serviceFeePercentage: property.serviceFeePercentage?.toString() || '', currency: property.currency || 'TZS',
+      maxGuests: property.maxGuests?.toString() || '', maxAdults: property.maxAdults?.toString() || '',
+      maxChildren: property.maxChildren?.toString() || '', maxInfants: property.maxInfants?.toString() || '',
+      bedrooms: (property as any).bedrooms?.toString() || '', bathrooms: (property as any).bathrooms?.toString() || '',
+      minimumStay: property.minimumStay?.toString() || '1', maximumStay: property.maximumStay?.toString() || '',
+      advanceBookingDays: property.advanceBookingDays?.toString() || '',
+      instantBookEnabled: property.instantBookEnabled ?? false,
       checkInTime: property.checkInTime || '', checkOutTime: property.checkOutTime || '',
-      checkInInstructions: property.checkInInstructions || '', cancellationPolicy: property.cancellationPolicy || 'MODERATE',
+      ciWifi: ci?.wifiName || '', ciWifiPassword: ci?.wifiPassword || '',
+      ciAccessCode: ci?.accessCode || '', ciDirections: ci?.directions || '',
+      ciParking: ci?.parkingInfo || '', ciContactPhone: ci?.contactPhone || '',
+      ciContactName: ci?.contactName || '', ciNotes: ci?.additionalNotes || '',
+      cancellationPolicy: property.cancellationPolicy || 'MODERATE',
       allowsPets: property.allowsPets ?? false, allowsSmoking: property.allowsSmoking ?? false,
       allowsChildren: property.allowsChildren ?? true, allowsInfants: property.allowsInfants ?? true,
+      houseRules: property.houseRules?.join('\n') || '',
       amenities: property.amenities?.filter((a): a is string => a !== null) || [],
-      houseRules: property.houseRules?.filter((r): r is string => r !== null) || [],
     });
     setImages(property.images || []);
   }, [property]);
 
   const upd = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const toggleCat = (c: string) => setForm(f => ({ ...f, stayCategories: f.stayCategories.includes(c) ? f.stayCategories.filter(x => x !== c) : [...f.stayCategories, c] }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -78,16 +112,28 @@ export default function EditShortTermPropertyScreen() {
         title: form.title, description: form.description || undefined,
         nightlyRate: parseFloat(form.nightlyRate) || 0, currency: form.currency,
         cleaningFee: parseFloat(form.cleaningFee) || undefined,
+        serviceFeePercentage: parseFloat(form.serviceFeePercentage) || undefined,
         maxGuests: parseInt(form.maxGuests) || 1,
+        maxAdults: parseInt(form.maxAdults) || undefined,
+        maxChildren: parseInt(form.maxChildren) || undefined,
+        maxInfants: parseInt(form.maxInfants) || undefined,
         minimumStay: parseInt(form.minimumStay) || 1,
         maximumStay: parseInt(form.maximumStay) || undefined,
+        advanceBookingDays: parseInt(form.advanceBookingDays) || undefined,
         instantBookEnabled: form.instantBookEnabled,
         checkInTime: form.checkInTime || undefined, checkOutTime: form.checkOutTime || undefined,
-        checkInInstructions: form.checkInInstructions || undefined,
+        checkInInstructions: JSON.stringify({
+          wifiName: form.ciWifi, wifiPassword: form.ciWifiPassword,
+          accessCode: form.ciAccessCode, directions: form.ciDirections,
+          parkingInfo: form.ciParking, contactPhone: form.ciContactPhone,
+          contactName: form.ciContactName, additionalNotes: form.ciNotes,
+        }),
         cancellationPolicy: form.cancellationPolicy as any,
         allowsPets: form.allowsPets, allowsSmoking: form.allowsSmoking,
         allowsChildren: form.allowsChildren, allowsInfants: form.allowsInfants,
         amenities: form.amenities, images,
+        houseRules: form.houseRules.split('\n').filter(r => r.trim()),
+        region: form.region, district: form.district,
       };
       const result = await updateShortProperty(propertyId, input);
       if (result.success) Alert.alert('✅ Saved', 'Property updated');
@@ -100,16 +146,14 @@ export default function EditShortTermPropertyScreen() {
   if (loading) return <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}><View style={styles.center}><ActivityIndicator size="large" color={tint} /></View></SafeAreaView>;
   if (error || !property) return (
     <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
-      <View style={styles.center}>
-        <Text style={[{ color: text, fontSize: 16 }]}>{error || 'Not found'}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}><Text style={{ color: tint }}>Go back</Text></TouchableOpacity>
-      </View>
+      <View style={styles.center}><Text style={{ color: text }}>{error || 'Not found'}</Text><TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}><Text style={{ color: tint }}>Go back</Text></TouchableOpacity></View>
     </SafeAreaView>
   );
 
   const TABS: { key: Tab; label: string; icon: string }[] = [
     { key: 'details', label: 'Details', icon: 'document-text-outline' },
     { key: 'photos', label: 'Photos', icon: 'images-outline' },
+    { key: 'checkin', label: 'Check-In', icon: 'key-outline' },
     { key: 'settings', label: 'Settings', icon: 'settings-outline' },
   ];
 
@@ -125,105 +169,147 @@ export default function EditShortTermPropertyScreen() {
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabBar, { borderBottomColor: border }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.tabBar, { borderBottomColor: border }]}>
         {TABS.map(t => (
           <TouchableOpacity key={t.key} style={[styles.tab, tab === t.key && { borderBottomColor: tint, borderBottomWidth: 2 }]} onPress={() => setTab(t.key)}>
-            <Ionicons name={t.icon as any} size={18} color={tab === t.key ? tint : subtle} />
+            <Ionicons name={t.icon as any} size={16} color={tab === t.key ? tint : subtle} />
             <Text style={[styles.tabLabel, { color: tab === t.key ? tint : subtle }]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* ═══ DETAILS ═══ */}
         {tab === 'details' && (
           <>
-            <Text style={[styles.label, { color: text }]}>Title</Text>
-            <TextInput style={[styles.input, { color: text, borderColor: border }]} value={form.title} onChangeText={v => upd('title', v)} placeholder="Property title" placeholderTextColor={subtle} />
+            <Label t={text}>Title</Label>
+            <Input val={form.title} set={v => upd('title', v)} border={border} text={text} subtle={subtle} placeholder="Property title" />
 
-            <Text style={[styles.label, { color: text }]}>Description</Text>
-            <TextInput style={[styles.input, styles.textArea, { color: text, borderColor: border }]} value={form.description} onChangeText={v => upd('description', v)} placeholder="Describe your property..." placeholderTextColor={subtle} multiline numberOfLines={4} textAlignVertical="top" />
+            <Label t={text}>Description</Label>
+            <Input val={form.description} set={v => upd('description', v)} border={border} text={text} subtle={subtle} placeholder="Describe your place..." multiline />
 
-            <Text style={[styles.label, { color: text }]}>Nightly rate ({form.currency})</Text>
-            <TextInput style={[styles.input, { color: text, borderColor: border }]} value={form.nightlyRate} onChangeText={v => upd('nightlyRate', v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" placeholder="50000" placeholderTextColor={subtle} />
-
-            <Text style={[styles.label, { color: text }]}>Cleaning fee</Text>
-            <TextInput style={[styles.input, { color: text, borderColor: border }]} value={form.cleaningFee} onChangeText={v => upd('cleaningFee', v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" placeholder="0" placeholderTextColor={subtle} />
-
-            <View style={styles.row}>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Guests</Text><TextInput style={[styles.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.maxGuests} onChangeText={v => upd('maxGuests', v)} keyboardType="number-pad" /></View>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Beds</Text><TextInput style={[styles.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.bedrooms} onChangeText={v => upd('bedrooms', v)} keyboardType="number-pad" /></View>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Baths</Text><TextInput style={[styles.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.bathrooms} onChangeText={v => upd('bathrooms', v)} keyboardType="number-pad" /></View>
+            <Label t={text}>Stay categories</Label>
+            <View style={styles.chipGrid}>
+              {STAY_CATEGORIES.map(c => {
+                const sel = form.stayCategories.includes(c.value);
+                return <TouchableOpacity key={c.value} style={[styles.chip, { borderColor: sel ? tint : border, backgroundColor: sel ? `${tint}08` : 'transparent' }]} onPress={() => toggleCat(c.value)}><Text style={{ fontSize: 16 }}>{c.icon}</Text><Text style={[styles.chipLabel, { color: sel ? tint : text }]}>{c.label}</Text></TouchableOpacity>;
+              })}
             </View>
 
+            <Label t={text}>Location</Label>
+            <LocationSelector value={{ region: form.region, district: form.district }} onChange={(loc: any) => { upd('region', loc.region); upd('district', loc.district); }} />
+
+            <SectionTitle t={text}>Pricing</SectionTitle>
             <View style={styles.row}>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Min nights</Text><TextInput style={[styles.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.minimumStay} onChangeText={v => upd('minimumStay', v)} keyboardType="number-pad" /></View>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Max nights</Text><TextInput style={[styles.input, { color: text, borderColor: border, textAlign: 'center' }]} value={form.maximumStay} onChangeText={v => upd('maximumStay', v)} keyboardType="number-pad" /></View>
+              <View style={styles.col}><Label t={text}>Nightly ({form.currency})</Label><Input val={form.nightlyRate} set={v => upd('nightlyRate', v.replace(/\D/g, ''))} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Cleaning fee</Label><Input val={form.cleaningFee} set={v => upd('cleaningFee', v.replace(/\D/g, ''))} border={border} text={text} subtle={subtle} num /></View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Service %</Label><Input val={form.serviceFeePercentage} set={v => upd('serviceFeePercentage', v)} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Currency</Label><Input val={form.currency} set={v => upd('currency', v)} border={border} text={text} subtle={subtle} /></View>
             </View>
 
-            <Text style={[styles.sectionHead, { color: text }]}>Amenities</Text>
+            <SectionTitle t={text}>Capacity</SectionTitle>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Max guests</Label><Input val={form.maxGuests} set={v => upd('maxGuests', v)} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Adults</Label><Input val={form.maxAdults} set={v => upd('maxAdults', v)} border={border} text={text} subtle={subtle} num /></View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Children</Label><Input val={form.maxChildren} set={v => upd('maxChildren', v)} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Infants</Label><Input val={form.maxInfants} set={v => upd('maxInfants', v)} border={border} text={text} subtle={subtle} num /></View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Bedrooms</Label><Input val={form.bedrooms} set={v => upd('bedrooms', v)} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Bathrooms</Label><Input val={form.bathrooms} set={v => upd('bathrooms', v)} border={border} text={text} subtle={subtle} num /></View>
+            </View>
+
+            <SectionTitle t={text}>Stay duration</SectionTitle>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Min nights</Label><Input val={form.minimumStay} set={v => upd('minimumStay', v)} border={border} text={text} subtle={subtle} num /></View>
+              <View style={styles.col}><Label t={text}>Max nights</Label><Input val={form.maximumStay} set={v => upd('maximumStay', v)} border={border} text={text} subtle={subtle} num /></View>
+            </View>
+            <Label t={text}>Advance booking (days)</Label>
+            <Input val={form.advanceBookingDays} set={v => upd('advanceBookingDays', v)} border={border} text={text} subtle={subtle} num placeholder="e.g. 90" />
+
+            <SectionTitle t={text}>Amenities</SectionTitle>
             <AmenitiesSelector selectedAmenities={form.amenities} onAmenitiesChange={a => upd('amenities', a)} propertyType="short-term" />
 
-            <Text style={[styles.sectionHead, { color: text }]}>Check-in / Check-out</Text>
-            <View style={styles.row}>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Check-in</Text><TextInput style={[styles.input, { color: text, borderColor: border }]} value={form.checkInTime} onChangeText={v => upd('checkInTime', v)} placeholder="14:00" placeholderTextColor={subtle} /></View>
-              <View style={styles.col}><Text style={[styles.label, { color: text }]}>Check-out</Text><TextInput style={[styles.input, { color: text, borderColor: border }]} value={form.checkOutTime} onChangeText={v => upd('checkOutTime', v)} placeholder="11:00" placeholderTextColor={subtle} /></View>
-            </View>
-
-            <Text style={[styles.label, { color: text }]}>Check-in instructions</Text>
-            <TextInput style={[styles.input, styles.textArea, { color: text, borderColor: border }]} value={form.checkInInstructions} onChangeText={v => upd('checkInInstructions', v)} placeholder="Directions, wifi password, access codes..." placeholderTextColor={subtle} multiline numberOfLines={3} textAlignVertical="top" />
+            <SectionTitle t={text}>House rules</SectionTitle>
+            <Input val={form.houseRules} set={v => upd('houseRules', v)} border={border} text={text} subtle={subtle} placeholder="One rule per line" multiline />
           </>
         )}
 
         {/* ═══ PHOTOS ═══ */}
         {tab === 'photos' && (
           <>
-            <Text style={[styles.sectionHead, { color: text }]}>Photos & Videos</Text>
-            <Text style={[{ color: subtle, fontSize: 13, marginBottom: 12 }]}>Add up to 10 photos. First photo is the cover.</Text>
+            <SectionTitle t={text}>Photos & Videos</SectionTitle>
+            <Text style={{ color: subtle, fontSize: 13, marginBottom: 14 }}>First photo is the cover. Add up to 10.</Text>
             <MediaSelector selectedMedia={images} onMediaChange={(_, imgs) => setImages(imgs)} />
+          </>
+        )}
+
+        {/* ═══ CHECK-IN ═══ */}
+        {tab === 'checkin' && (
+          <>
+            <SectionTitle t={text}>Check-in & Check-out</SectionTitle>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Check-in time</Label><Input val={form.checkInTime} set={v => upd('checkInTime', v)} border={border} text={text} subtle={subtle} placeholder="14:00" /></View>
+              <View style={styles.col}><Label t={text}>Check-out time</Label><Input val={form.checkOutTime} set={v => upd('checkOutTime', v)} border={border} text={text} subtle={subtle} placeholder="11:00" /></View>
+            </View>
+
+            <SectionTitle t={text}>Wi-Fi</SectionTitle>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Network name</Label><Input val={form.ciWifi} set={v => upd('ciWifi', v)} border={border} text={text} subtle={subtle} placeholder="WiFi name" /></View>
+              <View style={styles.col}><Label t={text}>Password</Label><Input val={form.ciWifiPassword} set={v => upd('ciWifiPassword', v)} border={border} text={text} subtle={subtle} placeholder="Password" /></View>
+            </View>
+
+            <SectionTitle t={text}>Access</SectionTitle>
+            <Label t={text}>Access code / Lock code</Label>
+            <Input val={form.ciAccessCode} set={v => upd('ciAccessCode', v)} border={border} text={text} subtle={subtle} placeholder="e.g. 1234 or key location" />
+
+            <Label t={text}>Directions to property</Label>
+            <Input val={form.ciDirections} set={v => upd('ciDirections', v)} border={border} text={text} subtle={subtle} placeholder="How to find the property..." multiline />
+
+            <Label t={text}>Parking info</Label>
+            <Input val={form.ciParking} set={v => upd('ciParking', v)} border={border} text={text} subtle={subtle} placeholder="Parking availability and instructions" multiline />
+
+            <SectionTitle t={text}>Emergency contact</SectionTitle>
+            <View style={styles.row}>
+              <View style={styles.col}><Label t={text}>Contact name</Label><Input val={form.ciContactName} set={v => upd('ciContactName', v)} border={border} text={text} subtle={subtle} placeholder="Name" /></View>
+              <View style={styles.col}><Label t={text}>Phone</Label><Input val={form.ciContactPhone} set={v => upd('ciContactPhone', v)} border={border} text={text} subtle={subtle} placeholder="+255..." /></View>
+            </View>
+
+            <Label t={text}>Additional notes</Label>
+            <Input val={form.ciNotes} set={v => upd('ciNotes', v)} border={border} text={text} subtle={subtle} placeholder="Anything else guests should know..." multiline />
           </>
         )}
 
         {/* ═══ SETTINGS ═══ */}
         {tab === 'settings' && (
           <>
-            <View style={[styles.toggleItem, { borderBottomColor: border }]}>
-              <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>⚡ Instant Book</Text><Text style={[styles.toggleDesc, { color: subtle }]}>Guests book without approval</Text></View>
-              <Switch value={form.instantBookEnabled} onValueChange={v => upd('instantBookEnabled', v)} trackColor={{ true: tint }} />
-            </View>
-            <View style={[styles.toggleItem, { borderBottomColor: border }]}>
-              <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>🐾 Pets allowed</Text></View>
-              <Switch value={form.allowsPets} onValueChange={v => upd('allowsPets', v)} trackColor={{ true: tint }} />
-            </View>
-            <View style={[styles.toggleItem, { borderBottomColor: border }]}>
-              <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>🚬 Smoking allowed</Text></View>
-              <Switch value={form.allowsSmoking} onValueChange={v => upd('allowsSmoking', v)} trackColor={{ true: tint }} />
-            </View>
-            <View style={[styles.toggleItem, { borderBottomColor: border }]}>
-              <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>👶 Children allowed</Text></View>
-              <Switch value={form.allowsChildren} onValueChange={v => upd('allowsChildren', v)} trackColor={{ true: tint }} />
-            </View>
-            <View style={[styles.toggleItem, { borderBottomColor: border }]}>
-              <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>🍼 Infants allowed</Text></View>
-              <Switch value={form.allowsInfants} onValueChange={v => upd('allowsInfants', v)} trackColor={{ true: tint }} />
-            </View>
+            <Toggle label="⚡ Instant Book" desc="Guests book without waiting for approval" val={form.instantBookEnabled} set={v => upd('instantBookEnabled', v)} text={text} subtle={subtle} border={border} tint={tint} />
+            <Toggle label="🐾 Pets allowed" val={form.allowsPets} set={v => upd('allowsPets', v)} text={text} subtle={subtle} border={border} tint={tint} />
+            <Toggle label="🚬 Smoking allowed" val={form.allowsSmoking} set={v => upd('allowsSmoking', v)} text={text} subtle={subtle} border={border} tint={tint} />
+            <Toggle label="👶 Children allowed" val={form.allowsChildren} set={v => upd('allowsChildren', v)} text={text} subtle={subtle} border={border} tint={tint} />
+            <Toggle label="🍼 Infants allowed" val={form.allowsInfants} set={v => upd('allowsInfants', v)} text={text} subtle={subtle} border={border} tint={tint} />
 
-            <Text style={[styles.sectionHead, { color: text, marginTop: 24 }]}>Cancellation policy</Text>
-            {['FLEXIBLE', 'MODERATE', 'STRICT'].map(p => (
-              <TouchableOpacity key={p} style={[styles.policyItem, { borderColor: form.cancellationPolicy === p ? tint : border, backgroundColor: form.cancellationPolicy === p ? `${tint}08` : 'transparent' }]} onPress={() => upd('cancellationPolicy', p)}>
-                <Text style={[styles.policyLabel, { color: form.cancellationPolicy === p ? tint : text }]}>{p.charAt(0) + p.slice(1).toLowerCase()}</Text>
-                <Text style={[styles.policyDesc, { color: subtle }]}>
-                  {p === 'FLEXIBLE' ? 'Free cancellation 24h before' : p === 'MODERATE' ? 'Free cancellation 5 days before' : 'No free cancellation'}
-                </Text>
+            <SectionTitle t={text}>Cancellation policy</SectionTitle>
+            {[
+              { v: 'FLEXIBLE', d: 'Free cancellation up to 24 hours before check-in' },
+              { v: 'MODERATE', d: 'Free cancellation up to 5 days before check-in' },
+              { v: 'STRICT', d: '50% refund up to 1 week before, no refund after' },
+            ].map(p => (
+              <TouchableOpacity key={p.v} style={[styles.policyCard, { borderColor: form.cancellationPolicy === p.v ? tint : border, backgroundColor: form.cancellationPolicy === p.v ? `${tint}06` : 'transparent' }]} onPress={() => upd('cancellationPolicy', p.v)}>
+                <Text style={[styles.policyName, { color: form.cancellationPolicy === p.v ? tint : text }]}>{p.v.charAt(0) + p.v.slice(1).toLowerCase()}</Text>
+                <Text style={[styles.policyDesc, { color: subtle }]}>{p.d}</Text>
               </TouchableOpacity>
             ))}
 
-            {/* Danger zone */}
-            <Text style={[styles.sectionHead, { color: '#ef4444', marginTop: 32 }]}>Danger zone</Text>
-            <TouchableOpacity style={styles.dangerBtn} onPress={() => Alert.alert('Deactivate', 'This will hide your listing from guests.', [{ text: 'Cancel' }, { text: 'Deactivate', style: 'destructive' }])}>
+            <SectionTitle t={text}>Danger zone</SectionTitle>
+            <TouchableOpacity style={styles.dangerBtn} onPress={() => Alert.alert('Deactivate', 'This will hide your listing.', [{ text: 'Cancel' }, { text: 'Deactivate', style: 'destructive' }])}>
               <Ionicons name="eye-off-outline" size={18} color="#ef4444" />
-              <Text style={styles.dangerText}>Deactivate listing</Text>
+              <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>Deactivate listing</Text>
             </TouchableOpacity>
           </>
         )}
@@ -234,35 +320,50 @@ export default function EditShortTermPropertyScreen() {
   );
 }
 
+// ─── Helper components ───
+function Label({ t, children }: { t: string; children: React.ReactNode }) {
+  return <Text style={[styles.label, { color: t }]}>{children}</Text>;
+}
+function SectionTitle({ t, children }: { t: string; children: React.ReactNode }) {
+  return <Text style={[styles.secTitle, { color: t }]}>{children}</Text>;
+}
+function Input({ val, set, border, text, subtle, placeholder, multiline, num }: { val: string; set: (v: string) => void; border: string; text: string; subtle: string; placeholder?: string; multiline?: boolean; num?: boolean }) {
+  return <TextInput style={[styles.input, multiline && styles.textArea, { color: text, borderColor: border }]} value={val} onChangeText={set} placeholder={placeholder} placeholderTextColor={subtle} multiline={multiline} numberOfLines={multiline ? 3 : 1} textAlignVertical={multiline ? 'top' : 'center'} keyboardType={num ? 'number-pad' : 'default'} />;
+}
+function Toggle({ label, desc, val, set, text, subtle, border, tint }: { label: string; desc?: string; val: boolean; set: (v: boolean) => void; text: string; subtle: string; border: string; tint: string }) {
+  return (
+    <View style={[styles.toggleRow, { borderBottomColor: border }]}>
+      <View style={{ flex: 1 }}><Text style={[styles.toggleLabel, { color: text }]}>{label}</Text>{desc && <Text style={[styles.toggleDesc, { color: subtle }]}>{desc}</Text>}</View>
+      <Switch value={val} onValueChange={set} trackColor={{ true: tint }} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
   headerTitle: { flex: 1, fontSize: 16, fontWeight: '600', marginHorizontal: 12 },
   saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
   saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12 },
+  tabBar: { paddingHorizontal: 12, borderBottomWidth: 1, gap: 4 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 12, paddingHorizontal: 10 },
   tabLabel: { fontSize: 13, fontWeight: '600' },
-
-  content: { padding: 20, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 16 },
-  sectionHead: { fontSize: 16, fontWeight: '700', marginTop: 24, marginBottom: 12 },
+  body: { padding: 20, paddingBottom: 40 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 14 },
+  secTitle: { fontSize: 17, fontWeight: '700', marginTop: 28, marginBottom: 8 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
   textArea: { minHeight: 80, paddingTop: 12 },
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
-
-  toggleItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5 },
+  chipLabel: { fontSize: 12, fontWeight: '600' },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1 },
   toggleLabel: { fontSize: 15, fontWeight: '600' },
   toggleDesc: { fontSize: 12, marginTop: 2 },
-
-  policyItem: { padding: 14, borderRadius: 12, borderWidth: 1.5, marginBottom: 8 },
-  policyLabel: { fontSize: 14, fontWeight: '600' },
-  policyDesc: { fontSize: 12, marginTop: 2 },
-
+  policyCard: { padding: 14, borderRadius: 12, borderWidth: 1.5, marginBottom: 8 },
+  policyName: { fontSize: 14, fontWeight: '600' },
+  policyDesc: { fontSize: 12, marginTop: 3, lineHeight: 16 },
   dangerBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 },
-  dangerText: { color: '#ef4444', fontSize: 15, fontWeight: '600' },
 });
