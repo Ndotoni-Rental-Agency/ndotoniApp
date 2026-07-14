@@ -2,6 +2,7 @@ import HostBookings from '@/components/host/HostBookings';
 import HostReviews from '@/components/host/HostReviews';
 import HostPayouts from '@/components/host/HostPayouts';
 import HostWhatsApp from '@/components/host/HostWhatsApp';
+import HostStats from '@/components/host/HostStats';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +28,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Subpage = 'home' | 'bookings' | 'reviews' | 'payouts' | 'whatsapp';
+type Subpage = 'home' | 'bookings' | 'reviews' | 'payouts' | 'whatsapp' | 'stats';
 
 export default function HostDashboardScreen() {
   const router = useRouter();
@@ -106,7 +107,7 @@ export default function HostDashboardScreen() {
         <View style={[styles.subHeader, { borderBottomColor: border }]}>
           <TouchableOpacity onPress={() => setPage('home')}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
           <Text style={[styles.subTitle, { color: text }]}>
-            {page === 'bookings' ? 'Bookings' : page === 'reviews' ? 'Reviews' : page === 'payouts' ? 'Payouts' : 'WhatsApp'}
+            {page === 'bookings' ? 'Bookings' : page === 'reviews' ? 'Reviews' : page === 'payouts' ? 'Payouts' : page === 'stats' ? 'Earnings & Stats' : 'WhatsApp'}
           </Text>
           <View style={{ width: 22 }} />
         </View>
@@ -115,6 +116,7 @@ export default function HostDashboardScreen() {
           {page === 'reviews' && <HostReviews propertyIds={properties.map(p => p.propertyId)} propertyNames={Object.fromEntries(properties.map(p => [p.propertyId, p.title]))} />}
           {page === 'payouts' && <HostPayouts />}
           {page === 'whatsapp' && <HostWhatsApp />}
+          {page === 'stats' && <HostStats propertyIds={properties.map(p => p.propertyId)} />}
         </ScrollView>
       </SafeAreaView>
     );
@@ -213,6 +215,7 @@ export default function HostDashboardScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: text }]}>Manage</Text>
           {[
+            { key: 'stats' as Subpage, icon: 'bar-chart-outline', label: 'Earnings & Stats', desc: 'Revenue charts & analytics' },
             { key: 'bookings' as Subpage, icon: 'calendar-outline', label: 'Bookings', desc: 'Approve requests & manage stays', badge: pendingCount },
             { key: 'reviews' as Subpage, icon: 'star-outline', label: 'Reviews', desc: 'See what guests say' },
             { key: 'payouts' as Subpage, icon: 'card-outline', label: 'Payouts', desc: 'M-Pesa & bank setup' },
