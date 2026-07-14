@@ -1,3 +1,4 @@
+import HostBookings from '@/components/host/HostBookings';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -214,6 +215,47 @@ export default function HostDashboardScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Properties inline below dashboard */}
+          {properties.length > 0 && (
+            <View style={styles.sectionBlock}>
+              <Text style={[styles.sectionTitle, { color: text }]}>Your listings</Text>
+              {properties.map(p => {
+                const st = String(p.status || 'DRAFT');
+                const statusColor = (st === 'AVAILABLE' || st === 'ACTIVE' || st === 'PUBLISHED') ? tint : st === 'DRAFT' ? '#f59e0b' : subtle;
+                return (
+                  <View key={p.propertyId} style={[styles.propCard, { backgroundColor: card, borderColor: border }]}>
+                    <TouchableOpacity style={styles.propRow} onPress={() => router.push(`/short-property/${p.propertyId}` as any)}>
+                      <View style={styles.propImgWrap}>
+                        {(p.thumbnail || p.images?.[0]) ? (
+                          <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={styles.propImg} contentFit="cover" />
+                        ) : (
+                          <View style={[styles.propImgPlaceholder, { backgroundColor: `${tint}10` }]}><Ionicons name="image-outline" size={20} color={tint} /></View>
+                        )}
+                        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                      </View>
+                      <View style={styles.propInfo}>
+                        <Text style={[styles.propTitle, { color: text }]} numberOfLines={1}>{p.title}</Text>
+                        <Text style={[styles.propLoc, { color: subtle }]}>{p.district}, {p.region}</Text>
+                        <Text style={[styles.propPrice, { color: text }]}>{p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()} <Text style={{ color: subtle, fontWeight: '400' }}>/night</Text></Text>
+                      </View>
+                    </TouchableOpacity>
+                    <View style={[styles.propActions, { borderTopColor: border }]}>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}>
+                        <Ionicons name="create-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}>
+                        <Ionicons name="calendar-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Calendar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => handleDelete(p.propertyId, p.title)}>
+                        <Ionicons name="trash-outline" size={15} color="#ef4444" /><Text style={[styles.actText, { color: '#ef4444' }]}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -275,32 +317,8 @@ export default function HostDashboardScreen() {
 
       {/* ═══ BOOKINGS ═══ */}
       {section === 'bookings' && (
-        <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false}>
-          {loadingBookings ? (
-            <View style={styles.centerWrap}><ActivityIndicator size="large" color={tint} /></View>
-          ) : pendingBookings.length === 0 ? (
-            <View style={styles.centerWrap}>
-              <Ionicons name="calendar-outline" size={36} color={subtle} />
-              <Text style={[styles.emptyTitle, { color: text }]}>No bookings yet</Text>
-              <Text style={[styles.emptySub, { color: subtle }]}>When guests book your properties, they'll appear here</Text>
-            </View>
-          ) : (
-            <>
-              <Text style={[styles.sectionTitle, { color: text }]}>Pending requests ({pendingBookings.length})</Text>
-              {pendingBookings.map(b => (
-                <View key={b.bookingId} style={[styles.bookingCard, { backgroundColor: card, borderColor: border }]}>
-                  <Text style={[styles.bookingTitle, { color: text }]}>{b.propertyTitle}</Text>
-                  <Text style={[styles.bookingDates, { color: subtle }]}>
-                    {new Date(b.checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(b.checkOutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {' · '}{b.numberOfGuests || 1} guest{(b.numberOfGuests || 1) > 1 ? 's' : ''}
-                  </Text>
-                  <Text style={[styles.bookingPrice, { color: text }]}>
-                    {b.pricing?.currency || 'TZS'} {(b.pricing?.total || b.totalPrice || 0).toLocaleString()}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
+        <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}>
+          <HostBookings propertyIds={properties.map(p => p.propertyId)} onRefresh={handleRefresh} />
         </ScrollView>
       )}
     </SafeAreaView>
