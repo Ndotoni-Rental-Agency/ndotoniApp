@@ -64,10 +64,11 @@ export default function CreatePropertyScreen() {
   const [predictingPrice, setPredictingPrice] = useState(false);
 
   const [form, setForm] = useState({
-    propertyType: '',
+    propertyType: 'HOTEL',
     stayCategories: ['NIGHTLY_STAY'] as string[],
     region: '',
     district: '',
+    ward: '',
     title: '',
     nightlyRate: '',
     currency: 'TZS',
@@ -88,7 +89,7 @@ export default function CreatePropertyScreen() {
     }));
   };
 
-  // AI: Generate title
+  // AI: Generate title (includes images for context)
   const generateTitle = async () => {
     setGeneratingTitle(true);
     try {
@@ -105,6 +106,8 @@ export default function CreatePropertyScreen() {
           stayCategories: form.stayCategories,
           currency: form.currency,
           nightlyRate: form.nightlyRate,
+          images: form.images.slice(0, 3), // Send up to 3 image URLs for AI analysis
+          userContext: form.title || undefined,
         }),
       });
       if (res.ok) {
@@ -244,8 +247,8 @@ export default function CreatePropertyScreen() {
               <Text style={[styles.heading, { color: text }]}>Where is it?</Text>
               <Text style={[styles.sub, { color: subtle }]}>Help guests find your place</Text>
               <LocationSelector
-                value={{ region: form.region, district: form.district, ward: '' }}
-                onChange={(loc: any) => { updateField('region', loc.region); updateField('district', loc.district); }}
+                value={{ region: form.region, district: form.district }}
+                onChange={(loc: any) => { updateField('region', loc.region); updateField('district', loc.district); if (loc.ward) updateField('ward', loc.ward); }}
               />
             </>
           )}
@@ -285,18 +288,27 @@ export default function CreatePropertyScreen() {
 
               {/* Details */}
               <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text style={[styles.detailLabel, { color: subtle }]}>Guests</Text>
-                  <TextInput style={[styles.detailInput, { color: text, borderColor: border }]} value={form.maxGuests} onChangeText={v => updateField('maxGuests', v)} keyboardType="number-pad" />
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={[styles.detailLabel, { color: subtle }]}>Beds</Text>
-                  <TextInput style={[styles.detailInput, { color: text, borderColor: border }]} value={form.bedrooms} onChangeText={v => updateField('bedrooms', v)} keyboardType="number-pad" />
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={[styles.detailLabel, { color: subtle }]}>Baths</Text>
-                  <TextInput style={[styles.detailInput, { color: text, borderColor: border }]} value={form.bathrooms} onChangeText={v => updateField('bathrooms', v)} keyboardType="number-pad" />
-                </View>
+                {[
+                  { key: 'maxGuests', label: 'Guests', min: 1, max: 50 },
+                  { key: 'bedrooms', label: 'Beds', min: 1, max: 20 },
+                  { key: 'bathrooms', label: 'Baths', min: 1, max: 10 },
+                ].map(item => {
+                  const val = parseInt(form[item.key as keyof typeof form] as string) || 1;
+                  return (
+                    <View key={item.key} style={styles.detailItem}>
+                      <Text style={[styles.detailLabel, { color: subtle }]}>{item.label}</Text>
+                      <View style={[styles.counterRow, { borderColor: border }]}>
+                        <TouchableOpacity style={styles.counterBtn} onPress={() => updateField(item.key, Math.max(item.min, val - 1).toString())} disabled={val <= item.min}>
+                          <Ionicons name="remove" size={18} color={val <= item.min ? border : text} />
+                        </TouchableOpacity>
+                        <Text style={[styles.counterNum, { color: text }]}>{val}</Text>
+                        <TouchableOpacity style={styles.counterBtn} onPress={() => updateField(item.key, Math.min(item.max, val + 1).toString())}>
+                          <Ionicons name="add" size={18} color={text} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
 
               {/* Instant book */}
@@ -399,9 +411,11 @@ const styles = StyleSheet.create({
   useBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
   detailRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  detailItem: { flex: 1 },
-  detailLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  detailInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  detailItem: { flex: 1, alignItems: 'center' },
+  detailLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  counterRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 8, gap: 10 },
+  counterBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  counterNum: { fontSize: 18, fontWeight: '700', minWidth: 20, textAlign: 'center' },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, padding: 16, borderRadius: 12, borderWidth: 1 },
 
