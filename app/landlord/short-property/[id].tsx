@@ -122,12 +122,18 @@ export default function EditShortTermPropertyScreen() {
         advanceBookingDays: parseInt(form.advanceBookingDays) || undefined,
         instantBookEnabled: form.instantBookEnabled,
         checkInTime: form.checkInTime || undefined, checkOutTime: form.checkOutTime || undefined,
-        checkInInstructions: JSON.stringify({
-          wifiName: form.ciWifi, wifiPassword: form.ciWifiPassword,
-          accessCode: form.ciAccessCode, directions: form.ciDirections,
-          parkingInfo: form.ciParking, contactPhone: form.ciContactPhone,
-          contactName: form.ciContactName, additionalNotes: form.ciNotes,
-        }),
+        checkInInstructions: (form.ciWifi || form.ciWifiPassword || form.ciAccessCode || form.ciDirections || form.ciParking || form.ciContactPhone || form.ciContactName || form.ciNotes)
+          ? JSON.stringify({
+              wifiName: form.ciWifi || undefined,
+              wifiPassword: form.ciWifiPassword || undefined,
+              accessCode: form.ciAccessCode || undefined,
+              directions: form.ciDirections || undefined,
+              parkingInfo: form.ciParking || undefined,
+              contactPhone: form.ciContactPhone || undefined,
+              contactName: form.ciContactName || undefined,
+              additionalNotes: form.ciNotes || undefined,
+            })
+          : undefined,
         cancellationPolicy: form.cancellationPolicy as any,
         allowsPets: form.allowsPets, allowsSmoking: form.allowsSmoking,
         allowsChildren: form.allowsChildren, allowsInfants: form.allowsInfants,
