@@ -1,4 +1,7 @@
 import HostBookings from '@/components/host/HostBookings';
+import HostReviews from '@/components/host/HostReviews';
+import HostPayouts from '@/components/host/HostPayouts';
+import HostWhatsApp from '@/components/host/HostWhatsApp';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,7 +28,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type HostSection = 'dashboard' | 'properties' | 'bookings';
+type HostSection = 'dashboard' | 'properties' | 'bookings' | 'reviews' | 'payouts' | 'whatsapp';
 
 export default function HostDashboardScreen() {
   const router = useRouter();
@@ -122,6 +125,9 @@ export default function HostDashboardScreen() {
     { key: 'dashboard', label: 'Overview', icon: 'grid-outline' },
     { key: 'properties', label: 'Listings', icon: 'home-outline' },
     { key: 'bookings', label: 'Bookings', icon: 'calendar-outline' },
+    { key: 'reviews', label: 'Reviews', icon: 'star-outline' },
+    { key: 'payouts', label: 'Payouts', icon: 'card-outline' },
+    { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp' },
   ];
 
   const fmt = (n: number) => n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}K` : n.toString();
@@ -319,6 +325,27 @@ export default function HostDashboardScreen() {
       {section === 'bookings' && (
         <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}>
           <HostBookings propertyIds={properties.map(p => p.propertyId)} onRefresh={handleRefresh} />
+        </ScrollView>
+      )}
+
+      {/* ═══ REVIEWS ═══ */}
+      {section === 'reviews' && (
+        <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false}>
+          <HostReviews propertyIds={properties.map(p => p.propertyId)} propertyNames={Object.fromEntries(properties.map(p => [p.propertyId, p.title]))} />
+        </ScrollView>
+      )}
+
+      {/* ═══ PAYOUTS ═══ */}
+      {section === 'payouts' && (
+        <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false}>
+          <HostPayouts />
+        </ScrollView>
+      )}
+
+      {/* ═══ WHATSAPP ═══ */}
+      {section === 'whatsapp' && (
+        <ScrollView contentContainerStyle={styles.dashContent} showsVerticalScrollIndicator={false}>
+          <HostWhatsApp />
         </ScrollView>
       )}
     </SafeAreaView>
