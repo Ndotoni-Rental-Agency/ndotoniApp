@@ -6,11 +6,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     name: "ndotoni Stays",
-    slug: "ndotoniStays",
+    slug: "ndotoniApp",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "ndotonistays",
+    scheme: "ndotoniapp",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {

@@ -592,6 +592,7 @@ type Property @aws_api_key @aws_cognito_user_pools {
   availability: PropertyAvailability @aws_api_key @aws_cognito_user_pools @aws_iam
   createdAt: AWSDateTime @aws_api_key @aws_cognito_user_pools @aws_iam
   description: String @aws_api_key @aws_cognito_user_pools @aws_iam
+  googleMapsUrl: String @aws_api_key @aws_cognito_user_pools @aws_iam
   landlord: PropertyUser @aws_api_key @aws_cognito_user_pools @aws_iam
   media: PropertyMedia @aws_api_key @aws_cognito_user_pools @aws_iam
   pricing: PropertyPricing @aws_api_key @aws_cognito_user_pools @aws_iam
@@ -866,6 +867,7 @@ type ShortTermProperty @aws_api_key @aws_cognito_user_pools {
   currency: String! @aws_api_key @aws_cognito_user_pools @aws_iam
   description: String @aws_api_key @aws_cognito_user_pools @aws_iam
   district: String! @aws_api_key @aws_cognito_user_pools @aws_iam
+  googleMapsUrl: String @aws_api_key @aws_cognito_user_pools @aws_iam
   host: PropertyUser @aws_api_key @aws_cognito_user_pools @aws_iam
   hostId: ID! @aws_api_key @aws_cognito_user_pools @aws_iam
   houseRules: [String!] @aws_api_key @aws_cognito_user_pools @aws_iam
@@ -1530,6 +1532,7 @@ input UpdatePropertyInput {
   amenities: [String!]
   availability: PropertyAvailabilityInput
   description: String
+  googleMapsUrl: String
   media: PropertyMediaInput
   pricing: PropertyPricingInput
   propertyType: PropertyType
@@ -1555,6 +1558,7 @@ input UpdateShortTermPropertyInput {
   currency: String
   description: String
   district: String
+  googleMapsUrl: String
   houseRules: [String!]
   images: [String!]
   instantBookEnabled: Boolean

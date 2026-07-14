@@ -134,7 +134,7 @@ export default function HostDashboardScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: border }]}>
         <Text style={[styles.headerTitle, { color: text }]}>Host Dashboard</Text>
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: tint }]} onPress={() => router.push('/(tabs)/list-property' as any)}>
+        <TouchableOpacity style={[styles.addBtn, { backgroundColor: tint }]} onPress={() => router.push('/landlord/short-property/create' as any)}>
           <Ionicons name="add" size={20} color="#fff" />
           <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
@@ -167,7 +167,7 @@ export default function HostDashboardScreen() {
                 <Ionicons name="home-outline" size={40} color={subtle} />
                 <Text style={[styles.emptyTitle, { color: text }]}>No listings yet</Text>
                 <Text style={[styles.emptySub, { color: subtle }]}>Add your first property to start hosting</Text>
-                <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: tint, marginTop: 16 }]} onPress={() => router.push('/(tabs)/list-property' as any)}>
+                <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: tint, marginTop: 16 }]} onPress={() => router.push('/landlord/short-property/create' as any)}>
                   <Text style={styles.primaryBtnText}>Add Property</Text>
                 </TouchableOpacity>
               </View>
