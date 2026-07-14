@@ -77,8 +77,8 @@ export default function SearchScreen() {
           input: {
             region: selectedRegion || 'Dar es Salaam',
             district: selectedDistrict,
-            checkInDate: checkInDate || today.toISOString().split('T')[0],
-            checkOutDate: checkOutDate || monthLater.toISOString().split('T')[0],
+            checkInDate: (checkInDate || today.toISOString().split('T')[0]).split('T')[0],
+            checkOutDate: (checkOutDate || monthLater.toISOString().split('T')[0]).split('T')[0],
             numberOfGuests: 2,
             limit: 20,
             nextToken: loadMore ? nextToken : null,
