@@ -110,6 +110,12 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.heart} onPress={() => toggleFavorite(p.propertyId)}>
           <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={20} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
         </TouchableOpacity>
+        {p.instantBookEnabled && (
+          <View style={styles.instantBadge}>
+            <Ionicons name="flash" size={11} color="#fff" />
+            <Text style={styles.instantBadgeText}>Instant</Text>
+          </View>
+        )}
         {p.averageRating > 0 && (
           <View style={styles.wideRatingBadge}>
             <Ionicons name="star" size={11} color="#fff" />
@@ -135,6 +141,12 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.heartSmall} onPress={() => toggleFavorite(p.propertyId)}>
           <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={16} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
         </TouchableOpacity>
+        {p.instantBookEnabled && (
+          <View style={styles.instantBadgeSmall}>
+            <Ionicons name="flash" size={9} color="#fff" />
+            <Text style={styles.instantBadgeSmallText}>Instant</Text>
+          </View>
+        )}
       </View>
       <View style={styles.compactMeta}>
         <Text style={[styles.compactLoc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
@@ -306,6 +318,8 @@ const styles = StyleSheet.create({
   wideImgWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0' },
   wideRatingBadge: { position: 'absolute', bottom: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   wideRatingText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  instantBadge: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10b981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  instantBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
 
   // Pair row (two compact cards side by side)
   pairRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 20, gap: 12 },
@@ -315,6 +329,8 @@ const styles = StyleSheet.create({
   compactCard: { flex: 1 },
   compactImgWrap: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#f0f0f0' },
   heartSmall: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' },
+  instantBadgeSmall: { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#10b981', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 5 },
+  instantBadgeSmallText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   compactMeta: { paddingTop: 6 },
   compactLoc: { fontSize: 13, fontWeight: '600' },
   compactTitle: { fontSize: 12, marginTop: 1 },

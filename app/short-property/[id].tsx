@@ -2,6 +2,7 @@ import PropertyAmenities from '@/components/property/PropertyAmenities';
 import PropertyDescription from '@/components/property/PropertyDescription';
 import PropertyHost from '@/components/property/PropertyHost';
 import PropertyLocation from '@/components/property/PropertyLocation';
+import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyRules from '@/components/property/PropertyRules';
 import ReservationModal from '@/components/property/ReservationModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
@@ -12,6 +13,7 @@ import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -20,8 +22,6 @@ import {
   Dimensions,
   FlatList,
   Modal,
-  Platform,
-  ScrollView,
   Share,
   StatusBar,
   StyleSheet,
@@ -33,7 +33,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width: W, height: H } = Dimensions.get('window');
 
-// ─── IN-PAGE GALLERY CAROUSEL ──────────────────────────────
+// ─── IMAGE GALLERY CAROUSEL ──────────────────────────────
 function GalleryCarousel({ images, height, onTap }: { images: string[]; height: number; onTap: (idx: number) => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -52,14 +52,29 @@ function GalleryCarousel({ images, height, onTap }: { images: string[]; height: 
           </TouchableOpacity>
         )}
       />
-      {/* Dot indicators */}
-      {images.length > 1 && images.length <= 8 && (
-        <View style={styles.carouselDots}>
-          {images.map((_, i) => (
-            <View key={i} style={[styles.carouselDot, { opacity: i === activeIdx ? 1 : 0.4 }]} />
-          ))}
+      {/* Modern pill indicator */}
+      {images.length > 1 && (
+        <View style={styles.pillIndicator}>
+          <Text style={styles.pillText}>{activeIdx + 1} / {images.length}</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+// ─── HIGHLIGHT CARD COMPONENT ───────────────────────────
+function HighlightCard({ icon, title, subtitle, tint, text: textColor }: {
+  icon: string; title: string; subtitle: string; tint: string; text: string; card: string; border: string;
+}) {
+  return (
+    <View style={styles.highlightCard}>
+      <View style={[styles.highlightIcon, { backgroundColor: `${tint}10` }]}>
+        <Ionicons name={icon as any} size={20} color={tint} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.highlightTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[styles.highlightSub, { color: `${textColor}88` }]}>{subtitle}</Text>
+      </View>
     </View>
   );
 }
@@ -83,34 +98,63 @@ export default function ShortTermPropertyDetailsScreen() {
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
   const card = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
+  const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
   useEffect(() => {
-    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, allowsRecordingIOS: false, staysActiveInBackground: false, shouldDuckAndroid: true });
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
   }, []);
 
   const images: string[] = property?.images || [];
-  const GALLERY_H = H * 0.45; // Taller — almost half the screen like Airbnb
+  const GALLERY_H = H * 0.42;
+
+  // Header opacity animation
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, GALLERY_H - 100, GALLERY_H - 60],
+    outputRange: [0, 0, 1],
+    extrapolate: 'clamp',
+  });
 
   const handleShare = async () => {
-    try { await Share.share({ message: `${property?.title}\nhttps://ndotonistays.com/property/${propertyId}` }); } catch {}
+    try {
+      await Share.share({ message: `${property?.title}\nhttps://ndotonistays.com/property/${propertyId}` });
+    } catch {}
   };
 
-  const openGallery = (index: number) => { setGalleryStart(index); setGalleryVisible(true); };
+  const openGallery = (index: number) => {
+    setGalleryStart(index);
+    setGalleryVisible(true);
+  };
 
-  // ─── LOADING ─────────────────────────────────────────────
+  // ─── LOADING STATE ─────────────────────────────────────
   if (loading) {
-    return <View style={[styles.fill, { backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }]}><ActivityIndicator size="large" color={tint} /></View>;
+    return (
+      <View style={[styles.fill, { backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={tint} />
+        <Text style={{ color: subtle, marginTop: 12, fontSize: 14 }}>Loading property...</Text>
+      </View>
+    );
   }
+
+  // ─── ERROR STATE ───────────────────────────────────────
   if (error || !property) {
     return (
       <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
           <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-          <Text style={{ fontSize: 17, fontWeight: '700', color: text, marginTop: 12 }}>Couldn't load property</Text>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: text, marginTop: 12 }}>
+            Couldn't load property
+          </Text>
           <Text style={{ fontSize: 14, color: subtle, textAlign: 'center', marginTop: 4 }}>{error}</Text>
-          <TouchableOpacity onPress={retry} style={{ marginTop: 20, backgroundColor: tint, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 }}>
+          <TouchableOpacity
+            onPress={retry}
+            style={{ marginTop: 20, backgroundColor: tint, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 }}
+          >
             <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
@@ -121,9 +165,40 @@ export default function ShortTermPropertyDetailsScreen() {
     );
   }
 
+  // Build highlights
+  const highlights: { icon: string; title: string; subtitle: string }[] = [];
+  if (property.instantBookEnabled) {
+    highlights.push({ icon: 'flash', title: 'Instant Book', subtitle: 'Book without waiting for approval' });
+  }
+  if ((property.averageRating ?? 0) >= 4.5) {
+    highlights.push({ icon: 'star', title: 'Guest favourite', subtitle: `${property.averageRating?.toFixed(1)} · ${property.ratingSummary?.totalReviews || 0} reviews` });
+  }
+  if (property.cancellationPolicy === 'FLEXIBLE') {
+    highlights.push({ icon: 'shield-checkmark', title: 'Free cancellation', subtitle: 'Cancel up to 24h before check-in' });
+  }
+  if (property.checkInTime) {
+    highlights.push({ icon: 'key', title: 'Self check-in', subtitle: `Check in from ${property.checkInTime}` });
+  }
+
   return (
     <View style={[styles.fill, { backgroundColor: bg }]}>
       <StatusBar barStyle="light-content" />
+
+      {/* ─── ANIMATED HEADER (shows on scroll) ─── */}
+      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, paddingTop: insets.top, backgroundColor: card, borderBottomColor: border }]}>
+        <TouchableOpacity style={styles.stickyBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={20} color={text} />
+        </TouchableOpacity>
+        <Text style={[styles.stickyTitle, { color: text }]} numberOfLines={1}>{property.title}</Text>
+        <View style={styles.stickyRight}>
+          <TouchableOpacity style={styles.stickyBtn} onPress={handleShare}>
+            <Ionicons name="share-outline" size={18} color={text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.stickyBtn} onPress={() => toggleFavorite(propertyId)}>
+            <Ionicons name={isFavorited(propertyId) ? 'heart' : 'heart-outline'} size={18} color={isFavorited(propertyId) ? '#ff385c' : text} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
 
       {/* ─── MAIN SCROLL ─── */}
       <Animated.ScrollView
@@ -131,7 +206,7 @@ export default function ShortTermPropertyDetailsScreen() {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
       >
-        {/* ─── IMAGE CAROUSEL ─── */}
+        {/* ─── IMAGE GALLERY ─── */}
         <View style={{ height: GALLERY_H }}>
           {images.length > 0 ? (
             <GalleryCarousel images={images} height={GALLERY_H} onTap={openGallery} />
@@ -141,7 +216,13 @@ export default function ShortTermPropertyDetailsScreen() {
             </View>
           )}
 
-          {/* Overlay nav */}
+          {/* Gradient overlay at bottom for smooth transition */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.15)']}
+            style={styles.galleryGradient}
+          />
+
+          {/* Nav buttons on image */}
           <View style={[styles.navOverlay, { paddingTop: insets.top + 8 }]}>
             <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
               <Ionicons name="chevron-back" size={22} color="#fff" />
@@ -151,181 +232,229 @@ export default function ShortTermPropertyDetailsScreen() {
                 <Ionicons name="share-outline" size={20} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.navBtn} onPress={() => toggleFavorite(propertyId)}>
-                <Ionicons name={isFavorited(propertyId) ? 'heart' : 'heart-outline'} size={20} color={isFavorited(propertyId) ? '#ff385c' : '#fff'} />
+                <Ionicons
+                  name={isFavorited(propertyId) ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={isFavorited(propertyId) ? '#ff385c' : '#fff'}
+                />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Photo count */}
+          {/* Show all photos button */}
           {images.length > 1 && (
-            <View style={styles.photoCount}>
-              <Ionicons name="images" size={12} color="#fff" />
-              <Text style={styles.photoCountText}>{images.length} photos</Text>
-            </View>
+            <TouchableOpacity style={styles.showPhotosBtn} onPress={() => openGallery(0)}>
+              <Ionicons name="grid-outline" size={14} color="#fff" />
+              <Text style={styles.showPhotosBtnText}>Show all photos</Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* ─── CONTENT CARD ─── */}
-        <View style={[styles.contentCard, { backgroundColor: card }]}>
+        {/* ─── CONTENT ─── */}
+        <View style={[styles.content, { backgroundColor: bg }]}>
 
-          {/* Title block */}
-          <View style={styles.titleBlock}>
+          {/* ── Title Section ── */}
+          <View style={styles.titleSection}>
             <View style={styles.typeRow}>
-              <Text style={[styles.propType, { color: tint }]}>{property.propertyType}</Text>
+              <View style={[styles.typeBadge, { backgroundColor: `${tint}10` }]}>
+                <Text style={[styles.typeText, { color: tint }]}>{property.propertyType}</Text>
+              </View>
               {property.instantBookEnabled && (
-                <View style={[styles.instantBadge, { backgroundColor: `${tint}12` }]}>
-                  <Ionicons name="flash" size={12} color={tint} />
-                  <Text style={[styles.instantText, { color: tint }]}>Instant Book</Text>
+                <View style={[styles.instantBadge, { backgroundColor: '#10b98110' }]}>
+                  <Ionicons name="flash" size={12} color="#10b981" />
+                  <Text style={[styles.instantText, { color: '#10b981' }]}>Instant</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.propTitle, { color: text }]}>{property.title}</Text>
-            <View style={styles.metaLine}>
-              <Ionicons name="location-outline" size={14} color={subtle} />
-              <Text style={[styles.metaText, { color: subtle }]}>{property.district}, {property.region}</Text>
-            </View>
-            <View style={styles.quickStats}>
-              <View style={styles.stat}>
-                <Ionicons name="people-outline" size={16} color={text} />
-                <Text style={[styles.statText, { color: text }]}>{property.maxGuests} guests</Text>
-              </View>
+
+            <Text style={[styles.title, { color: text }]}>{property.title}</Text>
+
+            {/* Rating + Location row */}
+            <View style={styles.metaRow}>
               {(property.averageRating ?? 0) > 0 && (
-                <View style={styles.stat}>
-                  <Ionicons name="star" size={16} color="#f59e0b" />
-                  <Text style={[styles.statText, { color: text }]}>{(property.averageRating ?? 0).toFixed(1)}</Text>
+                <View style={styles.ratingPill}>
+                  <Ionicons name="star" size={14} color="#f59e0b" />
+                  <Text style={[styles.ratingText, { color: text }]}>
+                    {(property.averageRating ?? 0).toFixed(1)}
+                  </Text>
                   {(property.ratingSummary?.totalReviews ?? 0) > 0 && (
-                    <Text style={[styles.statTextSub, { color: subtle }]}>({property.ratingSummary?.totalReviews} reviews)</Text>
+                    <Text style={[styles.reviewCount, { color: subtle }]}>
+                      ({property.ratingSummary?.totalReviews} reviews)
+                    </Text>
                   )}
                 </View>
               )}
-              {property.minimumStay && property.minimumStay > 1 && (
-                <View style={styles.stat}>
-                  <Ionicons name="moon-outline" size={16} color={text} />
-                  <Text style={[styles.statText, { color: text }]}>{property.minimumStay} min nights</Text>
-                </View>
-              )}
+              <View style={styles.locationPill}>
+                <Ionicons name="location" size={13} color={subtle} />
+                <Text style={[styles.locationText, { color: subtle }]}>
+                  {property.district}, {property.region}
+                </Text>
+              </View>
             </View>
           </View>
 
-          <View style={[styles.sep, { backgroundColor: border }]} />
+          <View style={[styles.separator, { backgroundColor: border }]} />
 
-          {/* Host quick info */}
+          {/* ── Host quick row ── */}
           {property.host && (
             <>
-              <View style={styles.hostQuick}>
-                <View style={[styles.hostAvatar, { backgroundColor: `${tint}15` }]}>
-                  {property.host.profileImage ? (
-                    <Image source={{ uri: property.host.profileImage }} style={styles.hostAvatarImg} contentFit="cover" />
-                  ) : (
-                    <Text style={[styles.hostInitial, { color: tint }]}>{property.host.firstName?.charAt(0) || 'H'}</Text>
-                  )}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.hostedBy, { color: text }]}>Hosted by {property.host.firstName}</Text>
-                  {property.instantBookEnabled ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                      <Ionicons name="shield-checkmark" size={12} color={tint} />
-                      <Text style={[styles.hostSub, { color: tint }]}>Instant booking available</Text>
-                    </View>
-                  ) : (
-                    <Text style={[styles.hostSub, { color: subtle }]}>Usually responds within a few hours</Text>
-                  )}
+              <View style={styles.hostSection}>
+                <View style={styles.hostRow}>
+                  <View style={[styles.hostAvatar, { backgroundColor: `${tint}12` }]}>
+                    {property.host.profileImage ? (
+                      <Image source={{ uri: property.host.profileImage }} style={styles.hostAvatarImg} contentFit="cover" />
+                    ) : (
+                      <Text style={[styles.hostInitial, { color: tint }]}>
+                        {property.host.firstName?.charAt(0) || 'H'}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.hostedBy, { color: text }]}>
+                      Hosted by {property.host.firstName}
+                    </Text>
+                    <Text style={[styles.hostSub, { color: subtle }]}>
+                      {property.instantBookEnabled
+                        ? 'Superhost · Instant booking'
+                        : 'Usually responds within a few hours'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={[styles.contactBtn, { borderColor: border }]}>
+                    <Ionicons name="chatbubble-outline" size={16} color={tint} />
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={[styles.sep, { backgroundColor: border }]} />
+              <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
-          {/* Details */}
+          {/* ── Highlights ── */}
+          {highlights.length > 0 && (
+            <>
+              <View style={styles.highlightsSection}>
+                {highlights.slice(0, 3).map((h, i) => (
+                  <HighlightCard key={i} icon={h.icon} title={h.title} subtitle={h.subtitle} tint={tint} text={text} card={card} border={border} />
+                ))}
+              </View>
+              <View style={[styles.separator, { backgroundColor: border }]} />
+            </>
+          )}
+
+          {/* ── Description ── */}
+          {property.description ? (
+            <>
+              <PropertyDescription description={property.description} textColor={text} tintColor={tint} />
+              <View style={[styles.separator, { backgroundColor: border }]} />
+            </>
+          ) : null}
+
+          {/* ── Amenities ── */}
+          {(property.amenities?.length ?? 0) > 0 && (
+            <>
+              <PropertyAmenities
+                amenities={property.amenities!}
+                textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border}
+              />
+              <View style={[styles.separator, { backgroundColor: border }]} />
+            </>
+          )}
+
+          {/* ── Details (check-in/out, guests, etc.) ── */}
           <ShortTermPropertyDetails
             maxGuests={property.maxGuests} maxAdults={property.maxAdults} maxChildren={property.maxChildren}
             maxInfants={property.maxInfants} minimumStay={property.minimumStay} maximumStay={property.maximumStay}
             checkInTime={property.checkInTime} checkOutTime={property.checkOutTime}
             textColor={text} tintColor={tint} secondaryText={subtle}
           />
-          <View style={[styles.sep, { backgroundColor: border }]} />
+          <View style={[styles.separator, { backgroundColor: border }]} />
 
-          {/* Description */}
-          {property.description ? (
-            <>
-              <PropertyDescription description={property.description} textColor={text} tintColor={tint} />
-              <View style={[styles.sep, { backgroundColor: border }]} />
-            </>
-          ) : null}
+          {/* ── Pricing ── */}
+          <View style={styles.pricingSection}>
+            <Text style={[styles.sectionTitle, { color: text }]}>Price breakdown</Text>
+            <View style={styles.priceList}>
+              <View style={styles.priceRow}>
+                <Text style={[styles.priceLabel, { color: subtle }]}>Nightly rate</Text>
+                <Text style={[styles.priceValue, { color: text }]}>
+                  {property.currency === 'TZS' ? 'Tshs' : property.currency} {property.nightlyRate?.toLocaleString()}
+                </Text>
+              </View>
+              {(property.cleaningFee ?? 0) > 0 && (
+                <View style={styles.priceRow}>
+                  <Text style={[styles.priceLabel, { color: subtle }]}>Cleaning fee</Text>
+                  <Text style={[styles.priceValue, { color: text }]}>
+                    {property.currency === 'TZS' ? 'Tshs' : property.currency} {property.cleaningFee?.toLocaleString()}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <View style={[styles.separator, { backgroundColor: border }]} />
 
-          {/* Amenities */}
-          {(property.amenities?.length ?? 0) > 0 && (
+          {/* ── Reviews ── */}
+          {(property.averageRating ?? 0) > 0 && (
             <>
-              <PropertyAmenities amenities={property.amenities!} textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border} />
-              <View style={[styles.sep, { backgroundColor: border }]} />
+              <PropertyReviews
+                propertyId={propertyId}
+                averageRating={property.averageRating}
+                totalReviews={property.ratingSummary?.totalReviews}
+                ratingSummary={property.ratingSummary}
+              />
+              <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
-          {/* Pricing */}
-          <View style={styles.pricingSection}>
-            <Text style={[styles.secTitle, { color: text }]}>Price details</Text>
-            <View style={styles.priceItem}>
-              <Text style={{ fontSize: 15, color: subtle }}>Nightly rate</Text>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: text }}>{property.currency} {property.nightlyRate?.toLocaleString()}</Text>
-            </View>
-            {(property.cleaningFee ?? 0) > 0 && (
-              <View style={styles.priceItem}>
-                <Text style={{ fontSize: 15, color: subtle }}>Cleaning fee</Text>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: text }}>{property.currency} {property.cleaningFee?.toLocaleString()}</Text>
-              </View>
-            )}
-            {(property.serviceFeePercentage ?? 0) > 0 && (
-              <View style={styles.priceItem}>
-                <Text style={{ fontSize: 15, color: subtle }}>Service fee</Text>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: text }}>{property.serviceFeePercentage}%</Text>
-              </View>
-            )}
-          </View>
-          <View style={[styles.sep, { backgroundColor: border }]} />
-
-          {/* Rules */}
+          {/* ── Rules ── */}
           <PropertyRules
             houseRules={property.houseRules} allowsPets={property.allowsPets} allowsSmoking={property.allowsSmoking}
             allowsChildren={property.allowsChildren} allowsInfants={property.allowsInfants}
             cancellationPolicy={property.cancellationPolicy} textColor={text} tintColor={tint} secondaryText={subtle}
           />
-          <View style={[styles.sep, { backgroundColor: border }]} />
+          <View style={[styles.separator, { backgroundColor: border }]} />
 
-          {/* Host full */}
-          {property.host && (
+          {/* ── Map ── */}
+          {coordinates && (
             <>
-              <PropertyHost
-                firstName={property.host.firstName} lastName={property.host.lastName}
-                profileImage={property.host.profileImage} textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border}
+              <PropertyLocation
+                latitude={coordinates.latitude} longitude={coordinates.longitude} title={property.title}
+                textColor={text} tintColor={tint} secondaryText={subtle} backgroundColor={bg} borderColor={border}
               />
-              <View style={[styles.sep, { backgroundColor: border }]} />
+              <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
-          {/* Map */}
-          {coordinates && (
-            <PropertyLocation
-              latitude={coordinates.latitude} longitude={coordinates.longitude} title={property.title}
-              textColor={text} tintColor={tint} secondaryText={subtle} backgroundColor={bg} borderColor={border}
+          {/* ── Host full profile ── */}
+          {property.host && (
+            <PropertyHost
+              firstName={property.host.firstName} lastName={property.host.lastName}
+              profileImage={property.host.profileImage} textColor={text} tintColor={tint}
+              backgroundColor={bg} borderColor={border}
             />
           )}
 
+          {/* Bottom spacer for fixed bar */}
           <View style={{ height: 120 }} />
         </View>
       </Animated.ScrollView>
 
-      {/* ─── BOTTOM BAR ─── */}
-      <View style={[styles.bottomBar, { backgroundColor: card, borderTopColor: border, paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <View>
+      {/* ─── BOTTOM BOOKING BAR ─── */}
+      <View style={[styles.bottomBar, { backgroundColor: card, borderTopColor: border, paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={styles.bottomLeft}>
           <Text style={[styles.barPrice, { color: text }]}>
-            {property.currency === 'TZS' ? 'Tshs' : property.currency} {property.nightlyRate?.toLocaleString()}
+            {property.currency === 'TZS' ? 'Tshs' : property.currency}{' '}
+            {property.nightlyRate?.toLocaleString()}
           </Text>
           <Text style={[styles.barUnit, { color: subtle }]}>per night</Text>
         </View>
-        <TouchableOpacity style={[styles.reserveBtn, { backgroundColor: tint }]} onPress={() => setShowReservation(true)} activeOpacity={0.85}>
-          {property.instantBookEnabled && <Ionicons name="flash" size={16} color="#fff" style={{ marginRight: 4 }} />}
+        <TouchableOpacity
+          style={[styles.reserveBtn, { backgroundColor: tint }]}
+          onPress={() => setShowReservation(true)}
+          activeOpacity={0.85}
+        >
+          {property.instantBookEnabled && (
+            <Ionicons name="flash" size={16} color="#fff" style={{ marginRight: 6 }} />
+          )}
           <Text style={styles.reserveText}>
-            {property.instantBookEnabled ? 'Reserve & Pay' : 'Request to Book'}
+            {property.instantBookEnabled ? 'Reserve' : 'Request to Book'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -335,7 +464,7 @@ export default function ShortTermPropertyDetailsScreen() {
         <FullScreenGallery images={images} startIndex={galleryStart} onClose={() => setGalleryVisible(false)} />
       </Modal>
 
-      {/* ─── RESERVATION ─── */}
+      {/* ─── RESERVATION MODAL ─── */}
       {property && (
         <ReservationModal
           visible={showReservation}
@@ -363,16 +492,14 @@ function FullScreenGallery({ images, startIndex, onClose }: { images: string[]; 
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Header */}
-      <View style={[styles.galleryHeader, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={onClose} style={styles.galleryBackBtn}>
+      <View style={[styles.galleryHeader, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity onPress={onClose} style={styles.galleryCloseBtn}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.galleryCounter}>{currentIdx + 1} / {images.length}</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Images */}
       <FlatList
         data={images}
         horizontal
@@ -389,8 +516,8 @@ function FullScreenGallery({ images, startIndex, onClose }: { images: string[]; 
         )}
       />
 
-      {/* Dot indicators */}
-      {images.length <= 10 && (
+      {/* Bottom dots */}
+      {images.length <= 12 && (
         <View style={styles.galleryDots}>
           {images.map((_, i) => (
             <View key={i} style={[styles.galleryDot, { backgroundColor: i === currentIdx ? '#fff' : 'rgba(255,255,255,0.3)' }]} />
@@ -405,60 +532,113 @@ function FullScreenGallery({ images, startIndex, onClose }: { images: string[]; 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
 
-  // Nav overlay on gallery
-  navOverlay: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
-  navBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
+  // Sticky header
+  stickyHeader: {
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1,
+  },
+  stickyBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  stickyTitle: { flex: 1, fontSize: 15, fontWeight: '600', textAlign: 'center', marginHorizontal: 8 },
+  stickyRight: { flexDirection: 'row', gap: 4 },
+
+  // Gallery
+  galleryGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  navOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16,
+  },
+  navBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center',
+  },
   navRight: { flexDirection: 'row', gap: 8 },
-  photoCount: { position: 'absolute', bottom: 28, right: 16, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
-  photoCountText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  pillIndicator: {
+    position: 'absolute', bottom: 16, alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12,
+  },
+  pillText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  showPhotosBtn: {
+    position: 'absolute', bottom: 16, right: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
+  },
+  showPhotosBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 
-  // Carousel dots (in-page)
-  carouselDots: { position: 'absolute', bottom: 32, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
-  carouselDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#fff' },
+  // Content
+  content: { paddingTop: 4 },
 
-  // Content card
-  contentCard: { borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -24, paddingTop: 28 },
-
-  // Title
-  titleBlock: { paddingHorizontal: 20, paddingBottom: 20 },
-  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  propType: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  // Title section
+  titleSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
+  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  typeText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   instantBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   instantText: { fontSize: 11, fontWeight: '700' },
-  propTitle: { fontSize: 24, fontWeight: '800', lineHeight: 30, letterSpacing: -0.3 },
-  metaLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
-  metaText: { fontSize: 14 },
-  quickStats: { flexDirection: 'row', gap: 16, marginTop: 12 },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  statText: { fontSize: 14, fontWeight: '600' },
-  statTextSub: { fontSize: 13 },
+  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.4, lineHeight: 30 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 10 },
+  ratingPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingText: { fontSize: 14, fontWeight: '700' },
+  reviewCount: { fontSize: 13 },
+  locationPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationText: { fontSize: 13 },
 
-  // Host quick
-  hostQuick: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 18 },
-  hostAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  hostAvatarImg: { width: 48, height: 48 },
-  hostInitial: { fontSize: 20, fontWeight: '700' },
+  // Separator (thin line)
+  separator: { height: 1, marginHorizontal: 20 },
+
+  // Host section
+  hostSection: { paddingHorizontal: 20, paddingVertical: 20 },
+  hostRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  hostAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  hostAvatarImg: { width: 52, height: 52 },
+  hostInitial: { fontSize: 22, fontWeight: '700' },
   hostedBy: { fontSize: 16, fontWeight: '600' },
-  hostSub: { fontSize: 13, marginTop: 1 },
+  hostSub: { fontSize: 13, marginTop: 2 },
+  contactBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
-  // Separator
-  sep: { height: 1, marginHorizontal: 20, marginVertical: 2 },
+  // Highlights
+  highlightsSection: { paddingHorizontal: 20, paddingVertical: 20, gap: 14 },
+  highlightCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 2,
+  },
+  highlightIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  highlightTitle: { fontSize: 15, fontWeight: '600' },
+  highlightSub: { fontSize: 13, marginTop: 1 },
 
   // Pricing
-  pricingSection: { paddingHorizontal: 20, paddingVertical: 18 },
-  secTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  priceItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  pricingSection: { paddingHorizontal: 20, paddingVertical: 24 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 14 },
+  priceList: { gap: 12 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  priceLabel: { fontSize: 15 },
+  priceValue: { fontSize: 15, fontWeight: '600' },
 
   // Bottom bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 6 },
+  bottomBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 8,
+  },
+  bottomLeft: {},
   barPrice: { fontSize: 18, fontWeight: '800' },
-  barUnit: { fontSize: 13, marginTop: 1 },
-  reserveBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
+  barUnit: { fontSize: 12, marginTop: 2 },
+  reserveBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12,
+  },
   reserveText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   // Gallery modal
-  galleryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12 },
-  galleryBackBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  galleryHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 12,
+  },
+  galleryCloseBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center',
+  },
   galleryCounter: { color: '#fff', fontSize: 16, fontWeight: '600' },
   galleryDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 30 },
   galleryDot: { width: 7, height: 7, borderRadius: 3.5 },

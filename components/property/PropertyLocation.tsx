@@ -26,10 +26,7 @@ export default function PropertyLocation({
 }: PropertyLocationProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="map" size={22} color={tintColor} />
-        <Text style={[styles.title, { color: textColor }]}>Location</Text>
-      </View>
+      <Text style={[styles.title, { color: textColor }]}>Where you'll be</Text>
       <View style={styles.mapWrapper}>
         <PropertyMapView
           latitude={latitude}
@@ -37,10 +34,10 @@ export default function PropertyLocation({
           title={title}
         />
       </View>
-      <View style={[styles.infoCard, { backgroundColor, borderColor }]}>
-        <Ionicons name="information-circle" size={20} color={tintColor} />
-        <Text style={[styles.disclaimer, { color: secondaryText }]}>
-          Approximate location shown for privacy
+      <View style={styles.disclaimer}>
+        <Ionicons name="information-circle-outline" size={16} color={secondaryText} />
+        <Text style={[styles.disclaimerText, { color: secondaryText }]}>
+          Exact location provided after booking
         </Text>
       </View>
     </View>
@@ -49,32 +46,25 @@ export default function PropertyLocation({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 20,
+    paddingVertical: 24,
     paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
+    marginBottom: 16,
   },
   mapWrapper: {
-    marginBottom: 12,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   disclaimer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  disclaimerText: {
     fontSize: 13,
-    flex: 1,
   },
 });

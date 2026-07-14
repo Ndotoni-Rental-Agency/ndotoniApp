@@ -26,64 +26,66 @@ export default function PropertyRules({
   secondaryText,
 }: PropertyRulesProps) {
   const policies = [
-    { label: 'Pets', allowed: allowsPets, icon: 'paw' },
-    { label: 'Smoking', allowed: allowsSmoking, icon: 'ban' },
-    { label: 'Children', allowed: allowsChildren, icon: 'happy' },
-    { label: 'Infants', allowed: allowsInfants, icon: 'heart' },
-  ].filter(policy => policy.allowed !== null);
+    { label: 'Pets', allowed: allowsPets, iconY: 'paw-outline', iconN: 'paw-outline' },
+    { label: 'Smoking', allowed: allowsSmoking, iconY: 'flame-outline', iconN: 'flame-outline' },
+    { label: 'Children', allowed: allowsChildren, iconY: 'happy-outline', iconN: 'happy-outline' },
+    { label: 'Infants', allowed: allowsInfants, iconY: 'heart-outline', iconN: 'heart-outline' },
+  ].filter(p => p.allowed !== null && p.allowed !== undefined);
 
   if (!houseRules?.length && policies.length === 0 && !cancellationPolicy) return null;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="shield-checkmark" size={22} color={tintColor} />
-        <Text style={[styles.title, { color: textColor }]}>House Rules & Policies</Text>
-      </View>
-      
-      {/* Policies */}
+      <Text style={[styles.title, { color: textColor }]}>House rules</Text>
+
+      {/* Policies grid */}
       {policies.length > 0 && (
-        <View style={styles.policiesGrid}>
+        <View style={styles.policies}>
           {policies.map((policy, index) => (
-            <View key={index} style={styles.policyItem}>
-              <Ionicons 
-                name={policy.allowed ? 'checkmark-circle' : 'close-circle'} 
-                size={20} 
-                color={policy.allowed ? '#10b981' : '#ef4444'} 
+            <View key={index} style={styles.policyRow}>
+              <Ionicons
+                name={policy.allowed ? (policy.iconY as any) : (policy.iconN as any)}
+                size={20}
+                color={policy.allowed ? '#10b981' : secondaryText}
               />
               <Text style={[styles.policyText, { color: textColor }]}>
-                {policy.label} {policy.allowed ? 'Allowed' : 'Not Allowed'}
+                {policy.label}
+              </Text>
+              <Text style={[
+                styles.policyStatus,
+                { color: policy.allowed ? '#10b981' : '#ef4444' },
+              ]}>
+                {policy.allowed ? 'Allowed' : 'Not allowed'}
               </Text>
             </View>
           ))}
         </View>
       )}
-      
-      {/* Cancellation Policy */}
+
+      {/* Cancellation */}
       {cancellationPolicy && (
-        <View style={styles.policyRow}>
-          <Ionicons name="calendar-outline" size={20} color={secondaryText} />
-          <View style={styles.policyContent}>
-            <Text style={[styles.policyLabel, { color: secondaryText }]}>Cancellation Policy</Text>
-            <Text style={[styles.policyValue, { color: textColor }]}>
+        <View style={styles.cancellation}>
+          <Ionicons name="calendar-outline" size={20} color={textColor} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.cancellationLabel, { color: secondaryText }]}>
+              Cancellation policy
+            </Text>
+            <Text style={[styles.cancellationValue, { color: textColor }]}>
               {cancellationPolicy.charAt(0) + cancellationPolicy.slice(1).toLowerCase()}
             </Text>
           </View>
         </View>
       )}
-      
-      {/* House Rules */}
+
+      {/* House rules list */}
       {houseRules && houseRules.length > 0 && (
-        <View style={styles.rulesSection}>
-          <Text style={[styles.rulesTitle, { color: textColor }]}>Additional Rules</Text>
-          <View style={styles.rulesList}>
-            {houseRules.map((rule, index) => (
-              <View key={index} style={styles.ruleItem}>
-                <Ionicons name="ellipse" size={6} color={secondaryText} />
-                <Text style={[styles.ruleText, { color: textColor }]}>{rule}</Text>
-              </View>
-            ))}
-          </View>
+        <View style={styles.rulesList}>
+          {houseRules.map((rule, index) => (
+            <View key={index} style={styles.ruleItem}>
+              <Text style={[styles.ruleBullet, { color: secondaryText }]}>•</Text>
+              <Text style={[styles.ruleText, { color: textColor }]}>{rule}</Text>
+            </View>
+          ))}
         </View>
       )}
     </View>
@@ -93,57 +95,43 @@ export default function PropertyRules({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    paddingVertical: 24,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-  },
-  policiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
     marginBottom: 16,
   },
-  policyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    width: '47%',
-  },
-  policyText: {
-    fontSize: 14,
-    fontWeight: '500',
+  policies: {
+    gap: 14,
+    marginBottom: 16,
   },
   policyRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 12,
+  },
+  policyText: {
+    fontSize: 15,
+    flex: 1,
+  },
+  policyStatus: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  cancellation: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
     marginBottom: 16,
   },
-  policyContent: {
-    flex: 1,
-    gap: 4,
+  cancellationLabel: {
+    fontSize: 12,
   },
-  policyLabel: {
-    fontSize: 13,
-  },
-  policyValue: {
-    fontSize: 16,
+  cancellationValue: {
+    fontSize: 15,
     fontWeight: '600',
-  },
-  rulesSection: {
-    gap: 12,
-  },
-  rulesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: 2,
   },
   rulesList: {
     gap: 10,
@@ -151,8 +139,11 @@ const styles = StyleSheet.create({
   ruleItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    paddingLeft: 4,
+    gap: 8,
+  },
+  ruleBullet: {
+    fontSize: 18,
+    lineHeight: 22,
   },
   ruleText: {
     fontSize: 15,

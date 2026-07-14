@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface ShortTermPropertyDetailsProps {
   maxGuests?: number | null;
@@ -29,57 +29,43 @@ export default function ShortTermPropertyDetails({
   tintColor,
   secondaryText,
 }: ShortTermPropertyDetailsProps) {
-  // Main details (guests and times)
-  const mainDetails = [
-    { icon: 'people', label: 'Max Guests', value: maxGuests },
-    { icon: 'person', label: 'Adults', value: maxAdults },
-    { icon: 'happy', label: 'Children', value: maxChildren },
-    { icon: 'heart', label: 'Infants', value: maxInfants },
-    { icon: 'log-in', label: 'Check-in', value: checkInTime },
-    { icon: 'log-out', label: 'Check-out', value: checkOutTime },
-  ].filter(detail => detail.value);
+  const details = [
+    { icon: 'people-outline', label: 'Max guests', value: maxGuests },
+    { icon: 'person-outline', label: 'Adults', value: maxAdults },
+    { icon: 'happy-outline', label: 'Children', value: maxChildren },
+    { icon: 'heart-outline', label: 'Infants', value: maxInfants },
+    { icon: 'log-in-outline', label: 'Check-in', value: checkInTime },
+    { icon: 'log-out-outline', label: 'Check-out', value: checkOutTime },
+  ].filter(d => d.value != null);
 
-  // Stay duration info
   const stayInfo = [];
-  if (minimumStay) stayInfo.push(`${minimumStay} night minimum`);
-  if (maximumStay) stayInfo.push(`${maximumStay} night maximum`);
+  if (minimumStay && minimumStay > 1) stayInfo.push(`${minimumStay} night min`);
+  if (maximumStay) stayInfo.push(`${maximumStay} night max`);
 
-  if (mainDetails.length === 0 && stayInfo.length === 0) return null;
+  if (details.length === 0 && stayInfo.length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="information-circle" size={22} color={tintColor} />
-        <Text style={[styles.title, { color: textColor }]}>Property Details</Text>
-      </View>
-      
-      {/* Main Details Grid */}
-      {mainDetails.length > 0 && (
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {mainDetails.map((detail, index) => (
-            <View key={index} style={styles.detailCard}>
-              <View style={[styles.iconCircle, { backgroundColor: `${tintColor}15` }]}>
-                <Ionicons name={detail.icon as any} size={24} color={tintColor} />
+      <Text style={[styles.title, { color: textColor }]}>Property details</Text>
+
+      {details.length > 0 && (
+        <View style={styles.grid}>
+          {details.map((detail, index) => (
+            <View key={index} style={styles.gridItem}>
+              <Ionicons name={detail.icon as any} size={20} color={tintColor} />
+              <View>
+                <Text style={[styles.gridValue, { color: textColor }]}>{detail.value}</Text>
+                <Text style={[styles.gridLabel, { color: secondaryText }]}>{detail.label}</Text>
               </View>
-              <Text style={[styles.value, { color: textColor }]}>{detail.value}</Text>
-              <Text style={[styles.label, { color: secondaryText }]}>{detail.label}</Text>
             </View>
           ))}
-        </ScrollView>
+        </View>
       )}
-      
-      {/* Stay Duration at Bottom */}
+
       {stayInfo.length > 0 && (
-        <View style={[styles.stayDurationCard, { backgroundColor: `${tintColor}10`, borderColor: `${tintColor}30` }]}>
-          <Ionicons name="calendar" size={20} color={tintColor} />
-          <View style={styles.stayDurationContent}>
-            <Text style={[styles.stayDurationLabel, { color: secondaryText }]}>Stay Duration</Text>
-            <Text style={[styles.stayDurationValue, { color: textColor }]}>{stayInfo.join(' • ')}</Text>
-          </View>
+        <View style={[styles.stayPill, { backgroundColor: `${tintColor}08` }]}>
+          <Ionicons name="calendar-outline" size={16} color={tintColor} />
+          <Text style={[styles.stayText, { color: textColor }]}>{stayInfo.join('  ·  ')}</Text>
         </View>
       )}
     </View>
@@ -89,65 +75,44 @@ export default function ShortTermPropertyDetails({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    paddingVertical: 24,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
+    marginBottom: 16,
   },
-  scrollContent: {
-    paddingRight: 20,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
   },
-  detailCard: {
-    alignItems: 'center',
-    gap: 8,
-    minWidth: 80,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  value: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 11,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  stayDurationCard: {
+  gridItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    gap: 10,
+    width: '46%',
+    paddingVertical: 4,
   },
-  stayDurationContent: {
-    flex: 1,
-    gap: 4,
-  },
-  stayDurationLabel: {
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  stayDurationValue: {
+  gridValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  gridLabel: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  stayPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  stayText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

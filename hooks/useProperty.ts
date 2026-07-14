@@ -6,7 +6,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { CreatePropertyDraftInput, PropertyCard } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { createPropertyDraft, deleteProperty, toggleFavorite as toggleFavoriteMutation } from '@/lib/graphql/mutations';
+import { createPropertyDraft, deactivateShortTermProperty, toggleFavorite as toggleFavoriteMutation } from '@/lib/graphql/mutations';
 import { getMe, getPropertiesByLocation } from '@/lib/graphql/queries';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -572,17 +572,17 @@ export function useDeleteProperty() {
     setError(null);
 
     try {
-      console.log('📤 [useDeleteProperty] Deleting property with ID:', propertyId);
+      console.log('📤 [useDeleteProperty] Deactivating short-term property with ID:', propertyId);
       const response = await GraphQLClient.executeAuthenticated(
-        deleteProperty,
+        deactivateShortTermProperty,
         { propertyId }
       );
 
-      const result = response?.deleteProperty;
+      const result = response?.deactivateShortTermProperty;
       if (result?.success) {
         return {
           success: true,
-          message: result.message,
+          message: result.message || 'Property deleted successfully',
         };
       } else {
         throw new Error(result?.message || 'Failed to delete property');

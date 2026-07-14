@@ -5,6 +5,7 @@ import HostWhatsApp from '@/components/host/HostWhatsApp';
 import HostStats from '@/components/host/HostStats';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
@@ -17,7 +18,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   RefreshControl,
   ScrollView,
@@ -50,6 +50,7 @@ export default function HostDashboardScreen() {
 
   const { properties, loading: propsLoading, refetch } = useLandlordShortTermProperties(isAuthenticated && !authLoading);
   const { deletePropertyById } = useDeleteProperty();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (properties.length > 0 && isAuthenticated) fetchStats();
@@ -74,10 +75,15 @@ export default function HostDashboardScreen() {
 
   const handleRefresh = async () => { setRefreshing(true); await refetch(); await fetchStats(); setRefreshing(false); };
   const handleDelete = (id: string, title: string) => {
-    Alert.alert('Delete', `Remove "${title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => { await deletePropertyById(id); await refetch(); } },
-    ]);
+    showAlert({
+      title: 'Delete Property',
+      message: `Are you sure you want to remove "${title}"? This cannot be undone.`,
+      icon: 'delete',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => { await deletePropertyById(id); await refetch(); } },
+      ],
+    });
   };
   const fmt = (n: number) => n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : n.toString();
   const firstName = user?.firstName || 'Host';
@@ -130,11 +136,19 @@ export default function HostDashboardScreen() {
         {/* Greeting */}
         <View style={styles.greetSection}>
           <Text style={[styles.greeting, { color: text }]}>Welcome, {firstName} 👋</Text>
-          <TouchableOpacity style={[styles.addBtn, { backgroundColor: tint }]} onPress={() => router.push('/landlord/short-property/create' as any)}>
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>Add</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Add property button — prominent */}
+        <TouchableOpacity style={[styles.addCard, { backgroundColor: tint }]} onPress={() => router.push('/landlord/short-property/create' as any)} activeOpacity={0.85}>
+          <View style={styles.addCardIcon}>
+            <Ionicons name="add" size={24} color={tint} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.addCardTitle}>List a new property</Text>
+            <Text style={styles.addCardSub}>Start earning from short-term stays</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color="#fff" />
+        </TouchableOpacity>
 
         {/* Summary cards */}
         {(pendingCount > 0 || upcomingCount > 0 || totalEarned > 0) && (
@@ -253,10 +267,21 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
 
   // Greeting
-  greetSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  greetSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   greeting: { fontSize: 24, fontWeight: '800' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+
+  // Add property card
+  addCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    marginHorizontal: 20, marginTop: 12, marginBottom: 4,
+    paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14,
+  },
+  addCardIcon: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  addCardTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  addCardSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
 
   // Summary cards
   summaryScroll: { paddingHorizontal: 20, paddingVertical: 12, gap: 10 },

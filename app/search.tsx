@@ -185,6 +185,12 @@ export default function SearchScreen() {
         <TouchableOpacity style={styles.cardFav}>
           <Ionicons name="heart-outline" size={20} color="#fff" />
         </TouchableOpacity>
+        {property.instantBookEnabled && (
+          <View style={styles.cardInstantBadge}>
+            <Ionicons name="flash" size={11} color="#fff" />
+            <Text style={styles.cardInstantText}>Instant</Text>
+          </View>
+        )}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardRow}>
@@ -393,6 +399,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
+  cardInstantBadge: {
+    position: 'absolute', top: 12, left: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#10b981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
+  },
+  cardInstantText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { paddingTop: 10 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardLoc: { fontSize: 15, fontWeight: '600', flex: 1 },

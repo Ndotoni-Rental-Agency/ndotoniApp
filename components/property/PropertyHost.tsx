@@ -29,11 +29,8 @@ export default function PropertyHost({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="person" size={22} color={tintColor} />
-        <Text style={[styles.title, { color: textColor }]}>Hosted by</Text>
-      </View>
-      <View style={[styles.card, { backgroundColor, borderColor }]}>
+      <Text style={[styles.title, { color: textColor }]}>Meet your Host</Text>
+      <View style={styles.hostRow}>
         {showImage ? (
           <Image
             source={{ uri: profileImage }}
@@ -41,19 +38,19 @@ export default function PropertyHost({
             onError={() => setImageError(true)}
           />
         ) : (
-          <View style={[styles.avatar, styles.initialsAvatar, { backgroundColor: tintColor }]}>
+          <View style={[styles.avatar, { backgroundColor: tintColor }]}>
             <Text style={styles.initials}>
               {firstName[0]}{lastName ? lastName[0] : ''}
             </Text>
           </View>
         )}
-        <View style={styles.details}>
-          <Text style={[styles.name, { color: textColor }]}>
+        <View style={styles.hostInfo}>
+          <Text style={[styles.hostName, { color: textColor }]}>
             {firstName}{lastName ? ` ${lastName}` : ''}
           </Text>
-          <View style={styles.badge}>
+          <View style={styles.verifiedRow}>
             <Ionicons name="shield-checkmark" size={14} color="#10b981" />
-            <Text style={styles.role}>Verified Host</Text>
+            <Text style={styles.verifiedText}>Verified Host</Text>
           </View>
         </View>
       </View>
@@ -64,56 +61,47 @@ export default function PropertyHost({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
+    paddingVertical: 24,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
+    marginBottom: 16,
   },
-  card: {
+  hostRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-  },
-  initialsAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   initials: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
   },
-  details: {
+  hostInfo: {
     flex: 1,
   },
-  name: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
+  hostName: {
+    fontSize: 17,
+    fontWeight: '600',
   },
-  badge: {
+  verifiedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+    marginTop: 4,
   },
-  role: {
-    fontSize: 14,
+  verifiedText: {
+    fontSize: 13,
     color: '#10b981',
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });
