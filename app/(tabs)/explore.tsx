@@ -132,7 +132,7 @@ export default function HostDashboardScreen() {
           <Text style={[styles.greeting, { color: text }]}>Welcome, {firstName} 👋</Text>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: tint }]} onPress={() => router.push('/landlord/short-property/create' as any)}>
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>List</Text>
+            <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
         </View>
 
@@ -170,44 +170,52 @@ export default function HostDashboardScreen() {
               <Text style={[styles.emptyText, { color: text }]}>Add your first property</Text>
             </TouchableOpacity>
           ) : (
-            properties.map(p => {
-              const st = String(p.status || 'DRAFT');
-              const live = st === 'AVAILABLE' || st === 'ACTIVE' || st === 'PUBLISHED';
-              return (
-                <View key={p.propertyId} style={[styles.propCard, { backgroundColor: card, borderColor: border }]}>
-                  <TouchableOpacity style={styles.propRow} onPress={() => router.push(`/short-property/${p.propertyId}` as any)}>
-                    <View style={styles.propImgWrap}>
-                      {(p.thumbnail || p.images?.[0]) ? (
-                        <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={styles.propImg} contentFit="cover" />
-                      ) : (
-                        <View style={[styles.propImgPlaceholder, { backgroundColor: `${tint}08` }]}><Ionicons name="image-outline" size={18} color={tint} /></View>
-                      )}
-                    </View>
-                    <View style={styles.propInfo}>
-                      <Text style={[styles.propTitle, { color: text }]} numberOfLines={1}>{p.title}</Text>
-                      <Text style={[styles.propLoc, { color: subtle }]}>{p.district}, {p.region}</Text>
-                      <View style={styles.propBottom}>
-                        <Text style={[styles.propPrice, { color: text }]}>{p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}/n</Text>
-                        <View style={[styles.statusPill, { backgroundColor: live ? `${tint}12` : '#fef3c7' }]}>
-                          <Text style={[styles.statusPillText, { color: live ? tint : '#92400e' }]}>{live ? 'Live' : 'Draft'}</Text>
+            <>
+              {properties.slice(0, 2).map(p => {
+                const st = String(p.status || 'DRAFT');
+                const live = st === 'AVAILABLE' || st === 'ACTIVE' || st === 'PUBLISHED';
+                return (
+                  <View key={p.propertyId} style={[styles.propCard, { backgroundColor: card, borderColor: border }]}>
+                    <TouchableOpacity style={styles.propRow} onPress={() => router.push(`/short-property/${p.propertyId}` as any)}>
+                      <View style={styles.propImgWrap}>
+                        {(p.thumbnail || p.images?.[0]) ? (
+                          <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={styles.propImg} contentFit="cover" />
+                        ) : (
+                          <View style={[styles.propImgPlaceholder, { backgroundColor: `${tint}08` }]}><Ionicons name="image-outline" size={18} color={tint} /></View>
+                        )}
+                      </View>
+                      <View style={styles.propInfo}>
+                        <Text style={[styles.propTitle, { color: text }]} numberOfLines={1}>{p.title}</Text>
+                        <Text style={[styles.propLoc, { color: subtle }]}>{p.district}, {p.region}</Text>
+                        <View style={styles.propBottom}>
+                          <Text style={[styles.propPrice, { color: text }]}>{p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}/n</Text>
+                          <View style={[styles.statusPill, { backgroundColor: live ? `${tint}12` : '#fef3c7' }]}>
+                            <Text style={[styles.statusPillText, { color: live ? tint : '#92400e' }]}>{live ? 'Live' : 'Draft'}</Text>
+                          </View>
                         </View>
                       </View>
+                    </TouchableOpacity>
+                    <View style={[styles.propActions, { borderTopColor: border }]}>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}>
+                        <Ionicons name="create-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}>
+                        <Ionicons name="calendar-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Calendar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actBtn} onPress={() => handleDelete(p.propertyId, p.title)}>
+                        <Ionicons name="trash-outline" size={15} color="#ef4444" /><Text style={[styles.actText, { color: '#ef4444' }]}>Delete</Text>
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                  <View style={[styles.propActions, { borderTopColor: border }]}>
-                    <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}>
-                      <Ionicons name="create-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Edit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}>
-                      <Ionicons name="calendar-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Calendar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actBtn} onPress={() => handleDelete(p.propertyId, p.title)}>
-                      <Ionicons name="trash-outline" size={15} color="#ef4444" /><Text style={[styles.actText, { color: '#ef4444' }]}>Delete</Text>
-                    </TouchableOpacity>
                   </View>
-                </View>
-              );
-            })
+                );
+              })}
+              {properties.length > 2 && (
+                <TouchableOpacity style={[styles.viewMoreBtn, { borderColor: border }]} onPress={() => router.push('/landlord/properties' as any)}>
+                  <Text style={[styles.viewMoreText, { color: tint }]}>View all {properties.length} listings</Text>
+                  <Ionicons name="arrow-forward" size={16} color={tint} />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
 
@@ -283,6 +291,8 @@ const styles = StyleSheet.create({
   // Empty
   emptyCard: { borderWidth: 1.5, borderStyle: 'dashed' as any, borderRadius: 14, paddingVertical: 32, alignItems: 'center', gap: 8 },
   emptyText: { fontSize: 14, fontWeight: '600' },
+  viewMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1, marginTop: 4 },
+  viewMoreText: { fontSize: 14, fontWeight: '600' },
 
   // Menu
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderBottomWidth: 1 },

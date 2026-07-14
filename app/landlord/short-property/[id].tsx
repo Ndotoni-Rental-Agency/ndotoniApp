@@ -367,11 +367,19 @@ export default function EditShortTermPropertyScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
-      <View style={[styles.titleContainer, { backgroundColor: cardBg }]}>
+      <View style={[styles.titleContainer, { backgroundColor: cardBg, borderBottomColor: borderColor, borderBottomWidth: 1 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
-          <Ionicons name="arrow-back" size={28} color={textColor} />
+          <Ionicons name="arrow-back" size={22} color={textColor} />
         </TouchableOpacity>
-        <Text style={[styles.pageTitle, { color: textColor }]}>Edit Property</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.pageTitle, { color: textColor }]} numberOfLines={1}>{formData.title || 'Edit Property'}</Text>
+          <Text style={{ fontSize: 12, color: placeholderColor, marginTop: 2 }}>{formData.district}, {formData.region}</Text>
+        </View>
+        {formData.status === 'DRAFT' && (
+          <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: '#92400e' }}>DRAFT</Text>
+          </View>
+        )}
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
