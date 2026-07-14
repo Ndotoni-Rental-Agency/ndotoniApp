@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AIService } from '@/lib/ai-service';
 import { EditTabProps } from '../types';
 
 export default function PricingSection({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
@@ -10,11 +11,8 @@ export default function PricingSection({ form, upd, saving, saveSec, text, tint,
   const suggestPrice = async () => {
     setPredicting(true);
     try {
-      const res = await fetch('https://www.ndotonistays.com/api/ai/predict-price', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: parseInt(form.maxGuests) || 2 }),
-      });
-      if (res.ok) setSuggestion(await res.json());
+      const result = await AIService.predictPrice({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: parseInt(form.maxGuests) || 2 });
+      setSuggestion(result);
     } catch {} finally { setPredicting(false); }
   };
 

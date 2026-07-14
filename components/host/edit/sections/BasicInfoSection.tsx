@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AIService } from '@/lib/ai-service';
 import { EditTabProps } from '../types';
 
 const STAY_CATEGORIES = [
@@ -21,22 +22,16 @@ export default function BasicInfoSection({ form, upd, toggleCat, saving, saveSec
   const generateTitle = async () => {
     setGeneratingTitle(true);
     try {
-      const res = await fetch('https://www.ndotonistays.com/api/generate-title', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: form.maxGuests, bedrooms: form.bedrooms, bathrooms: form.bathrooms, stayCategories: form.stayCategories, currency: form.currency, nightlyRate: form.nightlyRate, userContext: form.title || undefined }),
-      });
-      if (res.ok) { const data = await res.json(); if (data.title) upd('title', data.title); }
+      const title = await AIService.generateTitle({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: form.maxGuests, bedrooms: form.bedrooms, bathrooms: form.bathrooms, stayCategories: form.stayCategories, currency: form.currency, nightlyRate: form.nightlyRate, userContext: form.title || undefined });
+      if (title) upd('title', title);
     } catch {} finally { setGeneratingTitle(false); }
   };
 
   const generateDescription = async () => {
     setGeneratingDesc(true);
     try {
-      const res = await fetch('https://www.ndotonistays.com/api/ai/generate-description', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: form.title, propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: parseInt(form.maxGuests) || 2, nightlyRate: parseInt(form.nightlyRate) || 0, currency: form.currency, amenities: form.amenities }),
-      });
-      if (res.ok) { const data = await res.json(); if (data.description) upd('description', data.description); }
+      const desc = await AIService.generateDescription({ title: form.title, propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: parseInt(form.maxGuests) || 2, nightlyRate: parseInt(form.nightlyRate) || 0, currency: form.currency, amenities: form.amenities });
+      if (desc) upd('description', desc);
     } catch {} finally { setGeneratingDesc(false); }
   };
 

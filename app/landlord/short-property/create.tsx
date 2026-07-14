@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { createShortTermPropertyDraft } from '@/lib/graphql/mutations';
+import { AIService } from '@/lib/ai-service';
 import MediaSelector from '@/components/media/MediaSelector';
 import LocationSelector from '@/components/location/LocationSelector';
 import { Ionicons } from '@expo/vector-icons';
@@ -93,57 +94,20 @@ export default function CreatePropertyScreen() {
   const generateTitle = async () => {
     setGeneratingTitle(true);
     try {
-      const res = await fetch('https://www.ndotonistays.com/api/generate-title', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          propertyType: form.propertyType,
-          district: form.district,
-          region: form.region,
-          maxGuests: form.maxGuests,
-          bedrooms: form.bedrooms,
-          bathrooms: form.bathrooms,
-          stayCategories: form.stayCategories,
-          currency: form.currency,
-          nightlyRate: form.nightlyRate,
-          images: form.images.slice(0, 3), // Send up to 3 image URLs for AI analysis
-          userContext: form.title || undefined,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.title) updateField('title', data.title);
-      }
-    } catch (err) {
-      console.error('AI title error:', err);
-    } finally {
-      setGeneratingTitle(false);
-    }
+      const title = await AIService.generateTitle({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: form.maxGuests, bedrooms: form.bedrooms, bathrooms: form.bathrooms, stayCategories: form.stayCategories, currency: form.currency, nightlyRate: form.nightlyRate, images: form.images.slice(0, 3), userContext: form.title || undefined });
+      if (title) updateField('title', title);
+    } catch (err) { console.error('AI title error:', err); }
+    finally { setGeneratingTitle(false); }
   };
 
   // AI: Suggest price
   const suggestPrice = async () => {
     setPredictingPrice(true);
     try {
-      const res = await fetch('https://www.ndotonistays.com/api/ai/predict-price', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          propertyType: form.propertyType,
-          district: form.district,
-          region: form.region,
-          maxGuests: parseInt(form.maxGuests) || 2,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPriceSuggestion(data);
-      }
-    } catch (err) {
-      console.error('AI price error:', err);
-    } finally {
-      setPredictingPrice(false);
-    }
+      const result = await AIService.predictPrice({ propertyType: form.propertyType, district: form.district, region: form.region, maxGuests: parseInt(form.maxGuests) || 2 });
+      setPriceSuggestion(result);
+    } catch (err) { console.error('AI price error:', err); }
+    finally { setPredictingPrice(false); }
   };
 
   const canNext = (): boolean => {
