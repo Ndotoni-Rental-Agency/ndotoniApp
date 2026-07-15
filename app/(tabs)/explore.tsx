@@ -43,8 +43,8 @@ export default function HostDashboardScreen() {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const card = useThemeColor({ light: '#f9f9f9', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
+  const card = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const border = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
   const { properties, loading: propsLoading, refetch } = useLandlordShortTermProperties(isAuthenticated && !authLoading);
@@ -62,7 +62,7 @@ export default function HostDashboardScreen() {
         try {
           const res = await GraphQLClient.executeAuthenticated<any>(listPropertyBookings, { propertyId: p.propertyId, limit: 20 });
           for (const b of (res.listPropertyBookings?.bookings || [])) {
-            if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.total || b.totalPrice || 0);
+            if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.total || 0);
             if (b.status === 'PENDING') pending++;
             if (b.status === 'CONFIRMED' && new Date(b.checkInDate) > new Date()) upcoming++;
           }
@@ -75,29 +75,24 @@ export default function HostDashboardScreen() {
   const handleRefresh = async () => { setRefreshing(true); await refetch(); await fetchStats(); setRefreshing(false); };
   const handleDelete = (id: string, title: string) => {
     showAlert({
-      title: 'Delete Property',
-      message: `Are you sure you want to remove "${title}"? This cannot be undone.`,
-      icon: 'delete',
-      buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: async () => { await deletePropertyById(id); await refetch(); } },
-      ],
+      title: 'Delete Property', message: `Remove "${title}"? This cannot be undone.`, icon: 'delete',
+      buttons: [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: async () => { await deletePropertyById(id); await refetch(); } }],
     });
   };
   const fmt = (n: number) => n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : n.toString();
   const firstName = user?.firstName || 'Host';
 
   // ─── NOT AUTHENTICATED ───
-  if (authLoading) return <View style={[styles.fill, { backgroundColor: bg }]}><ActivityIndicator style={{ flex: 1 }} color={tint} /></View>;
+  if (authLoading) return <View style={[s.fill, { backgroundColor: bg }]}><ActivityIndicator style={{ flex: 1 }} color={tint} /></View>;
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
-        <View style={styles.authWrap}>
-          <View style={[styles.authIcon, { backgroundColor: `${tint}12` }]}><Ionicons name="home-outline" size={40} color={tint} /></View>
-          <Text style={[styles.authTitle, { color: text }]}>Become a Host</Text>
-          <Text style={[styles.authSub, { color: subtle }]}>List your space and start earning from short-term stays</Text>
-          <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: tint }]} onPress={() => setShowSignIn(true)}><Text style={styles.primaryBtnText}>Sign In</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowSignUp(true)}><Text style={[styles.linkText, { color: tint }]}>Create account</Text></TouchableOpacity>
+      <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
+        <View style={s.authWrap}>
+          <View style={[s.authIcon, { backgroundColor: `${tint}10` }]}><Ionicons name="home-outline" size={44} color={tint} /></View>
+          <Text style={[s.authTitle, { color: text }]}>Become a Host</Text>
+          <Text style={[s.authSub, { color: subtle }]}>List your space and start earning{'\n'}from short-term stays</Text>
+          <TouchableOpacity style={[s.authBtn, { backgroundColor: tint }]} onPress={() => setShowSignIn(true)}><Text style={s.authBtnText}>Sign In</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowSignUp(true)}><Text style={[s.authLink, { color: tint }]}>Create account</Text></TouchableOpacity>
         </View>
         <SignInModal visible={showSignIn} onClose={() => setShowSignIn(false)} onSwitchToSignUp={() => { setShowSignIn(false); setShowSignUp(true); }} onForgotPassword={() => {}} onNeedsVerification={() => {}} />
         <SignUpModal visible={showSignUp} onClose={() => setShowSignUp(false)} onSwitchToSignIn={() => { setShowSignUp(false); setShowSignIn(true); }} onNeedsVerification={() => {}} />
@@ -108,15 +103,15 @@ export default function HostDashboardScreen() {
   // ─── SUBPAGES ───
   if (page !== 'home') {
     return (
-      <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
-        <View style={[styles.subHeader, { borderBottomColor: border }]}>
-          <TouchableOpacity onPress={() => setPage('home')}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
-          <Text style={[styles.subTitle, { color: text }]}>
-            {page === 'bookings' ? 'Bookings' : page === 'reviews' ? 'Reviews' : page === 'payouts' ? 'Payouts' : page === 'stats' ? 'Earnings & Stats' : 'WhatsApp'}
+      <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
+        <View style={s.subHeader}>
+          <TouchableOpacity onPress={() => setPage('home')} style={s.subBack}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
+          <Text style={[s.subTitle, { color: text }]}>
+            {page === 'bookings' ? 'Bookings' : page === 'reviews' ? 'Reviews' : page === 'payouts' ? 'Payouts' : page === 'stats' ? 'Earnings' : 'WhatsApp'}
           </Text>
-          <View style={{ width: 22 }} />
+          <View style={{ width: 30 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.subContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={s.subContent} showsVerticalScrollIndicator={false}>
           {page === 'bookings' && <HostBookings propertyIds={properties.map(p => p.propertyId)} onRefresh={handleRefresh} />}
           {page === 'reviews' && <HostReviews propertyIds={properties.map(p => p.propertyId)} propertyNames={Object.fromEntries(properties.map(p => [p.propertyId, p.title]))} />}
           {page === 'payouts' && <HostPayouts />}
@@ -127,230 +122,198 @@ export default function HostDashboardScreen() {
     );
   }
 
-  // ─── MAIN HOST PAGE (Airbnb "Today" style) ───
+  // ─── MAIN HOST DASHBOARD ───
   return (
-    <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.mainContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}>
+    <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}>
 
-        {/* Header with greeting + add button */}
-        <View style={styles.greetSection}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.greeting, { color: text }]}>Welcome, {firstName} 👋</Text>
-          </View>
-          {properties.length > 0 && (
-            <TouchableOpacity
-              style={[styles.addBtn, { borderColor: border }]}
-              onPress={() => router.push('/landlord/short-property/create' as any)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={16} color={tint} />
-              <Text style={[styles.addBtnText, { color: tint }]}>Add Property</Text>
-            </TouchableOpacity>
-          )}
+        {/* Header */}
+        <View style={s.headerRow}>
+          <Text style={[s.headerTitle, { color: text }]}>Today</Text>
         </View>
+        <Text style={[s.headerGreet, { color: subtle }]}>Welcome back, {firstName}</Text>
 
-        {/* Summary cards — only when there's data */}
-        {(pendingCount > 0 || upcomingCount > 0 || totalEarned > 0) && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
-            {pendingCount > 0 && (
-              <TouchableOpacity style={[styles.summaryCard, { backgroundColor: '#fef3c7', borderColor: '#fde68a' }]} onPress={() => setPage('bookings')}>
-                <Text style={styles.summaryNum}>{pendingCount}</Text>
-                <Text style={styles.summaryLabel}>Pending{'\n'}requests</Text>
-                <Ionicons name="chevron-forward" size={16} color="#92400e" />
-              </TouchableOpacity>
-            )}
-            <View style={[styles.summaryCard, { backgroundColor: `${tint}08`, borderColor: `${tint}20` }]}>
-              <Text style={[styles.summaryNum, { color: tint }]}>{upcomingCount}</Text>
-              <Text style={[styles.summaryLabel, { color: tint }]}>Upcoming{'\n'}guests</Text>
+        {/* Notification cards — action items */}
+        {pendingCount > 0 && (
+          <TouchableOpacity style={[s.alertCard, { backgroundColor: '#fef3c7' }]} onPress={() => setPage('bookings')} activeOpacity={0.8}>
+            <View style={[s.alertDot, { backgroundColor: '#f59e0b' }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.alertTitle}>{pendingCount} booking request{pendingCount > 1 ? 's' : ''}</Text>
+              <Text style={s.alertSub}>Tap to review and approve</Text>
             </View>
-            <View style={[styles.summaryCard, { backgroundColor: card, borderColor: border }]}>
-              <Text style={[styles.summaryNum, { color: text }]}>Tshs {fmt(totalEarned)}</Text>
-              <Text style={[styles.summaryLabel, { color: subtle }]}>Total{'\n'}earned</Text>
-            </View>
-          </ScrollView>
+            <Ionicons name="chevron-forward" size={18} color="#92400e" />
+          </TouchableOpacity>
         )}
 
-        {/* Your listings */}
-        <View style={styles.section}>
-          {properties.length > 0 && (
-            <View style={styles.sectionHead}>
-              <Text style={[styles.sectionTitle, { color: text }]}>Your listings</Text>
-              <Text style={[styles.sectionCount, { color: subtle }]}>{properties.length}</Text>
+        {/* Stats row */}
+        {(upcomingCount > 0 || totalEarned > 0 || properties.length > 0) && (
+          <View style={s.statsRow}>
+            <TouchableOpacity style={[s.statCard, { backgroundColor: card }]} onPress={() => setPage('stats')} activeOpacity={0.7}>
+              <Text style={[s.statValue, { color: text }]}>Tshs {fmt(totalEarned)}</Text>
+              <Text style={[s.statLabel, { color: subtle }]}>Total earned</Text>
+            </TouchableOpacity>
+            <View style={[s.statCard, { backgroundColor: card }]}>
+              <Text style={[s.statValue, { color: text }]}>{upcomingCount}</Text>
+              <Text style={[s.statLabel, { color: subtle }]}>Upcoming</Text>
             </View>
-          )}
+            <View style={[s.statCard, { backgroundColor: card }]}>
+              <Text style={[s.statValue, { color: text }]}>{properties.length}</Text>
+              <Text style={[s.statLabel, { color: subtle }]}>Listings</Text>
+            </View>
+          </View>
+        )}
 
-          {propsLoading ? <ActivityIndicator color={tint} style={{ paddingVertical: 30 }} /> : properties.length === 0 ? (
-            /* Empty state — single clear CTA */
-            <View style={styles.emptyWrap}>
-              <View style={[styles.emptyIcon, { backgroundColor: `${tint}10` }]}>
-                <Ionicons name="home-outline" size={40} color={tint} />
+        {/* Listings */}
+        <View style={s.listingsSection}>
+          <View style={s.listingsHeader}>
+            <Text style={[s.sectionTitle, { color: text }]}>Your listings</Text>
+            <TouchableOpacity onPress={() => router.push('/landlord/short-property/create' as any)} style={[s.newListingBtn, { backgroundColor: tint }]}>
+              <Ionicons name="add" size={16} color="#fff" />
+              <Text style={s.newListingText}>New</Text>
+            </TouchableOpacity>
+          </View>
+
+          {propsLoading ? <ActivityIndicator color={tint} style={{ paddingVertical: 40 }} /> : properties.length === 0 ? (
+            <TouchableOpacity style={[s.emptyCard, { borderColor: border }]} onPress={() => router.push('/landlord/short-property/create' as any)} activeOpacity={0.8}>
+              <View style={[s.emptyIconWrap, { backgroundColor: `${tint}08` }]}>
+                <Ionicons name="add-circle-outline" size={36} color={tint} />
               </View>
-              <Text style={[styles.emptyTitle, { color: text }]}>List your first property</Text>
-              <Text style={[styles.emptySub, { color: subtle }]}>
-                Start hosting guests and earning from{'\n'}short-term stays on Ndotoni.
-              </Text>
-              <TouchableOpacity
-                style={[styles.emptyBtn, { backgroundColor: tint }]}
-                onPress={() => router.push('/landlord/short-property/create' as any)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.emptyBtnText}>Create your listing</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={[s.emptyTitle, { color: text }]}>Add your first place</Text>
+              <Text style={[s.emptySub, { color: subtle }]}>It only takes a few minutes</Text>
+            </TouchableOpacity>
           ) : (
-            <>
-              {properties.slice(0, 2).map(p => {
-                const st = String(p.status || 'DRAFT');
-                const live = st === 'AVAILABLE' || st === 'ACTIVE' || st === 'PUBLISHED';
-                return (
-                  <View key={p.propertyId} style={[styles.propCard, { backgroundColor: card, borderColor: border }]}>
-                    <TouchableOpacity style={styles.propRow} onPress={() => router.push(`/short-property/${p.propertyId}` as any)}>
-                      <View style={styles.propImgWrap}>
-                        {(p.thumbnail || p.images?.[0]) ? (
-                          <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={styles.propImg} contentFit="cover" />
-                        ) : (
-                          <View style={[styles.propImgPlaceholder, { backgroundColor: `${tint}08` }]}><Ionicons name="image-outline" size={18} color={tint} /></View>
-                        )}
-                      </View>
-                      <View style={styles.propInfo}>
-                        <Text style={[styles.propTitle, { color: text }]} numberOfLines={1}>{p.title}</Text>
-                        <Text style={[styles.propLoc, { color: subtle }]}>{p.district}, {p.region}</Text>
-                        <View style={styles.propBottom}>
-                          <Text style={[styles.propPrice, { color: text }]}>{p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}/n</Text>
-                          <View style={[styles.statusPill, { backgroundColor: live ? `${tint}12` : '#fef3c7' }]}>
-                            <Text style={[styles.statusPillText, { color: live ? tint : '#92400e' }]}>{live ? 'Live' : 'Draft'}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                    <View style={[styles.propActions, { borderTopColor: border }]}>
-                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}>
-                        <Ionicons name="create-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.actBtn} onPress={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}>
-                        <Ionicons name="calendar-outline" size={15} color={text} /><Text style={[styles.actText, { color: text }]}>Calendar</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.actBtn} onPress={() => handleDelete(p.propertyId, p.title)}>
-                        <Ionicons name="trash-outline" size={15} color="#ef4444" /><Text style={[styles.actText, { color: '#ef4444' }]}>Delete</Text>
-                      </TouchableOpacity>
+            properties.map(p => {
+              const live = ['AVAILABLE', 'ACTIVE', 'PUBLISHED'].includes(String(p.status || ''));
+              return (
+                <TouchableOpacity key={p.propertyId} style={[s.listingCard, { backgroundColor: card }]} onPress={() => router.push(`/short-property/${p.propertyId}` as any)} activeOpacity={0.8}>
+                  <View style={s.listingImgWrap}>
+                    {(p.thumbnail || p.images?.[0]) ? (
+                      <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={s.listingImg} contentFit="cover" />
+                    ) : (
+                      <View style={[s.listingImgEmpty, { backgroundColor: `${tint}06` }]}><Ionicons name="image-outline" size={20} color={tint} /></View>
+                    )}
+                    <View style={[s.liveTag, { backgroundColor: live ? '#16a34a' : '#f59e0b' }]}>
+                      <Text style={s.liveTagText}>{live ? 'Live' : 'Draft'}</Text>
                     </View>
                   </View>
-                );
-              })}
-              {properties.length > 2 && (
-                <TouchableOpacity style={[styles.viewMoreBtn, { borderColor: border }]} onPress={() => router.push('/landlord/properties' as any)}>
-                  <Text style={[styles.viewMoreText, { color: tint }]}>View all {properties.length} listings</Text>
-                  <Ionicons name="arrow-forward" size={16} color={tint} />
+                  <View style={s.listingBody}>
+                    <Text style={[s.listingTitle, { color: text }]} numberOfLines={1}>{p.title}</Text>
+                    <Text style={[s.listingLoc, { color: subtle }]}>{p.district}, {p.region}</Text>
+                    <Text style={[s.listingPrice, { color: text }]}>{p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()} <Text style={{ color: subtle, fontWeight: '400' }}>/ night</Text></Text>
+                  </View>
+                  <View style={s.listingActions}>
+                    <TouchableOpacity style={[s.listingActBtn, { backgroundColor: `${tint}08` }]} onPress={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}>
+                      <Ionicons name="create-outline" size={15} color={tint} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[s.listingActBtn, { backgroundColor: `${tint}08` }]} onPress={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}>
+                      <Ionicons name="calendar-outline" size={15} color={tint} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[s.listingActBtn, { backgroundColor: '#fef2f2' }]} onPress={() => handleDelete(p.propertyId, p.title)}>
+                      <Ionicons name="trash-outline" size={15} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
                 </TouchableOpacity>
-              )}
-            </>
+              );
+            })
           )}
         </View>
 
-        {/* Menu items */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: text }]}>Manage</Text>
-          {[
-            { key: 'stats' as Subpage, icon: 'bar-chart-outline', label: 'Earnings & Stats', desc: 'Revenue charts & analytics' },
-            { key: 'bookings' as Subpage, icon: 'calendar-outline', label: 'Bookings', desc: 'Approve requests & manage stays', badge: pendingCount },
-            { key: 'reviews' as Subpage, icon: 'star-outline', label: 'Reviews', desc: 'See what guests say' },
-            { key: 'payouts' as Subpage, icon: 'card-outline', label: 'Payouts', desc: 'M-Pesa & bank setup' },
-            { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', desc: 'Notification number' },
-          ].map(item => (
-            <TouchableOpacity key={item.key} style={[styles.menuItem, { borderColor: border }]} onPress={() => setPage(item.key)}>
-              <Ionicons name={item.icon as any} size={22} color={item.key === 'whatsapp' ? '#25d366' : tint} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuLabel, { color: text }]}>{item.label}</Text>
-                <Text style={[styles.menuDesc, { color: subtle }]}>{item.desc}</Text>
-              </View>
-              {item.badge ? (
-                <View style={[styles.badge, { backgroundColor: '#ef4444' }]}><Text style={styles.badgeText}>{item.badge}</Text></View>
-              ) : (
-                <Ionicons name="chevron-forward" size={18} color={border} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Quick actions grid */}
+        {properties.length > 0 && (
+          <View style={s.quickSection}>
+            <Text style={[s.sectionTitle, { color: text }]}>Quick actions</Text>
+            <View style={s.quickGrid}>
+              {[
+                { key: 'bookings' as Subpage, icon: 'calendar', label: 'Bookings', color: tint },
+                { key: 'stats' as Subpage, icon: 'trending-up', label: 'Earnings', color: '#16a34a' },
+                { key: 'reviews' as Subpage, icon: 'star', label: 'Reviews', color: '#f59e0b' },
+                { key: 'payouts' as Subpage, icon: 'card', label: 'Payouts', color: '#8b5cf6' },
+                { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', color: '#25d366' },
+              ].map(item => (
+                <TouchableOpacity key={item.key} style={[s.quickItem, { backgroundColor: card }]} onPress={() => setPage(item.key)} activeOpacity={0.7}>
+                  <View style={[s.quickIcon, { backgroundColor: `${item.color}12` }]}>
+                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                  </View>
+                  <Text style={[s.quickLabel, { color: text }]}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   fill: { flex: 1 },
+  content: { paddingBottom: 20 },
 
-  // Greeting
-  greetSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  greeting: { fontSize: 24, fontWeight: '800' },
+  // Header
+  headerRow: { paddingHorizontal: 20, paddingTop: 16 },
+  headerTitle: { fontSize: 28, fontWeight: '800' },
+  headerGreet: { paddingHorizontal: 20, fontSize: 15, marginTop: 4, marginBottom: 16 },
 
-  // Add button (pill in header)
-  addBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
-    borderWidth: 1,
-  },
-  addBtnText: { fontSize: 13, fontWeight: '600' },
+  // Alert card
+  alertCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, padding: 16, borderRadius: 14, gap: 12, marginBottom: 16 },
+  alertDot: { width: 8, height: 8, borderRadius: 4 },
+  alertTitle: { fontSize: 15, fontWeight: '700', color: '#92400e' },
+  alertSub: { fontSize: 12, color: '#92400e', marginTop: 1 },
 
-  // Summary cards
-  summaryScroll: { paddingHorizontal: 20, paddingVertical: 12, gap: 10 },
-  summaryCard: { width: 130, padding: 14, borderRadius: 14, borderWidth: 1, justifyContent: 'space-between', gap: 6 },
-  summaryNum: { fontSize: 20, fontWeight: '800', color: '#92400e' },
-  summaryLabel: { fontSize: 12, fontWeight: '500', color: '#92400e', lineHeight: 16 },
+  // Stats
+  statsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 24 },
+  statCard: { flex: 1, padding: 16, borderRadius: 14, alignItems: 'center' },
+  statValue: { fontSize: 18, fontWeight: '800' },
+  statLabel: { fontSize: 12, marginTop: 4, fontWeight: '500' },
 
-  // Sections
-  mainContent: { paddingBottom: 40 },
-  section: { paddingHorizontal: 20, marginTop: 24 },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  // Listings
+  listingsSection: { paddingHorizontal: 20 },
+  listingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sectionTitle: { fontSize: 18, fontWeight: '700' },
-  sectionCount: { fontSize: 14, fontWeight: '600' },
+  newListingBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 16 },
+  newListingText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
-  // Property cards
-  propCard: { borderRadius: 14, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
-  propRow: { flexDirection: 'row', padding: 12, gap: 12 },
-  propImgWrap: { width: 60, height: 60, borderRadius: 10, overflow: 'hidden' },
-  propImg: { width: '100%', height: '100%' },
-  propImgPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  propInfo: { flex: 1, justifyContent: 'center' },
-  propTitle: { fontSize: 14, fontWeight: '600' },
-  propLoc: { fontSize: 12, marginTop: 2 },
-  propBottom: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  propPrice: { fontSize: 13, fontWeight: '600' },
-  statusPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  statusPillText: { fontSize: 10, fontWeight: '700' },
-  propActions: { flexDirection: 'row', borderTopWidth: 1, paddingVertical: 8, paddingHorizontal: 12 },
-  actBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 4 },
-  actText: { fontSize: 12, fontWeight: '600' },
+  // Listing card
+  listingCard: { borderRadius: 14, marginBottom: 14, overflow: 'hidden' },
+  listingImgWrap: { width: '100%', height: 140, position: 'relative' },
+  listingImg: { width: '100%', height: '100%' },
+  listingImgEmpty: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
+  liveTag: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  liveTagText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  listingBody: { padding: 14 },
+  listingTitle: { fontSize: 16, fontWeight: '600' },
+  listingLoc: { fontSize: 13, marginTop: 3 },
+  listingPrice: { fontSize: 15, fontWeight: '700', marginTop: 6 },
+  listingActions: { flexDirection: 'row', paddingHorizontal: 14, paddingBottom: 12, gap: 8 },
+  listingActBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 
-  // Empty state
-  emptyWrap: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
-  emptyIcon: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  emptySub: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 12 },
-  emptyBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  viewMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1, marginTop: 4 },
-  viewMoreText: { fontSize: 14, fontWeight: '600' },
+  // Empty listing
+  emptyCard: { borderWidth: 1.5, borderStyle: 'dashed' as any, borderRadius: 14, padding: 32, alignItems: 'center' },
+  emptyIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  emptyTitle: { fontSize: 17, fontWeight: '700' },
+  emptySub: { fontSize: 13, marginTop: 4 },
 
-  // Menu
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, borderBottomWidth: 1 },
-  menuLabel: { fontSize: 15, fontWeight: '600' },
-  menuDesc: { fontSize: 12, marginTop: 1 },
-  badge: { minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  // Quick actions
+  quickSection: { paddingHorizontal: 20, marginTop: 28 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  quickItem: { width: '31%', alignItems: 'center', paddingVertical: 18, borderRadius: 14 },
+  quickIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  quickLabel: { fontSize: 12, fontWeight: '600' },
 
   // Sub-pages
-  subHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  subHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+  subBack: { width: 30 },
   subTitle: { fontSize: 17, fontWeight: '600' },
   subContent: { padding: 20, paddingBottom: 40 },
 
   // Auth
   authWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  authIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  authTitle: { fontSize: 22, fontWeight: '700' },
-  authSub: { fontSize: 14, textAlign: 'center', marginTop: 6, lineHeight: 20 },
-  primaryBtn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12, marginTop: 24 },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  linkText: { fontSize: 15, fontWeight: '600', marginTop: 14 },
+  authIcon: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  authTitle: { fontSize: 24, fontWeight: '800' },
+  authSub: { fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 },
+  authBtn: { paddingHorizontal: 36, paddingVertical: 14, borderRadius: 12, marginTop: 28 },
+  authBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  authLink: { fontSize: 15, fontWeight: '600', marginTop: 16 },
 });
