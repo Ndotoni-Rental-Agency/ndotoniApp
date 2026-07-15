@@ -37,7 +37,7 @@ export default function HostReviews({ propertyIds, propertyNames }: Props) {
   useEffect(() => {
     if (propertyIds.length > 0) fetchReviews();
     else setLoading(false);
-  }, [propertyIds]);
+  }, [propertyIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReviews = async () => {
     try {

@@ -33,7 +33,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: W, height: H } = Dimensions.get('window');
+const { height: H } = Dimensions.get('window');
 
 export default function ShortTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();

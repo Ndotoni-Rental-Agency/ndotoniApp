@@ -34,7 +34,7 @@ export default function QuickActions({ colors, pendingCount = 0, onAction }: Qui
     } else {
       pulseAnim.setValue(1);
     }
-  }, [pendingCount]);
+  }, [pendingCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <View style={s.section}>

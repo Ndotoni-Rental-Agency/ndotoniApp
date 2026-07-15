@@ -30,8 +30,6 @@ export default function PropertyMapView({
   radius = 600,
 }: PropertyMapViewProps) {
   const [expanded, setExpanded] = useState(false);
-  const backgroundColor = useThemeColor({ light: '#f3f4f6', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#2c2c2e' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';

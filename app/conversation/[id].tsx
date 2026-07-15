@@ -39,14 +39,12 @@ export default function ConversationScreen() {
     loadingMessages,
     sendingMessage,
     conversations,
-    loadingConversations,
     loadConversations,
   } = useChat();
 
-  const { deleteMessage: deleteChatMessage, isDeletingMessage } = useChatDeletion();
+  const { deleteMessage: deleteChatMessage } = useChatDeletion();
 
   const [messageText, setMessageText] = useState('');
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
@@ -76,7 +74,7 @@ export default function ConversationScreen() {
       loadMessages(decodedId);
       markConversationAsRead(decodedId);
     }
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -100,27 +98,6 @@ export default function ConversationScreen() {
       Alert.alert('Error', 'Failed to send message. Please try again.');
       setMessageText(text); // Restore message on error
     }
-  };
-
-  const handleDeleteMessage = (messageId: string) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await deleteChatMessage(messageId);
-            if (success && decodedId) {
-              // Reload messages after deletion
-              await loadMessages(decodedId);
-            }
-          },
-        },
-      ]
-    );
   };
 
   const handleDeleteSelectedMessages = () => {

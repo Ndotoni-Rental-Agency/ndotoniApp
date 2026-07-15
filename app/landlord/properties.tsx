@@ -76,7 +76,6 @@ export default function LandlordPropertiesScreen() {
   const renderPropertyCard = ({ item: property }: { item: any }) => {
     const thumbnail = property.thumbnail || property.images?.[0];
     const isDraft = !property.status || property.status === 'DRAFT';
-    const isActive = property.status === 'ACTIVE' || property.status === 'AVAILABLE' || property.status === 'PUBLISHED';
     
     return (
       <View style={[styles.propertyCard, { backgroundColor: cardBg, borderColor }]}>

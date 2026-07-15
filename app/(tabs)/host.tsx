@@ -55,14 +55,14 @@ export default function HostDashboardScreen() {
 
   useEffect(() => {
     if (properties.length > 0 && isAuthenticated) fetchStats();
-  }, [properties, isAuthenticated]);
+  }, [properties, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll for new pending bookings every 15 seconds
   useEffect(() => {
     if (!isAuthenticated || properties.length === 0) return;
     const interval = setInterval(() => { fetchStats(); }, 15000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, properties.length]);
+  }, [isAuthenticated, properties.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStats = async () => {
     let earned = 0, pending = 0, upcoming = 0;

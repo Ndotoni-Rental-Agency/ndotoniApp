@@ -25,7 +25,7 @@ type SectionKey = 'personal' | 'contact' | 'address' | 'emergency' | 'identifica
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
-  const { updateUserProfile, isUpdating } = useUpdateUser();
+  const { updateUserProfile } = useUpdateUser();
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -150,7 +150,7 @@ export default function EditProfileScreen() {
       } else {
         Alert.alert('Error', result.message);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setSavingSection(null);

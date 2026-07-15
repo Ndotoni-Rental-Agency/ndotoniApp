@@ -38,7 +38,7 @@ export default function AuthCallback() {
     };
 
     processCallback();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <View style={styles.container}>

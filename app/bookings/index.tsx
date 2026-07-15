@@ -52,7 +52,7 @@ export default function BookingsScreen() {
     if (isAuthenticated) {
       fetchBookings();
     }
-  }, [isAuthenticated, selectedTab]);
+  }, [isAuthenticated, selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookings = async () => {
     try {

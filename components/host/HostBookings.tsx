@@ -1,4 +1,3 @@
-import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { approveBooking, declineBooking } from '@/lib/graphql/mutations';

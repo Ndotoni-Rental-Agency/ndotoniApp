@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Review } from '@/lib/API';
-import GraphQLClient from '@/lib/graphql-client';
+import { GraphQLClient } from '@/lib/graphql-client';
 import { getPropertyReviews } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -39,11 +39,10 @@ export default function PropertyReviews({
   const tint = useThemeColor({}, 'tint');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
   const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
-  const card = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
 
   useEffect(() => {
     fetchReviews();
-  }, [propertyId]);
+  }, [propertyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReviews = async () => {
     try {

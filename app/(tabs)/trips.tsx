@@ -50,7 +50,7 @@ export default function TripsScreen() {
 
   useEffect(() => {
     if (isAuthenticated) fetchBookings();
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookings = async () => {
     try {

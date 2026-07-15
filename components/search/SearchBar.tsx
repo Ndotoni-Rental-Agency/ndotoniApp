@@ -34,7 +34,6 @@ export default function SearchBar({
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({ light: '#ddd', dark: '#333' }, 'background');
   const subtleColor = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
-  const tintColor = useThemeColor({}, 'tint');
   const shadowBg = useThemeColor({ light: '#000', dark: '#000' }, 'background');
 
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
@@ -56,7 +55,7 @@ export default function SearchBar({
       });
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dateSummary = checkInDate && checkOutDate
     ? `${formatDateShort(checkInDate)} – ${formatDateShort(checkOutDate)}`

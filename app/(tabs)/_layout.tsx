@@ -12,7 +12,6 @@ export default function TabLayout() {
   const isDark = colorScheme === 'dark';
 
   const tabBarBg = isDark ? '#0a0a0a' : '#ffffff';
-  const tabBarBorder = isDark ? '#1c1c1e' : '#f0f0f0';
   const inactiveColor = isDark ? '#6b7280' : '#9ca3af';
   const activeColor = Colors[colorScheme ?? 'light'].tint;
 

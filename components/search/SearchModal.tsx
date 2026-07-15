@@ -77,7 +77,7 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
       slideAnim.setValue(H);
       setStep('where');
     }
-  }, [visible]);
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = () => {
     setSearchQuery('');

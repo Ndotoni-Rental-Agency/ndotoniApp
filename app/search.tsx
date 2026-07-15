@@ -1,7 +1,7 @@
 import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import GraphQLClient from '@/lib/graphql-client';
-import { getDistricts, getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -35,7 +35,6 @@ export default function SearchScreen() {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [regions, setRegions] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -54,13 +53,6 @@ export default function SearchScreen() {
   const [selectedDistrict, setSelectedDistrict] = useState(district || '');
 
   useEffect(() => { fetchRegions(); }, []);
-
-  useEffect(() => {
-    if (selectedRegion) {
-      const r = regions.find(r => r.name === selectedRegion);
-      if (r) fetchDistricts(r.id);
-    }
-  }, [selectedRegion, regions]);
 
   const fetchProperties = async (loadMore = false) => {
     try {
@@ -107,19 +99,12 @@ export default function SearchScreen() {
     fetchProperties(true);
   };
 
-  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict]);
+  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRegions = async () => {
     try {
       const data = await GraphQLClient.executePublic<{ getRegions: any[] }>(getRegions);
       setRegions(data.getRegions || []);
-    } catch {}
-  };
-
-  const fetchDistricts = async (regionId: string) => {
-    try {
-      const data = await GraphQLClient.executePublic<{ getDistricts: any[] }>(getDistricts, { regionId });
-      setDistricts(data.getDistricts || []);
     } catch {}
   };
 

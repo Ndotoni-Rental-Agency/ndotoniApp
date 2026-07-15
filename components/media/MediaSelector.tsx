@@ -50,7 +50,7 @@ export default function MediaSelector({
     if (user) {
       fetchMediaLibrary();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMediaLibrary = async () => {
     if (!user) return;
@@ -214,6 +214,7 @@ export default function MediaSelector({
 
   const generateVideoThumbnail = async (videoUri: string): Promise<string | null> => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const VideoThumbnails = require('expo-video-thumbnails');
       const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
         time: 1000, // Get frame at 1 second

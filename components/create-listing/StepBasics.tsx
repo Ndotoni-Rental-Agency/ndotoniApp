@@ -5,7 +5,7 @@ import AppSwitch from '@/components/ui/AppSwitch';
 import { StepProps } from './types';
 
 export default function StepBasics({ form, updateField, colors }: StepProps) {
-  const { text, tint, card, border, subtle } = colors;
+  const { text, card, border, subtle } = colors;
 
   const Counter = ({ label, valueKey, min, max }: {
     label: string; valueKey: string; min: number; max: number;

@@ -92,7 +92,7 @@ export default function MapCoordinatesPicker({
 
       initializeMap();
     }
-  }, [region, district, hasInitialized]);
+  }, [region, district, hasInitialized]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-geocode when address changes (after initialization)
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function MapCoordinatesPicker({
 
       updateMapLocation();
     }
-  }, [region, district, ward]);
+  }, [region, district, ward]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMarkerDragEnd = (e: any) => {
     const coords = e.nativeEvent.coordinate;

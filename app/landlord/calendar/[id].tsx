@@ -73,7 +73,7 @@ export default function PropertyCalendarScreen() {
     } finally { setIsLoading(false); }
   };
 
-  useEffect(() => { fetchBlockedDates(currentMonth); }, [propertyId, currentMonth]);
+  useEffect(() => { fetchBlockedDates(currentMonth); }, [propertyId, currentMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchProperty = async () => {

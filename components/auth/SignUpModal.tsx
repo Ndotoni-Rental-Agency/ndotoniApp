@@ -48,7 +48,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       setIsSocialLoading(false);
       onClose();
     }
-  }, [isAuthenticated, visible, isSocialLoading]);
+  }, [isAuthenticated, visible, isSocialLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignUp = async () => {
     if (!email || !password || !firstName || !lastName || !phoneNumber) {

@@ -103,7 +103,7 @@ export default function ReservationModal({
       setTimeout(() => setShowCalendar(true), 400);
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [visible]);
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When user signs in while modal is open, auto-fill and advance
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function ReservationModal({
       setShowSignUp(false);
       setStep('guest-info');
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Business logic ───
 

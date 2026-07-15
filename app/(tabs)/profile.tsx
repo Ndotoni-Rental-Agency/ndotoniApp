@@ -29,9 +29,9 @@ export default function ProfileScreen() {
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
   
   const { user, isAuthenticated, isLoading, signOut, refreshUser } = useAuth();
-  const { themeMode, setThemeMode, isDark } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
-  const { updateUserProfile, isUpdating } = useUpdateUser();
+  const { setThemeMode, isDark } = useTheme();
+  const { language, setLanguage } = useLanguage();
+  const { updateUserProfile } = useUpdateUser();
   
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);

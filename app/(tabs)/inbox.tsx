@@ -27,7 +27,7 @@ export default function MessagesScreen() {
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { conversations, loadConversations, loadingConversations } = useChat();
-  const { deleteConversation, isDeletingConversation } = useChatDeletion();
+  const { deleteConversation } = useChatDeletion();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSignInModal, setShowSignInModal] = useState(false);

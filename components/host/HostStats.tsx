@@ -31,7 +31,7 @@ export default function HostStats({ propertyIds }: Props) {
   useEffect(() => {
     if (propertyIds.length > 0) fetchData();
     else setLoading(false);
-  }, [propertyIds]);
+  }, [propertyIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
