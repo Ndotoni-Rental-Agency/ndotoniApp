@@ -33,7 +33,6 @@ function RootLayoutContent() {
             headerShown: false,
           }} 
         />
-        <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="short-property/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
