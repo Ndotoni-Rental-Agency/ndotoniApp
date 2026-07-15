@@ -133,6 +133,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fetch user profile from backend
           await refreshUserFromBackend();
         }
+      } else {
+        // Not authenticated via token check — but check if we have a cached user
+        // and try to refresh the session before giving up. This covers cases where
+        // the app was closed for a long time but the refresh token is still valid.
+        const storedUser = await AsyncStorage.getItem(USER_KEY);
+        if (storedUser) {
+          console.log('[AuthContext] Token check failed but cached user exists, attempting token refresh...');
+          try {
+            // Try getting a fresh access token (will trigger refresh internally)
+            const token = await HybridAuthService.getAccessToken();
+            if (token) {
+              console.log('[AuthContext] Token refresh succeeded, restoring session');
+              const user = JSON.parse(storedUser);
+              setAuthState({
+                user,
+                accessToken: 'COGNITO_MANAGED',
+                refreshToken: 'COGNITO_MANAGED',
+                isAuthenticated: true,
+              });
+            } else {
+              console.log('[AuthContext] Token refresh failed, clearing session');
+              await AsyncStorage.removeItem(USER_KEY);
+            }
+          } catch (refreshError) {
+            console.log('[AuthContext] Token refresh error, clearing session:', refreshError);
+            await AsyncStorage.removeItem(USER_KEY);
+          }
+        }
       }
       
       setIsLoading(false);

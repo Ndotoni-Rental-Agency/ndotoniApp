@@ -286,6 +286,9 @@ export async function getCurrentUser(): Promise<User | null> {
 
 /**
  * Check if user is authenticated
+ * Returns true if we have a stored user session — even if the access token is expired,
+ * because the refresh token (or Cognito session) can still be used to get new tokens.
+ * The user is only considered unauthenticated if there is no stored session at all.
  */
 export async function isAuthenticated(): Promise<boolean> {
   const user = await getCurrentUser();
@@ -294,25 +297,48 @@ export async function isAuthenticated(): Promise<boolean> {
     return false;
   }
   
-  // Check if token is expired
-  const now = Math.floor(Date.now() / 1000);
-  const isExpired = user.expires_at ? now >= user.expires_at : true;
-  
-  const isAuth = !isExpired;
-  console.log('[OIDC] isAuthenticated:', isAuth, {
-    now,
-    expiresAt: user.expires_at,
-    isExpired
+  // We have a stored user session — consider the user authenticated.
+  // Token refresh will happen lazily when getAccessToken is called.
+  console.log('[OIDC] isAuthenticated: true (user session exists)', {
+    email: user.profile?.email,
+    sub: user.profile?.sub,
+    expiresAt: user.expires_at
   });
-  return isAuth;
+  return true;
 }
 
 /**
  * Get access token
+ * If the stored token is expired, attempts a silent refresh first.
  */
 export async function getAccessToken(): Promise<string | null> {
   const user = await getCurrentUser();
-  return user?.access_token || null;
+  if (!user) return null;
+
+  // Check if token is expired
+  const now = Math.floor(Date.now() / 1000);
+  const isExpired = user.expires_at ? now >= user.expires_at : true;
+
+  if (!isExpired) {
+    return user.access_token || null;
+  }
+
+  // Token expired — attempt refresh using the refresh token
+  if (user.refresh_token) {
+    console.log('[OIDC] Access token expired, attempting refresh...');
+    try {
+      const refreshed = await refreshTokensManually(user.refresh_token);
+      if (refreshed) {
+        return refreshed.access_token || null;
+      }
+    } catch (error) {
+      console.error('[OIDC] Token refresh failed:', error);
+    }
+  }
+
+  // Return the expired token as fallback — the API will reject it and
+  // the auth context will handle re-authentication if needed
+  return user.access_token || null;
 }
 
 /**
@@ -324,12 +350,86 @@ export async function getIdToken(): Promise<string | null> {
 }
 
 /**
+ * Refresh tokens using the refresh_token grant
+ * Exchanges the refresh token for new access and ID tokens via Cognito's token endpoint.
+ */
+async function refreshTokensManually(refreshToken: string): Promise<User | null> {
+  try {
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: oidcConfig.client_id,
+      refresh_token: refreshToken,
+    });
+
+    const response = await fetch(oidcConfig.token_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[OIDC] Refresh token request failed:', response.status, errorBody);
+      // If refresh token is revoked or expired, clear the session
+      if (response.status === 400 || response.status === 401) {
+        await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      }
+      return null;
+    }
+
+    const tokens = await response.json();
+
+    // Decode the new ID token
+    const idTokenPayload = decodeJwt(tokens.id_token);
+
+    // Build updated user — refresh tokens are not re-issued by Cognito,
+    // so we keep the original refresh_token
+    const updatedUser: User = {
+      id_token: tokens.id_token,
+      access_token: tokens.access_token,
+      refresh_token: refreshToken, // Cognito does not return a new refresh token
+      token_type: tokens.token_type || 'Bearer',
+      scope: tokens.scope || oidcConfig.scope,
+      profile: {
+        sub: idTokenPayload.sub,
+        email: idTokenPayload.email,
+        email_verified: idTokenPayload.email_verified,
+        given_name: idTokenPayload.given_name,
+        family_name: idTokenPayload.family_name,
+        name: idTokenPayload.name,
+        ...idTokenPayload,
+      },
+      expires_at: idTokenPayload.exp,
+      session_state: null,
+      state: null,
+      expired: false,
+      scopes: (tokens.scope || oidcConfig.scope).split(' '),
+    } as User;
+
+    // Persist the updated user
+    await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+    console.log('[OIDC] Token refresh successful, new expiry:', updatedUser.expires_at);
+
+    return updatedUser;
+  } catch (error) {
+    console.error('[OIDC] refreshTokensManually error:', error);
+    return null;
+  }
+}
+
+/**
  * Refresh tokens
  */
 export async function refreshTokens(): Promise<User | null> {
   try {
-    const user = await userManager.signinSilent();
-    return user;
+    const user = await getCurrentUser();
+    if (user?.refresh_token) {
+      return await refreshTokensManually(user.refresh_token);
+    }
+    const refreshedUser = await userManager.signinSilent();
+    return refreshedUser;
   } catch (error) {
     console.error('Token refresh error:', error);
     return null;
