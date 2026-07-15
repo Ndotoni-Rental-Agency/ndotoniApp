@@ -61,8 +61,13 @@ export default function TripsScreen() {
         ]);
         const confirmed = Array.isArray(confirmedRes?.listMyBookings?.bookings) ? confirmedRes.listMyBookings.bookings : [];
         const pending = Array.isArray(pendingRes?.listMyBookings?.bookings) ? pendingRes.listMyBookings.bookings : [];
+        // Filter out bookings where property no longer exists and user hasn't paid
+        const isValid = (b: any) => {
+          if (!b.property?.title && b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED') return false;
+          return true;
+        };
         // Combine and sort: awaiting payment first, then by check-in date
-        const all = [...confirmed, ...pending].sort((a: any, b: any) => {
+        const all = [...confirmed, ...pending].filter(isValid).sort((a: any, b: any) => {
           const aNeeds = a.paymentStatus !== 'CAPTURED' && a.paymentStatus !== 'AUTHORIZED';
           const bNeeds = b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED';
           if (aNeeds && !bNeeds) return -1;
