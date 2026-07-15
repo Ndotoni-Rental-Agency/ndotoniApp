@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DashboardColors, Subpage } from './types';
 
 interface QuickActionsProps {
   colors: DashboardColors;
+  pendingCount?: number;
   onAction: (page: Subpage) => void;
 }
 
@@ -16,8 +17,24 @@ const ACTIONS = [
   { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', desc: 'Notification number', color: '#25d366' },
 ];
 
-export default function QuickActions({ colors, onAction }: QuickActionsProps) {
+export default function QuickActions({ colors, pendingCount = 0, onAction }: QuickActionsProps) {
   const { text, card, subtle } = colors;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (pendingCount > 0) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.3, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [pendingCount]);
 
   return (
     <View style={s.section}>
@@ -37,9 +54,16 @@ export default function QuickActions({ colors, onAction }: QuickActionsProps) {
               <Text style={[s.label, { color: text }]}>{item.label}</Text>
               <Text style={[s.desc, { color: subtle }]}>{item.desc}</Text>
             </View>
-            <View style={[s.arrow, { backgroundColor: `${item.color}10` }]}>
-              <Ionicons name="arrow-forward" size={14} color={item.color} />
-            </View>
+            {/* Pulsing badge for bookings with pending count */}
+            {item.key === 'bookings' && pendingCount > 0 ? (
+              <Animated.View style={[s.badge, { transform: [{ scale: pulseAnim }] }]}>
+                <Text style={s.badgeText}>{pendingCount}</Text>
+              </Animated.View>
+            ) : (
+              <View style={[s.arrow, { backgroundColor: `${item.color}10` }]}>
+                <Ionicons name="arrow-forward" size={14} color={item.color} />
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -63,4 +87,6 @@ const s = StyleSheet.create({
   label: { fontSize: 15, fontWeight: '700' },
   desc: { fontSize: 13, marginTop: 2 },
   arrow: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  badge: { backgroundColor: '#ef4444', minWidth: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 });

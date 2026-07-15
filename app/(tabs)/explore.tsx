@@ -56,6 +56,13 @@ export default function HostDashboardScreen() {
     if (properties.length > 0 && isAuthenticated) fetchStats();
   }, [properties, isAuthenticated]);
 
+  // Poll for new pending bookings every 15 seconds
+  useEffect(() => {
+    if (!isAuthenticated || properties.length === 0) return;
+    const interval = setInterval(() => { fetchStats(); }, 15000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, properties.length]);
+
   const fetchStats = async () => {
     let earned = 0, pending = 0, upcoming = 0;
     try {
@@ -188,7 +195,7 @@ export default function HostDashboardScreen() {
         </View>
 
         {/* Quick actions */}
-        {properties.length > 0 && <QuickActions colors={colors} onAction={setPage} />}
+        {properties.length > 0 && <QuickActions colors={colors} pendingCount={pendingCount} onAction={setPage} />}
 
         <View style={{ height: 40 }} />
       </ScrollView>
