@@ -13,7 +13,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -317,7 +317,7 @@ export default function ProfileScreen() {
     id: string;
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
-    route?: string;
+    route?: Href;
     action?: () => void;
   }
 

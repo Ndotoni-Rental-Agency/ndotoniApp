@@ -60,12 +60,7 @@ export default function PropertyCard({
     if (onPress) {
       onPress();
     } else {
-      // Navigate to property details based on rental type
-      if (priceUnit === 'night') {
-        router.push(`/short-property/${propertyId}`);
-      } else {
-        router.push(`/property/${propertyId}`);
-      }
+      router.push(`/short-property/${propertyId}`);
     }
   };
 

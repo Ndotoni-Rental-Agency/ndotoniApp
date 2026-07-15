@@ -28,7 +28,7 @@ const INQUIRY_TYPES = [
   { key: 'SUPPORT', label: 'Technical Support', icon: 'build' as const },
   { key: 'GENERAL', label: 'General Question', icon: 'help-circle' as const },
   { key: 'PROPERTY', label: 'Property Issue', icon: 'home' as const },
-  { key: 'PARTNERSHIP', label: 'Partnership', icon: 'handshake' as const },
+  { key: 'PARTNERSHIP', label: 'Partnership', icon: 'people' as const },
 ] as const;
 
 export default function ContactSupportModal({ visible, onClose }: ContactSupportModalProps) {
@@ -46,7 +46,7 @@ export default function ContactSupportModal({ visible, onClose }: ContactSupport
   const [message, setMessage] = useState('');
   const [name, setName] = useState(user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '');
   const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [phone, setPhone] = useState(user?.phoneNumber || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = subject.trim() && message.trim() && name.trim() && email.trim();

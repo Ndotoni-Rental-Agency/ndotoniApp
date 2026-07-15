@@ -22,7 +22,7 @@ export function useChatNavigation() {
       
       // Fallback: redirect to property page where they can authenticate
       if (options.propertyId) {
-        router.push(`/property/${options.propertyId}`);
+        router.push(`/short-property/${options.propertyId}`);
         return;
       }
       

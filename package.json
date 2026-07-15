@@ -73,6 +73,7 @@
     "@graphql-codegen/import-types-preset": "^3.0.1",
     "@graphql-codegen/typescript": "^5.0.6",
     "@graphql-codegen/typescript-operations": "^5.0.8",
+    "@types/node": "^26.1.1",
     "@types/react": "~19.1.0",
     "@types/text-encoding": "^0.0.40",
     "eslint": "^9.25.0",

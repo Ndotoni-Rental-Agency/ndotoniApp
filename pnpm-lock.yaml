@@ -140,13 +140,13 @@ importers:
         version: 14.2.5
       '@aws-amplify/cli-core':
         specifier: ^2.2.3
-        version: 2.2.3(@aws-cdk/cli-plugin-contract@2.182.1)(@aws-sdk/types@3.973.1)(@types/node@25.3.0)(aws-cdk-lib@2.239.0(constructs@10.5.1))(constructs@10.5.1)
+        version: 2.2.3(@aws-cdk/cli-plugin-contract@2.182.1)(@aws-sdk/types@3.973.1)(@types/node@26.1.1)(aws-cdk-lib@2.239.0(constructs@10.5.1))(constructs@10.5.1)
       '@expo/ngrok':
         specifier: ^4.1.3
         version: 4.1.3
       '@graphql-codegen/cli':
         specifier: ^6.1.0
-        version: 6.1.1(@types/node@25.3.0)(graphql@15.8.0)(typescript@5.9.3)
+        version: 6.1.1(@types/node@26.1.1)(graphql@15.8.0)(typescript@5.9.3)
       '@graphql-codegen/import-types-preset':
         specifier: ^3.0.1
         version: 3.0.1(graphql@15.8.0)
@@ -156,6 +156,9 @@ importers:
       '@graphql-codegen/typescript-operations':
         specifier: ^5.0.8
         version: 5.0.8(graphql@15.8.0)
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
       '@types/react':
         specifier: ~19.1.0
         version: 19.1.17
@@ -2748,8 +2751,8 @@ packages:
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
 
-  '@types/node@25.3.0':
-    resolution: {integrity: sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==}
+  '@types/node@26.1.1':
+    resolution: {integrity: sha512-nxAkRSVkN1Y0JC1W8ky/fTfkGsMmcrRsbx+3XoZE+rMOX71kLYTV7fLXpqud1GpbpP5TuffXFqfX7fH2GgZREw==}
 
   '@types/react@19.1.17':
     resolution: {integrity: sha512-Qec1E3mhALmaspIrhWt9jkQMNdw6bReVu64mjvhbhq2NFPftLPVr+l1SZgmw/66WwBNpDh7ao5AT6gF5v41PFA==}
@@ -6567,8 +6570,8 @@ packages:
     resolution: {integrity: sha512-eXL4nmJT7oCpkZsHZUOJo8hcX3GbsiDOa0Qu9F646fi8dT3XuSVopVqAcEiVzSKKH7UoDti23wNX3qGFxcW5Qg==}
     engines: {node: '>=0.10.0'}
 
-  undici-types@7.18.2:
-    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
   undici@6.23.0:
     resolution: {integrity: sha512-VfQPToRA5FZs/qJxLIinmU59u0r7LXqoJkCzinq3ckNJp3vKEh7jTWN589YQ5+aoAC/TGRLyJLCPKcLQbM8r9g==}
@@ -6987,11 +6990,11 @@ snapshots:
     optionalDependencies:
       '@aws-amplify/react-native': 1.3.3(react-native-get-random-values@1.11.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))
 
-  '@aws-amplify/cli-core@2.2.3(@aws-cdk/cli-plugin-contract@2.182.1)(@aws-sdk/types@3.973.1)(@types/node@25.3.0)(aws-cdk-lib@2.239.0(constructs@10.5.1))(constructs@10.5.1)':
+  '@aws-amplify/cli-core@2.2.3(@aws-cdk/cli-plugin-contract@2.182.1)(@aws-sdk/types@3.973.1)(@types/node@26.1.1)(aws-cdk-lib@2.239.0(constructs@10.5.1))(constructs@10.5.1)':
     dependencies:
       '@aws-amplify/platform-core': 1.10.4(@aws-cdk/cli-plugin-contract@2.182.1)(@aws-sdk/types@3.973.1)(aws-cdk-lib@2.239.0(constructs@10.5.1))(constructs@10.5.1)
       '@aws-sdk/client-cloudformation': 3.995.0
-      '@inquirer/prompts': 7.10.1(@types/node@25.3.0)
+      '@inquirer/prompts': 7.10.1(@types/node@26.1.1)
       '@opentelemetry/api': 1.9.0
       execa: 9.6.1
       kleur: 4.1.5
@@ -9976,7 +9979,7 @@ snapshots:
       graphql: 15.8.0
       tslib: 2.6.3
 
-  '@graphql-codegen/cli@6.1.1(@types/node@25.3.0)(graphql@15.8.0)(typescript@5.9.3)':
+  '@graphql-codegen/cli@6.1.1(@types/node@26.1.1)(graphql@15.8.0)(typescript@5.9.3)':
     dependencies:
       '@babel/generator': 7.29.1
       '@babel/template': 7.28.6
@@ -9987,20 +9990,20 @@ snapshots:
       '@graphql-tools/apollo-engine-loader': 8.0.28(graphql@15.8.0)
       '@graphql-tools/code-file-loader': 8.1.28(graphql@15.8.0)
       '@graphql-tools/git-loader': 8.0.32(graphql@15.8.0)
-      '@graphql-tools/github-loader': 9.0.6(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/github-loader': 9.0.6(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/graphql-file-loader': 8.1.9(graphql@15.8.0)
       '@graphql-tools/json-file-loader': 8.0.26(graphql@15.8.0)
       '@graphql-tools/load': 8.1.8(graphql@15.8.0)
-      '@graphql-tools/url-loader': 9.0.6(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/url-loader': 9.0.6(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/utils': 10.11.0(graphql@15.8.0)
-      '@inquirer/prompts': 7.10.1(@types/node@25.3.0)
+      '@inquirer/prompts': 7.10.1(@types/node@26.1.1)
       '@whatwg-node/fetch': 0.10.13
       chalk: 4.1.2
       cosmiconfig: 9.0.0(typescript@5.9.3)
       debounce: 2.2.0
       detect-indent: 6.1.0
       graphql: 15.8.0
-      graphql-config: 5.1.5(@types/node@25.3.0)(graphql@15.8.0)(typescript@5.9.3)
+      graphql-config: 5.1.5(@types/node@26.1.1)(graphql@15.8.0)(typescript@5.9.3)
       is-glob: 4.0.3
       jiti: 2.6.1
       json-to-pretty-yaml: 1.2.2
@@ -10287,7 +10290,7 @@ snapshots:
       - crossws
       - utf-8-validate
 
-  '@graphql-tools/executor-http@1.3.3(@types/node@25.3.0)(graphql@15.8.0)':
+  '@graphql-tools/executor-http@1.3.3(@types/node@26.1.1)(graphql@15.8.0)':
     dependencies:
       '@graphql-hive/signal': 1.0.0
       '@graphql-tools/executor-common': 0.0.4(graphql@15.8.0)
@@ -10297,12 +10300,12 @@ snapshots:
       '@whatwg-node/fetch': 0.10.13
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 15.8.0
-      meros: 1.3.2(@types/node@25.3.0)
+      meros: 1.3.2(@types/node@26.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@types/node'
 
-  '@graphql-tools/executor-http@3.1.0(@types/node@25.3.0)(graphql@15.8.0)':
+  '@graphql-tools/executor-http@3.1.0(@types/node@26.1.1)(graphql@15.8.0)':
     dependencies:
       '@graphql-hive/signal': 2.0.0
       '@graphql-tools/executor-common': 1.0.6(graphql@15.8.0)
@@ -10312,7 +10315,7 @@ snapshots:
       '@whatwg-node/fetch': 0.10.13
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 15.8.0
-      meros: 1.3.2(@types/node@25.3.0)
+      meros: 1.3.2(@types/node@26.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@types/node'
@@ -10351,9 +10354,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@graphql-tools/github-loader@9.0.6(@types/node@25.3.0)(graphql@15.8.0)':
+  '@graphql-tools/github-loader@9.0.6(@types/node@26.1.1)(graphql@15.8.0)':
     dependencies:
-      '@graphql-tools/executor-http': 3.1.0(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/executor-http': 3.1.0(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/graphql-tag-pluck': 8.3.27(graphql@15.8.0)
       '@graphql-tools/utils': 11.0.0(graphql@15.8.0)
       '@whatwg-node/fetch': 0.10.13
@@ -10457,10 +10460,10 @@ snapshots:
       graphql: 15.8.0
       tslib: 2.8.1
 
-  '@graphql-tools/url-loader@8.0.33(@types/node@25.3.0)(graphql@15.8.0)':
+  '@graphql-tools/url-loader@8.0.33(@types/node@26.1.1)(graphql@15.8.0)':
     dependencies:
       '@graphql-tools/executor-graphql-ws': 2.0.7(graphql@15.8.0)
-      '@graphql-tools/executor-http': 1.3.3(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/executor-http': 1.3.3(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/executor-legacy-ws': 1.1.25(graphql@15.8.0)
       '@graphql-tools/utils': 10.11.0(graphql@15.8.0)
       '@graphql-tools/wrap': 10.1.4(graphql@15.8.0)
@@ -10479,10 +10482,10 @@ snapshots:
       - crossws
       - utf-8-validate
 
-  '@graphql-tools/url-loader@9.0.6(@types/node@25.3.0)(graphql@15.8.0)':
+  '@graphql-tools/url-loader@9.0.6(@types/node@26.1.1)(graphql@15.8.0)':
     dependencies:
       '@graphql-tools/executor-graphql-ws': 3.1.4(graphql@15.8.0)
-      '@graphql-tools/executor-http': 3.1.0(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/executor-http': 3.1.0(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/executor-legacy-ws': 1.1.25(graphql@15.8.0)
       '@graphql-tools/utils': 11.0.0(graphql@15.8.0)
       '@graphql-tools/wrap': 11.1.7(graphql@15.8.0)
@@ -10558,128 +10561,128 @@ snapshots:
 
   '@inquirer/ansi@1.0.2': {}
 
-  '@inquirer/checkbox@4.3.2(@types/node@25.3.0)':
+  '@inquirer/checkbox@4.3.2(@types/node@26.1.1)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/confirm@5.1.21(@types/node@25.3.0)':
+  '@inquirer/confirm@5.1.21(@types/node@26.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/core@10.3.2(@types/node@25.3.0)':
+  '@inquirer/core@10.3.2(@types/node@26.1.1)':
     dependencies:
       '@inquirer/ansi': 1.0.2
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
       cli-width: 4.1.0
       mute-stream: 2.0.0
       signal-exit: 4.1.0
       wrap-ansi: 6.2.0
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/editor@4.2.23(@types/node@25.3.0)':
+  '@inquirer/editor@4.2.23(@types/node@26.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/external-editor': 1.0.3(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/external-editor': 1.0.3(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/expand@4.0.23(@types/node@25.3.0)':
+  '@inquirer/expand@4.0.23(@types/node@26.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/external-editor@1.0.3(@types/node@25.3.0)':
+  '@inquirer/external-editor@1.0.3(@types/node@26.1.1)':
     dependencies:
       chardet: 2.1.1
       iconv-lite: 0.7.2
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
   '@inquirer/figures@1.0.15': {}
 
-  '@inquirer/input@4.3.1(@types/node@25.3.0)':
+  '@inquirer/input@4.3.1(@types/node@26.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/number@3.0.23(@types/node@25.3.0)':
+  '@inquirer/number@3.0.23(@types/node@26.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/password@4.0.23(@types/node@25.3.0)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
-    optionalDependencies:
-      '@types/node': 25.3.0
-
-  '@inquirer/prompts@7.10.1(@types/node@25.3.0)':
-    dependencies:
-      '@inquirer/checkbox': 4.3.2(@types/node@25.3.0)
-      '@inquirer/confirm': 5.1.21(@types/node@25.3.0)
-      '@inquirer/editor': 4.2.23(@types/node@25.3.0)
-      '@inquirer/expand': 4.0.23(@types/node@25.3.0)
-      '@inquirer/input': 4.3.1(@types/node@25.3.0)
-      '@inquirer/number': 3.0.23(@types/node@25.3.0)
-      '@inquirer/password': 4.0.23(@types/node@25.3.0)
-      '@inquirer/rawlist': 4.1.11(@types/node@25.3.0)
-      '@inquirer/search': 3.2.2(@types/node@25.3.0)
-      '@inquirer/select': 4.4.2(@types/node@25.3.0)
-    optionalDependencies:
-      '@types/node': 25.3.0
-
-  '@inquirer/rawlist@4.1.11(@types/node@25.3.0)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 25.3.0
-
-  '@inquirer/search@3.2.2(@types/node@25.3.0)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 25.3.0
-
-  '@inquirer/select@4.4.2(@types/node@25.3.0)':
+  '@inquirer/password@4.0.23(@types/node@26.1.1)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@25.3.0)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@25.3.0)
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
+    optionalDependencies:
+      '@types/node': 26.1.1
+
+  '@inquirer/prompts@7.10.1(@types/node@26.1.1)':
+    dependencies:
+      '@inquirer/checkbox': 4.3.2(@types/node@26.1.1)
+      '@inquirer/confirm': 5.1.21(@types/node@26.1.1)
+      '@inquirer/editor': 4.2.23(@types/node@26.1.1)
+      '@inquirer/expand': 4.0.23(@types/node@26.1.1)
+      '@inquirer/input': 4.3.1(@types/node@26.1.1)
+      '@inquirer/number': 3.0.23(@types/node@26.1.1)
+      '@inquirer/password': 4.0.23(@types/node@26.1.1)
+      '@inquirer/rawlist': 4.1.11(@types/node@26.1.1)
+      '@inquirer/search': 3.2.2(@types/node@26.1.1)
+      '@inquirer/select': 4.4.2(@types/node@26.1.1)
+    optionalDependencies:
+      '@types/node': 26.1.1
+
+  '@inquirer/rawlist@4.1.11(@types/node@26.1.1)':
+    dependencies:
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@inquirer/type@3.0.10(@types/node@25.3.0)':
+  '@inquirer/search@3.2.2(@types/node@26.1.1)':
+    dependencies:
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/figures': 1.0.15
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
+      yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
+
+  '@inquirer/select@4.4.2(@types/node@26.1.1)':
+    dependencies:
+      '@inquirer/ansi': 1.0.2
+      '@inquirer/core': 10.3.2(@types/node@26.1.1)
+      '@inquirer/figures': 1.0.15
+      '@inquirer/type': 3.0.10(@types/node@26.1.1)
+      yoctocolors-cjs: 2.1.3
+    optionalDependencies:
+      '@types/node': 26.1.1
+
+  '@inquirer/type@3.0.10(@types/node@26.1.1)':
+    optionalDependencies:
+      '@types/node': 26.1.1
 
   '@isaacs/balanced-match@4.0.1': {}
 
@@ -10722,14 +10725,14 @@ snapshots:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       jest-mock: 29.7.0
 
   '@jest/fake-timers@29.7.0':
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -10763,7 +10766,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -11677,7 +11680,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       '@types/keyv': 3.1.4
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       '@types/responselike': 1.0.3
 
   '@types/estree@1.0.8': {}
@@ -11686,7 +11689,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
   '@types/hammerjs@2.0.46': {}
 
@@ -11708,11 +11711,11 @@ snapshots:
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
-  '@types/node@25.3.0':
+  '@types/node@26.1.1':
     dependencies:
-      undici-types: 7.18.2
+      undici-types: 8.3.0
 
   '@types/react@19.1.17':
     dependencies:
@@ -11720,7 +11723,7 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
   '@types/stack-utils@2.0.3': {}
 
@@ -11730,7 +11733,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -12518,7 +12521,7 @@ snapshots:
 
   chrome-launcher@0.15.2:
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -12527,7 +12530,7 @@ snapshots:
 
   chromium-edge-launcher@0.2.0:
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -13709,13 +13712,13 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql-config@5.1.5(@types/node@25.3.0)(graphql@15.8.0)(typescript@5.9.3):
+  graphql-config@5.1.5(@types/node@26.1.1)(graphql@15.8.0)(typescript@5.9.3):
     dependencies:
       '@graphql-tools/graphql-file-loader': 8.1.9(graphql@15.8.0)
       '@graphql-tools/json-file-loader': 8.0.26(graphql@15.8.0)
       '@graphql-tools/load': 8.1.8(graphql@15.8.0)
       '@graphql-tools/merge': 9.1.7(graphql@15.8.0)
-      '@graphql-tools/url-loader': 8.0.33(@types/node@25.3.0)(graphql@15.8.0)
+      '@graphql-tools/url-loader': 8.0.33(@types/node@26.1.1)(graphql@15.8.0)
       '@graphql-tools/utils': 10.11.0(graphql@15.8.0)
       cosmiconfig: 8.3.6(typescript@5.9.3)
       graphql: 15.8.0
@@ -14103,7 +14106,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -14113,7 +14116,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -14140,7 +14143,7 @@ snapshots:
   jest-mock@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       jest-util: 29.7.0
 
   jest-regex-util@29.6.3: {}
@@ -14148,7 +14151,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -14165,7 +14168,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -14405,9 +14408,9 @@ snapshots:
 
   merge2@1.4.1: {}
 
-  meros@1.3.2(@types/node@25.3.0):
+  meros@1.3.2(@types/node@26.1.1):
     optionalDependencies:
-      '@types/node': 25.3.0
+      '@types/node': 26.1.1
 
   metro-babel-transformer@0.83.3:
     dependencies:
@@ -16136,7 +16139,7 @@ snapshots:
 
   unc-path-regex@0.1.2: {}
 
-  undici-types@7.18.2: {}
+  undici-types@8.3.0: {}
 
   undici@6.23.0: {}
 
