@@ -50,7 +50,7 @@ export default function PropertyCalendarScreen() {
       const response = await GraphQLClient.executeAuthenticated<{
         getBlockedDates: {
           propertyId: string;
-          blockedRanges: Array<{ startDate: string; endDate: string; reason?: string }>;
+          blockedRanges: { startDate: string; endDate: string; reason?: string }[];
         };
       }>(getBlockedDates, {
         propertyId,

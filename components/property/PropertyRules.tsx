@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface PropertyRulesProps {
-  houseRules?: Array<string> | null;
+  houseRules?: string[] | null;
   allowsPets?: boolean | null;
   allowsSmoking?: boolean | null;
   allowsChildren?: boolean | null;

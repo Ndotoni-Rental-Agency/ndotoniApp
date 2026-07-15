@@ -23,6 +23,7 @@ export default function MessagesScreen() {
   const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const searchBarBg = useThemeColor({ light: '#f3f4f6', dark: '#1c1c1e' }, 'background');
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { conversations, loadConversations, loadingConversations } = useChat();
@@ -257,7 +258,7 @@ export default function MessagesScreen() {
             {/* Search Bar */}
             {conversations.length > 0 && (
               <View style={styles.searchContainer}>
-                <View style={[styles.searchBar, { backgroundColor: useThemeColor({ light: '#f3f4f6', dark: cardBg }, 'background') }]}>
+                <View style={[styles.searchBar, { backgroundColor: searchBarBg }]}>
                   <Ionicons name="search" size={18} color={secondaryText} />
                   <TextInput
                     style={[styles.searchInput, { color: textColor }]}
