@@ -2465,3 +2465,27 @@ export const verifyEmail = /* GraphQL */ `mutation VerifyEmail($code: String!, $
   APITypes.VerifyEmailMutationVariables,
   APITypes.VerifyEmailMutation
 >;
+
+export const initiateWhatsAppAssociation = /* GraphQL */ `mutation InitiateWhatsAppAssociation($whatsappNumber: String!) {
+  initiateWhatsAppAssociation(whatsappNumber: $whatsappNumber) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  { whatsappNumber: string },
+  { initiateWhatsAppAssociation: { success: boolean; message: string } }
+>;
+
+export const confirmWhatsAppAssociation = /* GraphQL */ `mutation ConfirmWhatsAppAssociation($code: String!, $whatsappNumber: String!) {
+  confirmWhatsAppAssociation(code: $code, whatsappNumber: $whatsappNumber) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  { code: string; whatsappNumber: string },
+  { confirmWhatsAppAssociation: { success: boolean; message: string } }
+>;
