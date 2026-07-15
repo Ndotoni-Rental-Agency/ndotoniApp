@@ -1,7 +1,7 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React from 'react';
-import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import AppSwitch from '@/components/ui/AppSwitch';
 interface PricingSectionProps {
   formData: {
     currency: string;
@@ -79,11 +79,9 @@ export default function PricingSection({ formData, onUpdate, propertyCategory }:
                 Water, electricity, internet, etc.
               </Text>
             </View>
-            <Switch
+            <AppSwitch
               value={formData.utilitiesIncluded}
               onValueChange={(value) => onUpdate('utilitiesIncluded', value)}
-              trackColor={{ false: borderColor, true: tintColor }}
-              thumbColor="#fff"
             />
           </View>
         </>

@@ -18,7 +18,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -133,24 +132,24 @@ export default function HostDashboardScreen() {
     <SafeAreaView style={[styles.fill, { backgroundColor: bg }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.mainContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}>
 
-        {/* Greeting */}
+        {/* Header with greeting + add button */}
         <View style={styles.greetSection}>
-          <Text style={[styles.greeting, { color: text }]}>Welcome, {firstName} 👋</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: text }]}>Welcome, {firstName} 👋</Text>
+          </View>
+          {properties.length > 0 && (
+            <TouchableOpacity
+              style={[styles.addBtn, { borderColor: border }]}
+              onPress={() => router.push('/landlord/short-property/create' as any)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={16} color={tint} />
+              <Text style={[styles.addBtnText, { color: tint }]}>Add Property</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Add property button — prominent */}
-        <TouchableOpacity style={[styles.addCard, { backgroundColor: tint }]} onPress={() => router.push('/landlord/short-property/create' as any)} activeOpacity={0.85}>
-          <View style={styles.addCardIcon}>
-            <Ionicons name="add" size={24} color={tint} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.addCardTitle}>List a new property</Text>
-            <Text style={styles.addCardSub}>Start earning from short-term stays</Text>
-          </View>
-          <Ionicons name="arrow-forward" size={20} color="#fff" />
-        </TouchableOpacity>
-
-        {/* Summary cards */}
+        {/* Summary cards — only when there's data */}
         {(pendingCount > 0 || upcomingCount > 0 || totalEarned > 0) && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
             {pendingCount > 0 && (
@@ -173,16 +172,32 @@ export default function HostDashboardScreen() {
 
         {/* Your listings */}
         <View style={styles.section}>
-          <View style={styles.sectionHead}>
-            <Text style={[styles.sectionTitle, { color: text }]}>Your listings</Text>
-            <Text style={[styles.sectionCount, { color: subtle }]}>{properties.length}</Text>
-          </View>
+          {properties.length > 0 && (
+            <View style={styles.sectionHead}>
+              <Text style={[styles.sectionTitle, { color: text }]}>Your listings</Text>
+              <Text style={[styles.sectionCount, { color: subtle }]}>{properties.length}</Text>
+            </View>
+          )}
 
           {propsLoading ? <ActivityIndicator color={tint} style={{ paddingVertical: 30 }} /> : properties.length === 0 ? (
-            <TouchableOpacity style={[styles.emptyCard, { borderColor: border }]} onPress={() => router.push('/landlord/short-property/create' as any)}>
-              <Ionicons name="add-circle-outline" size={32} color={tint} />
-              <Text style={[styles.emptyText, { color: text }]}>Add your first property</Text>
-            </TouchableOpacity>
+            /* Empty state — single clear CTA */
+            <View style={styles.emptyWrap}>
+              <View style={[styles.emptyIcon, { backgroundColor: `${tint}10` }]}>
+                <Ionicons name="home-outline" size={40} color={tint} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: text }]}>List your first property</Text>
+              <Text style={[styles.emptySub, { color: subtle }]}>
+                Start hosting guests and earning from{'\n'}short-term stays on Ndotoni.
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyBtn, { backgroundColor: tint }]}
+                onPress={() => router.push('/landlord/short-property/create' as any)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.emptyBtnText}>Create your listing</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               {properties.slice(0, 2).map(p => {
@@ -267,21 +282,16 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
 
   // Greeting
-  greetSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  greetSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   greeting: { fontSize: 24, fontWeight: '800' },
 
-  // Add property card
-  addCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    marginHorizontal: 20, marginTop: 12, marginBottom: 4,
-    paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14,
+  // Add button (pill in header)
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
+    borderWidth: 1,
   },
-  addCardIcon: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  addCardTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  addCardSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
+  addBtnText: { fontSize: 13, fontWeight: '600' },
 
   // Summary cards
   summaryScroll: { paddingHorizontal: 20, paddingVertical: 12, gap: 10 },
@@ -313,9 +323,13 @@ const styles = StyleSheet.create({
   actBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 4 },
   actText: { fontSize: 12, fontWeight: '600' },
 
-  // Empty
-  emptyCard: { borderWidth: 1.5, borderStyle: 'dashed' as any, borderRadius: 14, paddingVertical: 32, alignItems: 'center', gap: 8 },
-  emptyText: { fontSize: 14, fontWeight: '600' },
+  // Empty state
+  emptyWrap: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
+  emptyIcon: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  emptySub: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 12 },
+  emptyBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   viewMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1, marginTop: 4 },
   viewMoreText: { fontSize: 14, fontWeight: '600' },
 

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AppSwitch from '@/components/ui/AppSwitch';
 import { EditTabProps } from './types';
 
 export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
@@ -41,20 +42,20 @@ function ToggleRow({ label, desc, val, set, text, subtle, border, tint }: { labe
   return (
     <View style={[s.toggleRow, { borderBottomColor: border }]}>
       <View style={{ flex: 1 }}><Text style={[s.toggleLabel, { color: text }]}>{label}</Text>{desc && <Text style={[s.toggleDesc, { color: subtle }]}>{desc}</Text>}</View>
-      <Switch value={val} onValueChange={set} trackColor={{ true: tint }} />
+      <AppSwitch value={val} onValueChange={set} />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  secTitle: { fontSize: 17, fontWeight: '700', marginTop: 24, marginBottom: 8 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1 },
-  toggleLabel: { fontSize: 15, fontWeight: '600' },
-  toggleDesc: { fontSize: 12, marginTop: 2 },
-  policyCard: { padding: 14, borderRadius: 12, borderWidth: 1.5, marginBottom: 8 },
-  policyName: { fontSize: 14, fontWeight: '600' },
-  policyDesc: { fontSize: 12, marginTop: 3, lineHeight: 16 },
-  saveBtn: { marginTop: 20, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  secTitle: { fontSize: 17, fontWeight: '700', marginTop: 28, marginBottom: 10 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  toggleLabel: { fontSize: 16, fontWeight: '600' },
+  toggleDesc: { fontSize: 13, marginTop: 3, lineHeight: 18 },
+  policyCard: { padding: 16, borderRadius: 14, borderWidth: 1.5, marginBottom: 10 },
+  policyName: { fontSize: 15, fontWeight: '600' },
+  policyDesc: { fontSize: 13, marginTop: 4, lineHeight: 18 },
+  saveBtn: { marginTop: 24, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   dangerBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14 },
 });

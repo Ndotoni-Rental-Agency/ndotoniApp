@@ -18,13 +18,13 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppSwitch from '@/components/ui/AppSwitch';
 
 export default function EditLongTermPropertyScreen() {
   const params = useLocalSearchParams();
@@ -472,12 +472,9 @@ export default function EditLongTermPropertyScreen() {
                 Property comes with furniture
               </Text>
             </View>
-            <Switch
+            <AppSwitch
               value={formData.furnished}
               onValueChange={(value) => updateField('furnished', value)}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
-              thumbColor="#fff"
             />
           </View>
         </CollapsibleSection>
@@ -499,12 +496,9 @@ export default function EditLongTermPropertyScreen() {
                 Show this property to potential tenants
               </Text>
             </View>
-            <Switch
+            <AppSwitch
               value={formData.available}
               onValueChange={(value) => updateField('available', value)}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              ios_backgroundColor="#d1d5db"
-              thumbColor="#fff"
             />
           </View>
 

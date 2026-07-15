@@ -46,9 +46,9 @@ export default function EditDetailsTab(props: EditTabProps) {
 }
 
 const s = StyleSheet.create({
-  accordion: { borderWidth: 1, borderRadius: 14, marginBottom: 10, overflow: 'hidden' },
-  accordionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
-  accordionLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  accordionTitle: { fontSize: 15, fontWeight: '600' },
-  accordionBody: { paddingHorizontal: 16, paddingBottom: 16 },
+  accordion: { borderWidth: 1, borderRadius: 16, marginBottom: 12, overflow: 'hidden' },
+  accordionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  accordionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  accordionTitle: { fontSize: 16, fontWeight: '600' },
+  accordionBody: { paddingHorizontal: 18, paddingBottom: 20, paddingTop: 4 },
 });

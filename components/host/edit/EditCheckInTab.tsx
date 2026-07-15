@@ -46,12 +46,12 @@ export default function EditCheckInTab({ form, upd, saving, saveSec, text, tint,
 }
 
 const s = StyleSheet.create({
-  secTitle: { fontSize: 17, fontWeight: '700', marginTop: 24, marginBottom: 8 },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 14 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
-  textArea: { minHeight: 70, paddingTop: 12 },
+  secTitle: { fontSize: 17, fontWeight: '700', marginTop: 28, marginBottom: 10 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginTop: 18 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
+  textArea: { minHeight: 80, paddingTop: 14 },
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
-  saveBtn: { marginTop: 20, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  saveBtn: { marginTop: 24, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

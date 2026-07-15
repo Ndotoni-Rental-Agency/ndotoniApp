@@ -101,21 +101,31 @@ export default function EditShortTermPropertyScreen() {
   return (
     <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
       {/* Header */}
-      <View style={[s.header, { borderBottomColor: border }]}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
-        <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>{form.title || 'Edit'}</Text>
-        <View style={{ width: 22 }} />
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
+        <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>{form.title || 'Edit Property'}</Text>
+        <View style={{ width: 30 }} />
       </View>
 
       {/* Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.tabBar, { borderBottomColor: border }]}>
-        {TABS.map(t => (
-          <TouchableOpacity key={t.key} style={[s.tab, tab === t.key && { borderBottomColor: tint, borderBottomWidth: 2 }]} onPress={() => setTab(t.key)}>
-            <Ionicons name={t.icon as any} size={16} color={tab === t.key ? tint : subtle} />
-            <Text style={[s.tabLabel, { color: tab === t.key ? tint : subtle }]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={[s.tabBarWrap, { borderBottomColor: border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabBar}>
+          {TABS.map(t => {
+            const active = tab === t.key;
+            return (
+              <TouchableOpacity
+                key={t.key}
+                style={[s.tab, active && { backgroundColor: `${tint}10`, borderRadius: 20 }]}
+                onPress={() => setTab(t.key)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={t.icon as any} size={16} color={active ? tint : subtle} />
+                <Text style={[s.tabLabel, { color: active ? tint : subtle }]}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Content */}
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -132,10 +142,24 @@ export default function EditShortTermPropertyScreen() {
 const s = StyleSheet.create({
   fill: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: '600', textAlign: 'center', marginHorizontal: 8 },
-  tabBar: { paddingHorizontal: 12, borderBottomWidth: 1, gap: 4 },
-  tab: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 12, paddingHorizontal: 10 },
-  tabLabel: { fontSize: 13, fontWeight: '600' },
-  body: { padding: 20, paddingBottom: 40 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  headerTitle: { flex: 1, fontSize: 17, fontWeight: '700', textAlign: 'center', marginHorizontal: 8 },
+  tabBarWrap: { borderBottomWidth: 1, height: 52 },
+  tabBar: { paddingHorizontal: 16, alignItems: 'center', height: 52 },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginRight: 4,
+  },
+  tabLabel: { fontSize: 14, fontWeight: '600' },
+  body: { padding: 20, paddingBottom: 60 },
 });

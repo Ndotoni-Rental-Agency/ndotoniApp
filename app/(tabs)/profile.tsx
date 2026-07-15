@@ -14,8 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppSwitch from '@/components/ui/AppSwitch';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -222,12 +223,9 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <Switch
+              <AppSwitch
                 value={isDark}
                 onValueChange={toggleTheme}
-                trackColor={{ false: '#d1d5db', true: tintColor }}
-                thumbColor="#fff"
-                ios_backgroundColor="#d1d5db"
               />
             </View>
 
@@ -244,12 +242,9 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <Switch
+              <AppSwitch
                 value={language === 'sw'}
                 onValueChange={toggleLanguage}
-                trackColor={{ false: '#d1d5db', true: tintColor }}
-                thumbColor="#fff"
-                ios_backgroundColor="#d1d5db"
               />
             </View>
           </View>
@@ -409,12 +404,9 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
-            <Switch
+            <AppSwitch
               value={isDark}
               onValueChange={toggleTheme}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              thumbColor="#fff"
-              ios_backgroundColor="#d1d5db"
             />
           </View>
 
@@ -431,12 +423,9 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
-            <Switch
+            <AppSwitch
               value={language === 'sw'}
               onValueChange={toggleLanguage}
-              trackColor={{ false: '#d1d5db', true: tintColor }}
-              thumbColor="#fff"
-              ios_backgroundColor="#d1d5db"
             />
           </View>
         </View>
