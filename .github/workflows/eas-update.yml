@@ -27,5 +27,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Publish OTA update
-        run: eas update --branch production --platform ios --platform android --message "${{ github.event.head_commit.message }}"
+      - name: Publish OTA update (iOS)
+        run: eas update --branch production --platform ios --message "${{ github.event.head_commit.message }}"
+
+      - name: Publish OTA update (Android)
+        run: eas update --branch production --platform android --message "${{ github.event.head_commit.message }}"
