@@ -65,7 +65,7 @@ export default function HostDashboardScreen() {
           for (const b of (res.listPropertyBookings?.bookings || [])) {
             if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.total || 0);
             if (b.status === 'PENDING') pending++;
-            if (b.status === 'CONFIRMED' && new Date(b.checkInDate) > new Date()) upcoming++;
+            if (b.status === 'CONFIRMED' && (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') && new Date(b.checkInDate) > new Date()) upcoming++;
           }
         } catch {}
       }
@@ -146,7 +146,7 @@ export default function HostDashboardScreen() {
         )}
 
         {/* Stats */}
-        <StatsRow colors={colors} totalEarned={totalEarned} upcomingCount={upcomingCount} listingsCount={properties.length} onStatPress={setPage} />
+        <StatsRow colors={colors} totalEarned={totalEarned} upcomingCount={upcomingCount} onStatPress={setPage} />
 
         {/* Listings */}
         <View style={s.listingsSection}>

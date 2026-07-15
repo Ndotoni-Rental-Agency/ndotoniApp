@@ -21,7 +21,7 @@ export default function ListingCard({ property: p, colors, onPress, onEdit, onCa
     <TouchableOpacity style={[s.card, { backgroundColor: card }]} onPress={onPress} activeOpacity={0.8}>
       <View style={s.imgWrap}>
         {(p.thumbnail || p.images?.[0]) ? (
-          <Image source={{ uri: p.thumbnail || p.images?.[0] }} style={s.img} contentFit="cover" />
+          <Image source={{ uri: (p.thumbnail || p.images?.[0]) as string }} style={s.img} contentFit="cover" />
         ) : (
           <View style={[s.imgEmpty, { backgroundColor: `${tint}06` }]}>
             <Ionicons name="image-outline" size={20} color={tint} />
@@ -41,13 +41,16 @@ export default function ListingCard({ property: p, colors, onPress, onEdit, onCa
       </View>
       <View style={s.actions}>
         <TouchableOpacity style={[s.actBtn, { backgroundColor: `${tint}08` }]} onPress={onEdit}>
-          <Ionicons name="create-outline" size={15} color={tint} />
+          <Ionicons name="create-outline" size={14} color={tint} />
+          <Text style={[s.actLabel, { color: tint }]}>Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.actBtn, { backgroundColor: `${tint}08` }]} onPress={onCalendar}>
-          <Ionicons name="calendar-outline" size={15} color={tint} />
+          <Ionicons name="calendar-outline" size={14} color={tint} />
+          <Text style={[s.actLabel, { color: tint }]}>Calendar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.actBtn, { backgroundColor: '#fef2f2' }]} onPress={onDelete}>
-          <Ionicons name="trash-outline" size={15} color="#ef4444" />
+          <Ionicons name="trash-outline" size={14} color="#ef4444" />
+          <Text style={[s.actLabel, { color: '#ef4444' }]}>Delete</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -65,6 +68,7 @@ const s = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '600' },
   loc: { fontSize: 13, marginTop: 3 },
   price: { fontSize: 15, fontWeight: '700', marginTop: 6 },
-  actions: { flexDirection: 'row', paddingHorizontal: 14, paddingBottom: 12, gap: 8 },
-  actBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row', paddingHorizontal: 14, paddingBottom: 14, gap: 8 },
+  actBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
+  actLabel: { fontSize: 12, fontWeight: '600' },
 });
