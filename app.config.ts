@@ -18,7 +18,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       config: {
         googleMapsApiKey,
       },
-      bundleIdentifier: "com.ndotoni.stays",
+      bundleIdentifier: "com.ndotoni.app",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationWhenInUseUsageDescription:
@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           apiKey: googleMapsApiKey,
         },
       },
-      package: "com.ndotoni.stays",
+      package: "com.ndotoni.app",
       permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
     },
     web: {
