@@ -17,22 +17,29 @@ const ACTIONS = [
 ];
 
 export default function QuickActions({ colors, onAction }: QuickActionsProps) {
-  const { text, card, border, subtle } = colors;
+  const { text, card, subtle } = colors;
 
   return (
     <View style={s.section}>
       <Text style={[s.title, { color: text }]}>Manage</Text>
       <View style={s.list}>
         {ACTIONS.map(item => (
-          <TouchableOpacity key={item.key} style={[s.item, { backgroundColor: card, borderBottomColor: border }]} onPress={() => onAction(item.key)} activeOpacity={0.7}>
-            <View style={[s.icon, { backgroundColor: `${item.color}12` }]}>
-              <Ionicons name={item.icon as any} size={20} color={item.color} />
+          <TouchableOpacity
+            key={item.key}
+            style={[s.item, { backgroundColor: card }]}
+            onPress={() => onAction(item.key)}
+            activeOpacity={0.6}
+          >
+            <View style={[s.icon, { backgroundColor: `${item.color}14` }]}>
+              <Ionicons name={item.icon as any} size={22} color={item.color} />
             </View>
             <View style={s.content}>
               <Text style={[s.label, { color: text }]}>{item.label}</Text>
               <Text style={[s.desc, { color: subtle }]}>{item.desc}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={border} />
+            <View style={[s.arrow, { backgroundColor: `${item.color}10` }]}>
+              <Ionicons name="arrow-forward" size={14} color={item.color} />
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -43,16 +50,17 @@ export default function QuickActions({ colors, onAction }: QuickActionsProps) {
 const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginTop: 28 },
   title: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  list: { gap: 0 },
+  list: { gap: 10 },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    padding: 16,
+    borderRadius: 14,
     gap: 14,
   },
-  icon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1 },
-  label: { fontSize: 15, fontWeight: '600' },
-  desc: { fontSize: 12, marginTop: 1 },
+  label: { fontSize: 15, fontWeight: '700' },
+  desc: { fontSize: 13, marginTop: 2 },
+  arrow: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });
