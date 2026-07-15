@@ -20,6 +20,8 @@ export default function EditCheckInTab({ form, upd, saving, saveSec, text, tint,
       <Text style={[s.secTitle, { color: text }]}>Access</Text>
       <Text style={[s.label, { color: text }]}>Access code / Lock code</Text>
       <TextInput style={[s.input, { color: text, borderColor: border }]} value={form.ciAccessCode} onChangeText={v => upd('ciAccessCode', v)} placeholder="e.g. 1234" placeholderTextColor={subtle} />
+      <Text style={[s.label, { color: text }]}>Google Maps link</Text>
+      <TextInput style={[s.input, { color: text, borderColor: border }]} value={form.googleMapsUrl} onChangeText={v => upd('googleMapsUrl', v)} placeholder="https://maps.google.com/..." placeholderTextColor={subtle} keyboardType="url" autoCapitalize="none" autoCorrect={false} />
       <Text style={[s.label, { color: text }]}>Directions to property</Text>
       <TextInput style={[s.input, s.textArea, { color: text, borderColor: border }]} value={form.ciDirections} onChangeText={v => upd('ciDirections', v)} placeholder="How to find the property..." placeholderTextColor={subtle} multiline numberOfLines={3} textAlignVertical="top" />
       <Text style={[s.label, { color: text }]}>Parking info</Text>
@@ -35,10 +37,11 @@ export default function EditCheckInTab({ form, upd, saving, saveSec, text, tint,
 
       <TouchableOpacity style={[s.saveBtn, { backgroundColor: tint, opacity: saving ? 0.5 : 1 }]} onPress={() => saveSec('Check-in', {
         checkInTime: form.checkInTime || undefined, checkOutTime: form.checkOutTime || undefined,
+        ...(form.googleMapsUrl ? { googleMapsUrl: form.googleMapsUrl } : {}),
         ...(form.ciWifi || form.ciWifiPassword || form.ciAccessCode || form.ciDirections || form.ciParking || form.ciContactPhone || form.ciContactName || form.ciNotes ? {
           checkInInstructions: JSON.stringify({ wifiName: form.ciWifi || undefined, wifiPassword: form.ciWifiPassword || undefined, accessCode: form.ciAccessCode || undefined, directions: form.ciDirections || undefined, parkingInfo: form.ciParking || undefined, contactPhone: form.ciContactPhone || undefined, contactName: form.ciContactName || undefined, additionalNotes: form.ciNotes || undefined })
         } : {}),
-      })} disabled={saving}>
+      } as any)} disabled={saving}>
         {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Save check-in info</Text>}
       </TouchableOpacity>
     </>

@@ -35,6 +35,7 @@ export default function EditShortTermPropertyScreen() {
     minimumStay: '1', maximumStay: '', advanceBookingDays: '', instantBookEnabled: false,
     checkInTime: '', checkOutTime: '', ciWifi: '', ciWifiPassword: '', ciAccessCode: '',
     ciDirections: '', ciParking: '', ciContactPhone: '', ciContactName: '', ciNotes: '',
+    googleMapsUrl: '',
     cancellationPolicy: 'MODERATE', allowsPets: false, allowsSmoking: false, allowsChildren: true, allowsInfants: true,
     houseRules: '', amenities: [],
   });
@@ -60,6 +61,7 @@ export default function EditShortTermPropertyScreen() {
       ciAccessCode: ci?.accessCode || '', ciDirections: ci?.directions || '',
       ciParking: ci?.parkingInfo || '', ciContactPhone: ci?.contactPhone || '',
       ciContactName: ci?.contactName || '', ciNotes: ci?.additionalNotes || '',
+      googleMapsUrl: (property as any).googleMapsUrl || '',
       cancellationPolicy: property.cancellationPolicy || 'MODERATE',
       allowsPets: property.allowsPets ?? false, allowsSmoking: property.allowsSmoking ?? false,
       allowsChildren: property.allowsChildren ?? true, allowsInfants: property.allowsInfants ?? true,

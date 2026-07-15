@@ -11,6 +11,7 @@ export interface EditFormData {
   checkInTime: string; checkOutTime: string;
   ciWifi: string; ciWifiPassword: string; ciAccessCode: string; ciDirections: string;
   ciParking: string; ciContactPhone: string; ciContactName: string; ciNotes: string;
+  googleMapsUrl: string;
   cancellationPolicy: string;
   allowsPets: boolean; allowsSmoking: boolean; allowsChildren: boolean; allowsInfants: boolean;
   houseRules: string;
