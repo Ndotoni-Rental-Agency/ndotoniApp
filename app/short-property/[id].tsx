@@ -1,3 +1,6 @@
+import FullScreenGallery from '@/components/property/FullScreenGallery';
+import GalleryCarousel from '@/components/property/GalleryCarousel';
+import HighlightCard from '@/components/property/HighlightCard';
 import PropertyAmenities from '@/components/property/PropertyAmenities';
 import PropertyDescription from '@/components/property/PropertyDescription';
 import PropertyHost from '@/components/property/PropertyHost';
@@ -20,7 +23,6 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  FlatList,
   Modal,
   Share,
   StatusBar,
@@ -32,52 +34,6 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: W, height: H } = Dimensions.get('window');
-
-// ─── IMAGE GALLERY CAROUSEL ──────────────────────────────
-function GalleryCarousel({ images, height, onTap }: { images: string[]; height: number; onTap: (idx: number) => void }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  return (
-    <View style={{ height }}>
-      <FlatList
-        data={images}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => setActiveIdx(Math.round(e.nativeEvent.contentOffset.x / W))}
-        keyExtractor={(_, i) => i.toString()}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity activeOpacity={0.95} onPress={() => onTap(index)}>
-            <Image source={{ uri: item }} style={{ width: W, height }} contentFit="cover" transition={200} />
-          </TouchableOpacity>
-        )}
-      />
-      {/* Modern pill indicator */}
-      {images.length > 1 && (
-        <View style={styles.pillIndicator}>
-          <Text style={styles.pillText}>{activeIdx + 1} / {images.length}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ─── HIGHLIGHT CARD COMPONENT ───────────────────────────
-function HighlightCard({ icon, title, subtitle, tint, text: textColor }: {
-  icon: string; title: string; subtitle: string; tint: string; text: string; card: string; border: string;
-}) {
-  return (
-    <View style={styles.highlightCard}>
-      <View style={[styles.highlightIcon, { backgroundColor: `${tint}10` }]}>
-        <Ionicons name={icon as any} size={20} color={tint} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.highlightTitle, { color: textColor }]}>{title}</Text>
-        <Text style={[styles.highlightSub, { color: `${textColor}88` }]}>{subtitle}</Text>
-      </View>
-    </View>
-  );
-}
 
 export default function ShortTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();
@@ -333,7 +289,7 @@ export default function ShortTermPropertyDetailsScreen() {
             <>
               <View style={styles.highlightsSection}>
                 {highlights.slice(0, 3).map((h, i) => (
-                  <HighlightCard key={i} icon={h.icon} title={h.title} subtitle={h.subtitle} tint={tint} text={text} card={card} border={border} />
+                  <HighlightCard key={i} icon={h.icon} title={h.title} subtitle={h.subtitle} tint={tint} text={text} />
                 ))}
               </View>
               <View style={[styles.separator, { backgroundColor: border }]} />
@@ -480,49 +436,6 @@ export default function ShortTermPropertyDetailsScreen() {
           serviceFeePercentage={property.serviceFeePercentage ?? 0}
           maxGuests={property.maxGuests ?? 10}
         />
-      )}
-    </View>
-  );
-}
-
-// ─── FULLSCREEN GALLERY COMPONENT ──────────────────────────
-function FullScreenGallery({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
-  const [currentIdx, setCurrentIdx] = useState(startIndex);
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
-      <View style={[styles.galleryHeader, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={onClose} style={styles.galleryCloseBtn}>
-          <Ionicons name="close" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.galleryCounter}>{currentIdx + 1} / {images.length}</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <FlatList
-        data={images}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        initialScrollIndex={startIndex}
-        getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
-        onMomentumScrollEnd={(e) => setCurrentIdx(Math.round(e.nativeEvent.contentOffset.x / W))}
-        keyExtractor={(_, i) => i.toString()}
-        renderItem={({ item }) => (
-          <View style={{ width: W, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Image source={{ uri: item }} style={{ width: W, height: H * 0.65 }} contentFit="contain" transition={150} />
-          </View>
-        )}
-      />
-
-      {/* Bottom dots */}
-      {images.length <= 12 && (
-        <View style={styles.galleryDots}>
-          {images.map((_, i) => (
-            <View key={i} style={[styles.galleryDot, { backgroundColor: i === currentIdx ? '#fff' : 'rgba(255,255,255,0.3)' }]} />
-          ))}
-        </View>
       )}
     </View>
   );
