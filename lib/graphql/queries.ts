@@ -1449,6 +1449,7 @@ export const getShortTermProperty = /* GraphQL */ `query GetShortTermProperty($p
     currency
     description
     district
+    googleMapsUrl
     host {
       firstName
       lastName
