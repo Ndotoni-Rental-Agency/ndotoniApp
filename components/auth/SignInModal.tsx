@@ -59,7 +59,6 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       console.log('[SignInModal] Starting sign in for:', email);
       await signIn(email, password);
       console.log('[SignInModal] Sign in successful');
-      Alert.alert('Success', 'Signed in successfully!');
       onClose();
       setEmail('');
       setPassword('');
