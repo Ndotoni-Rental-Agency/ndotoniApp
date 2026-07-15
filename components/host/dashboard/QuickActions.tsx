@@ -9,26 +9,30 @@ interface QuickActionsProps {
 }
 
 const ACTIONS = [
-  { key: 'bookings' as Subpage, icon: 'calendar', label: 'Bookings', color: '#3b82f6' },
-  { key: 'stats' as Subpage, icon: 'trending-up', label: 'Earnings', color: '#16a34a' },
-  { key: 'reviews' as Subpage, icon: 'star', label: 'Reviews', color: '#f59e0b' },
-  { key: 'payouts' as Subpage, icon: 'card', label: 'Payouts', color: '#8b5cf6' },
-  { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', color: '#25d366' },
+  { key: 'bookings' as Subpage, icon: 'calendar', label: 'Bookings', desc: 'Manage guest requests', color: '#3b82f6' },
+  { key: 'stats' as Subpage, icon: 'trending-up', label: 'Earnings', desc: 'Revenue & analytics', color: '#16a34a' },
+  { key: 'reviews' as Subpage, icon: 'star', label: 'Reviews', desc: 'What guests say', color: '#f59e0b' },
+  { key: 'payouts' as Subpage, icon: 'card', label: 'Payouts', desc: 'M-Pesa & bank setup', color: '#8b5cf6' },
+  { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', desc: 'Notification number', color: '#25d366' },
 ];
 
 export default function QuickActions({ colors, onAction }: QuickActionsProps) {
-  const { text, card } = colors;
+  const { text, card, border, subtle } = colors;
 
   return (
     <View style={s.section}>
-      <Text style={[s.title, { color: text }]}>Quick actions</Text>
-      <View style={s.grid}>
+      <Text style={[s.title, { color: text }]}>Manage</Text>
+      <View style={s.list}>
         {ACTIONS.map(item => (
-          <TouchableOpacity key={item.key} style={[s.item, { backgroundColor: card }]} onPress={() => onAction(item.key)} activeOpacity={0.7}>
+          <TouchableOpacity key={item.key} style={[s.item, { backgroundColor: card, borderBottomColor: border }]} onPress={() => onAction(item.key)} activeOpacity={0.7}>
             <View style={[s.icon, { backgroundColor: `${item.color}12` }]}>
               <Ionicons name={item.icon as any} size={20} color={item.color} />
             </View>
-            <Text style={[s.label, { color: text }]}>{item.label}</Text>
+            <View style={s.content}>
+              <Text style={[s.label, { color: text }]}>{item.label}</Text>
+              <Text style={[s.desc, { color: subtle }]}>{item.desc}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={border} />
           </TouchableOpacity>
         ))}
       </View>
@@ -38,9 +42,17 @@ export default function QuickActions({ colors, onAction }: QuickActionsProps) {
 
 const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginTop: 28 },
-  title: { fontSize: 18, fontWeight: '700' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
-  item: { width: '31%', alignItems: 'center', paddingVertical: 18, borderRadius: 14 },
-  icon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  label: { fontSize: 12, fontWeight: '600' },
+  title: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  list: { gap: 0 },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 14,
+  },
+  icon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  content: { flex: 1 },
+  label: { fontSize: 15, fontWeight: '600' },
+  desc: { fontSize: 12, marginTop: 1 },
 });
