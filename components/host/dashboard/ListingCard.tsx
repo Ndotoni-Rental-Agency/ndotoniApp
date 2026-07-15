@@ -11,9 +11,10 @@ interface ListingCardProps {
   onEdit: () => void;
   onCalendar: () => void;
   onDelete: () => void;
+  onDeactivate: () => void;
 }
 
-export default function ListingCard({ property: p, colors, onPress, onEdit, onCalendar, onDelete }: ListingCardProps) {
+export default function ListingCard({ property: p, colors, onPress, onEdit, onCalendar, onDelete, onDeactivate }: ListingCardProps) {
   const { text, tint, card, subtle } = colors;
   const live = ['AVAILABLE', 'ACTIVE', 'PUBLISHED'].includes(String(p.status || ''));
 
@@ -48,6 +49,12 @@ export default function ListingCard({ property: p, colors, onPress, onEdit, onCa
           <Ionicons name="calendar-outline" size={14} color={tint} />
           <Text style={[s.actLabel, { color: tint }]}>Calendar</Text>
         </TouchableOpacity>
+        {live && (
+          <TouchableOpacity style={[s.actBtn, { backgroundColor: '#fef9c3' }]} onPress={onDeactivate}>
+            <Ionicons name="pause-outline" size={14} color="#ca8a04" />
+            <Text style={[s.actLabel, { color: '#ca8a04' }]}>Pause</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={[s.actBtn, { backgroundColor: '#fef2f2' }]} onPress={onDelete}>
           <Ionicons name="trash-outline" size={14} color="#ef4444" />
           <Text style={[s.actLabel, { color: '#ef4444' }]}>Delete</Text>

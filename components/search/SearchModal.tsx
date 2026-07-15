@@ -1,6 +1,5 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLocationSearch } from '@/hooks/useLocationSearch';
-import { RentalType } from '@/hooks/useRentalType';
 import type { FlattenedLocation } from '@/lib/location/types';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,9 +24,9 @@ import CalendarDatePicker from '../property/CalendarDatePicker';
 interface SearchModalProps {
   visible: boolean;
   onClose: () => void;
-  rentalType: RentalType;
+  rentalType?: string;
   onSearch: (params: SearchParams) => void;
-  onRentalTypeChange?: (type: RentalType) => void;
+  onRentalTypeChange?: (type: string) => void;
 }
 
 export interface SearchParams {
@@ -135,7 +134,6 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
   // Summary for collapsed cards
   const locationSummary = selectedLocation ? toTitleCase(selectedLocation.displayName) : 'Anywhere';
   const dateSummary = checkIn && checkOut ? `${formatDateShort(checkIn)} – ${formatDateShort(checkOut)}` : 'Any week';
-  const guestSummary = `${guests} guest${guests !== 1 ? 's' : ''}`;
 
   return (
     <Modal visible={visible} animationType="none" transparent statusBarTranslucent onRequestClose={onClose}>
@@ -454,7 +452,7 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
-  } as any,
+  },
   sheet: { flex: 1 },
   container: { flex: 1 },
 
@@ -553,7 +551,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   destCard: {
-    width: '47%' as any,
+    width: '47%',
     paddingVertical: 18,
     paddingHorizontal: 12,
     borderRadius: 16,
@@ -574,7 +572,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderStyle: 'dashed' as any,
+    borderStyle: 'dashed',
   },
   flexText: { fontSize: 15, fontWeight: '600' },
 

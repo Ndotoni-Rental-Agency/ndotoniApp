@@ -9,6 +9,7 @@ export interface Booking {
   checkOutDate: string;
   totalPrice: number;
   numberOfGuests: number;
+  hasReview?: boolean;
   pricing?: {
     total: number;
     currency: string;

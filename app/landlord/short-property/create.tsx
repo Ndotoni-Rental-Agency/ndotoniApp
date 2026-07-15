@@ -153,7 +153,7 @@ export default function CreatePropertyScreen() {
         Alert.alert(
           '🎉 Your place is listed!',
           'You can add more details anytime from your dashboard.',
-          [{ text: 'Done', onPress: () => router.replace('/(tabs)/explore' as any) }]
+          [{ text: 'Done', onPress: () => router.replace('/(tabs)/host') }]
         );
       } else {
         Alert.alert('Error', res.createShortTermPropertyDraft?.message || 'Failed');

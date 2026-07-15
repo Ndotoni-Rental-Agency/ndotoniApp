@@ -54,7 +54,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="trips"
         options={{
           title: 'Trips',
           tabBarIcon: ({ color, focused }) => (
@@ -63,7 +63,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="host"
         options={{
           title: 'Host',
           tabBarIcon: ({ color, focused }) => (
@@ -72,7 +72,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="list-property"
+        name="inbox"
         options={{
           title: 'Inbox',
           tabBarIcon: ({ color, focused }) => (
@@ -93,10 +93,10 @@ export default function TabLayout() {
   );
 }
 
-function TabIcon({ name, color, focused, activeColor }: { name: string; color: string; focused: boolean; activeColor: string }) {
+function TabIcon({ name, color, focused, activeColor }: { name: keyof typeof Ionicons.glyphMap; color: string; focused: boolean; activeColor: string }) {
   return (
     <View style={[styles.iconWrap, focused && { backgroundColor: `${activeColor}12` }]}>
-      <Ionicons name={name as any} size={22} color={color} />
+      <Ionicons name={name} size={22} color={color} />
     </View>
   );
 }

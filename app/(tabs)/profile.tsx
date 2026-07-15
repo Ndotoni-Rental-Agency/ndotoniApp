@@ -3,6 +3,7 @@ import ResetPasswordModal from '@/components/auth/ResetPasswordModal';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
+import ContactSupportModal from '@/components/profile/ContactSupportModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -39,6 +40,7 @@ export default function ProfileScreen() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showContactSupport, setShowContactSupport] = useState(false);
 
   const toggleTheme = async () => {
     const newMode = isDark ? 'light' : 'dark';
@@ -311,13 +313,21 @@ export default function ProfileScreen() {
   }
 
   // Show profile UI if authenticated
-  const menuItems = [
-    { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/explore' },
+  interface MenuItem {
+    id: string;
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    route?: string;
+    action?: () => void;
+  }
+
+  const menuItems: MenuItem[] = [
+    { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/host' },
     { id: 'favorites', label: 'Favorites', icon: 'heart' },
-    { id: 'bookings', label: 'My Trips', icon: 'airplane', route: '/bookings' },
-    { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/messages' },
+    { id: 'bookings', label: 'My Trips', icon: 'airplane', route: '/(tabs)/trips' },
+    { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/inbox' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
-    { id: 'help', label: 'Help & Support', icon: 'help-circle' },
+    { id: 'help', label: 'Help & Support', icon: 'help-circle', action: () => setShowContactSupport(true) },
   ];
 
   const getInitials = () => {
@@ -372,14 +382,16 @@ export default function ProfileScreen() {
               key={item.id} 
               style={[styles.menuItem, { backgroundColor: cardBg, borderColor }]}
               onPress={() => {
-                if (item.route) {
-                  router.push(item.route as any);
+                if (item.action) {
+                  item.action();
+                } else if (item.route) {
+                  router.push(item.route);
                 }
               }}
             >
               <View style={styles.menuItemLeft}>
                 <View style={[styles.menuIcon, { backgroundColor: `${tintColor}20` }]}>
-                  <Ionicons name={item.icon as any} size={24} color={tintColor} />
+                  <Ionicons name={item.icon} size={24} color={tintColor} />
                 </View>
                 <Text style={[styles.menuLabel, { color: textColor }]}>{item.label}</Text>
               </View>
@@ -446,6 +458,12 @@ export default function ProfileScreen() {
           <Text style={[styles.versionText, { color: secondaryText }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Contact Support Modal */}
+      <ContactSupportModal
+        visible={showContactSupport}
+        onClose={() => setShowContactSupport(false)}
+      />
     </SafeAreaView>
   );
 }

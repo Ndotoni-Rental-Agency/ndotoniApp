@@ -331,14 +331,14 @@ export default function ShortTermPropertyDetailsScreen() {
               <View style={styles.priceRow}>
                 <Text style={[styles.priceLabel, { color: subtle }]}>Nightly rate</Text>
                 <Text style={[styles.priceValue, { color: text }]}>
-                  {property.currency === 'TZS' ? 'Tshs' : property.currency} {property.nightlyRate?.toLocaleString()}
+                  {property.currency === 'TZS' ? 'Tshs' : property.currency} {(property.nightlyRate ?? 0).toLocaleString()}
                 </Text>
               </View>
               {(property.cleaningFee ?? 0) > 0 && (
                 <View style={styles.priceRow}>
                   <Text style={[styles.priceLabel, { color: subtle }]}>Cleaning fee</Text>
                   <Text style={[styles.priceValue, { color: text }]}>
-                    {property.currency === 'TZS' ? 'Tshs' : property.currency} {property.cleaningFee?.toLocaleString()}
+                    {property.currency === 'TZS' ? 'Tshs' : property.currency} {(property.cleaningFee ?? 0).toLocaleString()}
                   </Text>
                 </View>
               )}
@@ -397,7 +397,7 @@ export default function ShortTermPropertyDetailsScreen() {
         <View style={styles.bottomLeft}>
           <Text style={[styles.barPrice, { color: text }]}>
             {property.currency === 'TZS' ? 'Tshs' : property.currency}{' '}
-            {property.nightlyRate?.toLocaleString()}
+            {(property.nightlyRate ?? 0).toLocaleString()}
           </Text>
           <Text style={[styles.barUnit, { color: subtle }]}>per night</Text>
         </View>

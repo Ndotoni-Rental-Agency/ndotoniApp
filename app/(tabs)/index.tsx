@@ -1,6 +1,5 @@
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
-import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { usePropertyFavorites } from '@/hooks/useProperty';
@@ -9,10 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -38,7 +36,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width: W } = useWindowDimensions();
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
 
   const today = new Date();
   const threeDays = new Date(today);
@@ -77,9 +74,6 @@ export default function HomeScreen() {
   // Featured card — first property rendered big
   const featured: any = feed[0];
   const rest = feed.slice(1);
-
-  // Image height for regular cards (landscape aspect, not too tall)
-  const CARD_IMG = W * 0.62;
 
   // Build a varied layout: pairs of small cards + full-width cards
   const renderFeedItem = ({ item, index }: { item: any; index: number }) => {
@@ -200,7 +194,7 @@ export default function HomeScreen() {
               key={cat.id}
               style={styles.catCard}
               activeOpacity={0.85}
-              onPress={() => router.push(`/search?category=${cat.param}` as any)}
+              onPress={() => router.push({ pathname: '/search', params: { category: cat.param } })}
             >
               <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
               <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />

@@ -13,6 +13,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLandlordShortTermProperties } from '@/hooks/useLandlordShortTermProperties';
 import { useDeleteProperty } from '@/hooks/useProperty';
 import { GraphQLClient } from '@/lib/graphql-client';
+import { deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -89,6 +90,23 @@ export default function HostDashboardScreen() {
     });
   };
 
+  const handleDeactivate = (id: string, title: string) => {
+    showAlert({
+      title: 'Pause Listing', message: `Pause "${title}"? Guests won't be able to book it until you reactivate.`, icon: 'warning',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Pause', style: 'default', onPress: async () => {
+          try {
+            await GraphQLClient.executeAuthenticated(deactivateShortTermProperty, { propertyId: id });
+            await refetch();
+          } catch (e: any) {
+            showAlert({ title: 'Error', message: e?.message || 'Failed to deactivate listing.', icon: 'error', buttons: [{ text: 'OK' }] });
+          }
+        }},
+      ],
+    });
+  };
+
   // ─── Auth gate ───
   if (authLoading) return <View style={[s.fill, { backgroundColor: bg }]}><ActivityIndicator style={{ flex: 1 }} color={tint} /></View>;
   if (!isAuthenticated) {
@@ -159,14 +177,14 @@ export default function HostDashboardScreen() {
         <View style={s.listingsSection}>
           <View style={s.listingsHeader}>
             <Text style={[s.sectionTitle, { color: text }]}>Your listings</Text>
-            <TouchableOpacity onPress={() => router.push('/landlord/short-property/create' as any)} style={[s.newBtn, { backgroundColor: tint }]}>
+            <TouchableOpacity onPress={() => router.push('/landlord/short-property/create')} style={[s.newBtn, { backgroundColor: tint }]}>
               <Ionicons name="add" size={16} color="#fff" />
               <Text style={s.newBtnText}>New</Text>
             </TouchableOpacity>
           </View>
 
           {propsLoading ? <ActivityIndicator color={tint} style={{ paddingVertical: 40 }} /> : properties.length === 0 ? (
-            <TouchableOpacity style={[s.emptyCard, { borderColor: border }]} onPress={() => router.push('/landlord/short-property/create' as any)} activeOpacity={0.8}>
+            <TouchableOpacity style={[s.emptyCard, { borderColor: border }]} onPress={() => router.push('/landlord/short-property/create')} activeOpacity={0.8}>
               <View style={[s.emptyIcon, { backgroundColor: `${tint}08` }]}><Ionicons name="add-circle-outline" size={36} color={tint} /></View>
               <Text style={[s.emptyTitle, { color: text }]}>Add your first place</Text>
               <Text style={[s.emptySub, { color: subtle }]}>It only takes a few minutes</Text>
@@ -176,16 +194,17 @@ export default function HostDashboardScreen() {
               {properties.slice(0, 2).map(p => (
                 <ListingCard
                   key={p.propertyId}
-                  property={p as any}
+                  property={p}
                   colors={colors}
-                  onPress={() => router.push(`/short-property/${p.propertyId}` as any)}
-                  onEdit={() => router.push(`/landlord/short-property/${p.propertyId}` as any)}
-                  onCalendar={() => router.push(`/landlord/calendar/${p.propertyId}?type=short-term` as any)}
+                  onPress={() => router.push(`/short-property/${p.propertyId}`)}
+                  onEdit={() => router.push(`/landlord/short-property/${p.propertyId}`)}
+                  onCalendar={() => router.push({ pathname: '/landlord/calendar/[id]', params: { id: p.propertyId, type: 'short-term' } })}
                   onDelete={() => handleDelete(p.propertyId, p.title)}
+                  onDeactivate={() => handleDeactivate(p.propertyId, p.title)}
                 />
               ))}
               {properties.length > 2 && (
-                <TouchableOpacity style={[s.seeMoreBtn, { borderColor: border }]} onPress={() => router.push('/landlord/properties' as any)} activeOpacity={0.7}>
+                <TouchableOpacity style={[s.seeMoreBtn, { borderColor: border }]} onPress={() => router.push('/landlord/properties')} activeOpacity={0.7}>
                   <Text style={[s.seeMoreText, { color: tint }]}>See all {properties.length} listings</Text>
                   <Ionicons name="arrow-forward" size={16} color={tint} />
                 </TouchableOpacity>
@@ -226,7 +245,7 @@ const s = StyleSheet.create({
   newBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   // Empty
-  emptyCard: { borderWidth: 1.5, borderStyle: 'dashed' as any, borderRadius: 14, padding: 32, alignItems: 'center' },
+  emptyCard: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 14, padding: 32, alignItems: 'center' },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   emptyTitle: { fontSize: 17, fontWeight: '700' },
   emptySub: { fontSize: 13, marginTop: 4 },

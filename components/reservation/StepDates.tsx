@@ -33,7 +33,7 @@ export default function StepDates({
   const { text, card, border, subtle, tint } = colors;
   const { nights, subtotal, cleaningFee, serviceFee, total, currency } = price;
   const cur = currency === 'TZS' ? 'Tshs' : currency;
-  const fmt = (n: number) => n.toLocaleString();
+  const fmt = (n: number) => (n ?? 0).toLocaleString();
 
   return (
     <>

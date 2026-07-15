@@ -35,8 +35,8 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   const [error, setError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const total = booking?.pricing?.total || booking?.totalPrice || 0;
-  const cur = (booking?.pricing?.currency || booking?.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : (booking?.pricing?.currency || booking?.property?.currency);
+  const total = booking?.pricing?.total ?? booking?.totalPrice ?? 0;
+  const cur = (booking?.pricing?.currency || booking?.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : (booking?.pricing?.currency || booking?.property?.currency || 'TZS');
 
   useEffect(() => {
     if (visible) { setMethod(null); setStatus('pick'); setError(''); setPhone(''); }

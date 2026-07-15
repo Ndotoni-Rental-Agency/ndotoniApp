@@ -27,6 +27,7 @@ function RootLayoutContent() {
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="bookings" options={{ headerShown: false }} />
         <Stack.Screen 
           name="landlord" 
           options={{ 

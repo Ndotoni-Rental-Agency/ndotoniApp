@@ -152,7 +152,7 @@ export default function ReservationModal({
   const serviceFee = Math.round(subtotal * (serviceFeePercentage / 100));
   const total = subtotal + cleaningFee + serviceFee;
   const cur = currency === 'TZS' ? 'Tshs' : currency;
-  const fmt = (n: number) => n.toLocaleString();
+  const fmt = (n: number) => (n ?? 0).toLocaleString();
 
   const handleDatesNext = () => {
     if (!checkInDate || !checkOutDate) { Alert.alert('Select dates'); return; }

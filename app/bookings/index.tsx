@@ -140,7 +140,7 @@ export default function BookingsScreen() {
 
           <View style={styles.bottomRow}>
             <Text style={[styles.priceText, { color: textColor }]}>
-              {currency === 'TZS' ? 'Tshs' : currency} {item.totalPrice.toLocaleString()}
+              {currency === 'TZS' ? 'Tshs' : currency} {(item.totalPrice ?? 0).toLocaleString()}
             </Text>
             <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
               <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>

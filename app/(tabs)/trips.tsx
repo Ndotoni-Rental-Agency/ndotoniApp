@@ -1,6 +1,7 @@
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import { PaymentModal, TripCard } from '@/components/trips';
+import ReviewModal from '@/components/trips/ReviewModal';
 import { Booking, TripColors, TripTab } from '@/components/trips/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -36,6 +37,7 @@ export default function TripsScreen() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [payingBooking, setPayingBooking] = useState<Booking | null>(null);
+  const [reviewingBooking, setReviewingBooking] = useState<Booking | null>(null);
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -131,19 +133,22 @@ export default function TripsScreen() {
           keyExtractor={(b) => b.bookingId}
           renderItem={({ item }) => {
             const needsPayment = item.status === 'CONFIRMED' && item.paymentStatus !== 'CAPTURED' && item.paymentStatus !== 'AUTHORIZED';
+            const canReview = activeTab === 'past' && !item.hasReview;
             return (
               <TripCard
                 booking={item}
                 colors={colors}
                 showPayButton={needsPayment}
+                showReviewButton={canReview}
                 onPress={() => {
                   if (needsPayment) {
                     setPayingBooking(item);
                   } else {
-                    router.push(`/short-property/${item.property?.propertyId}` as any);
+                    router.push(`/short-property/${item.property?.propertyId}`);
                   }
                 }}
                 onPayPress={() => setPayingBooking(item)}
+                onReviewPress={() => setReviewingBooking(item)}
               />
             );
           }}
@@ -160,7 +165,7 @@ export default function TripsScreen() {
                 {activeTab === 'upcoming' ? 'When you book a stay, it will show up here' : 'Your travel history will appear here'}
               </Text>
               {activeTab === 'upcoming' && (
-                <TouchableOpacity style={[s.btn, { backgroundColor: tint }]} onPress={() => router.push('/(tabs)/' as any)}>
+                <TouchableOpacity style={[s.btn, { backgroundColor: tint }]} onPress={() => router.push('/')}>
                   <Text style={s.btnText}>Explore stays</Text>
                 </TouchableOpacity>
               )}
@@ -175,6 +180,16 @@ export default function TripsScreen() {
         booking={payingBooking}
         onClose={() => { setPayingBooking(null); fetchBookings(); }}
         colors={colors}
+      />
+
+      {/* Review modal */}
+      <ReviewModal
+        visible={!!reviewingBooking}
+        onClose={() => setReviewingBooking(null)}
+        bookingId={reviewingBooking?.bookingId || ''}
+        propertyId={reviewingBooking?.property?.propertyId || ''}
+        propertyTitle={reviewingBooking?.property?.title || 'Property'}
+        onReviewSubmitted={fetchBookings}
       />
     </SafeAreaView>
   );

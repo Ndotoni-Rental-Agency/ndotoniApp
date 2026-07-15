@@ -1,6 +1,5 @@
 import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { RentalType } from '@/hooks/useRentalType';
 import GraphQLClient from '@/lib/graphql-client';
 import { getDistricts, getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
@@ -50,7 +49,6 @@ export default function SearchScreen() {
   const district = params.district as string;
   const checkInDate = params.checkInDate as string;
   const checkOutDate = params.checkOutDate as string;
-  const category = params.category as string;
 
   const [selectedRegion, setSelectedRegion] = useState(region || '');
   const [selectedDistrict, setSelectedDistrict] = useState(district || '');
@@ -173,7 +171,7 @@ export default function SearchScreen() {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.95}
-      onPress={() => router.push(`/short-property/${property.propertyId}` as any)}
+      onPress={() => router.push(`/short-property/${property.propertyId}`)}
     >
       <View style={[styles.cardImg, { height: IMG_H * 0.7 }]}>  
         <Image

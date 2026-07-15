@@ -8,16 +8,18 @@ interface TripCardProps {
   booking: Booking;
   colors: TripColors;
   showPayButton?: boolean;
+  showReviewButton?: boolean;
   onPress: () => void;
   onPayPress?: () => void;
+  onReviewPress?: () => void;
 }
 
-export default function TripCard({ booking: b, colors, showPayButton, onPress, onPayPress }: TripCardProps) {
+export default function TripCard({ booking: b, colors, showPayButton, showReviewButton, onPress, onPayPress, onReviewPress }: TripCardProps) {
   const { text, tint, card, border, subtle } = colors;
   const img = b.property?.thumbnail || b.property?.images?.[0];
   const nights = getNights(b.checkInDate, b.checkOutDate);
-  const totalAmount = b.pricing?.total || b.totalPrice || 0;
-  const cur = (b.pricing?.currency || b.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : (b.pricing?.currency || b.property?.currency);
+  const totalAmount = b.pricing?.total ?? b.totalPrice ?? 0;
+  const cur = (b.pricing?.currency || b.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : (b.pricing?.currency || b.property?.currency || 'TZS');
   const statusColor = getStatusColor(b, subtle);
   const statusLabel = getStatusLabel(b);
 
@@ -54,6 +56,17 @@ export default function TripCard({ booking: b, colors, showPayButton, onPress, o
             <Text style={s.payBtnText}>Pay now</Text>
           </TouchableOpacity>
         )}
+
+        {showReviewButton && (
+          <TouchableOpacity
+            style={[s.reviewBtn, { borderColor: tint }]}
+            onPress={(e) => { e.stopPropagation?.(); onReviewPress?.(); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="star-outline" size={16} color={tint} />
+            <Text style={[s.reviewBtnText, { color: tint }]}>Leave a review</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -74,4 +87,6 @@ const s = StyleSheet.create({
   price: { fontSize: 16, fontWeight: '700', marginTop: 8 },
   payBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 12, borderRadius: 10 },
   payBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  reviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5 },
+  reviewBtnText: { fontSize: 14, fontWeight: '700' },
 });

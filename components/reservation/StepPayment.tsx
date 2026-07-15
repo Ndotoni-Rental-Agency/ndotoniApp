@@ -24,7 +24,7 @@ export default function StepPayment({
 }: StepPaymentProps) {
   const { text, tint, card, border, subtle } = colors;
   const cur = currency === 'TZS' ? 'Tshs' : currency;
-  const fmt = (n: number) => n.toLocaleString();
+  const fmt = (n: number) => (n ?? 0).toLocaleString();
 
   const handlePhoneChange = (t: string) => {
     let v = t.replace(/\D/g, '');
