@@ -6,12 +6,18 @@
   "build": {
     "base": {
       "node": "20.18.1",
-      "pnpm": "10.28.1"
+      "pnpm": "10.28.1",
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
+      }
     },
     "development": {
       "extends": "base",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ENV": "development"
+      }
     },
     "preview": {
       "extends": "base",
@@ -21,7 +27,11 @@
       },
       "ios": {
         "simulator": false
-      }
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
+      },
+      "channel": "preview"
     },
     "production": {
       "extends": "base",
@@ -31,7 +41,8 @@
       },
       "ios": {
         "buildConfiguration": "Release"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
