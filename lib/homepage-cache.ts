@@ -7,8 +7,8 @@
 
 import { PropertyCard } from '@/lib/API';
 
-const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d2bstvyam1bm1f.cloudfront.net';
-const STAGE = process.env.EXPO_PUBLIC_STAGE || 'dev';
+const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d3qiuw9agheakm.cloudfront.net';
+const STAGE = process.env.EXPO_PUBLIC_STAGE || 'beta';
 
 // Single URL for homepage cache (long-term properties)
 const HOMEPAGE_CACHE_URL = process.env.EXPO_PUBLIC_HOMEPAGE_CACHE_URL || 

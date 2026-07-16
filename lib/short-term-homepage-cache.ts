@@ -6,8 +6,8 @@
  */
 
 // Use environment variables or fallback to dev
-const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d2bstvyam1bm1f.cloudfront.net';
-const STAGE = process.env.EXPO_PUBLIC_STAGE || 'dev';
+const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d3qiuw9agheakm.cloudfront.net';
+const STAGE = process.env.EXPO_PUBLIC_STAGE || 'beta';
 
 // Backend structure from Lambda (supports both old and new formats)
 interface BackendPropertyCard {

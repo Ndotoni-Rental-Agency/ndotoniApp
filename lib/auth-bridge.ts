@@ -273,7 +273,7 @@ export class AuthBridge {
    */
   private static async fetchUserProfileWithToken(token: string): Promise<{ getMe: any }> {
     const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 
-      'https://pkqm7izcm5gm5hall3gc6o5dx4.appsync-api.us-west-2.amazonaws.com/graphql';
+      'https://otp4pddzjjhvzdwcexgxcuopp4.appsync-api.us-west-2.amazonaws.com/graphql';
 
     try {
       console.log('[AuthBridge] Fetching user profile with OAuth token');
