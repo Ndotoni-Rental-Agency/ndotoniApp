@@ -37,4 +37,4 @@ jobs:
       - name: Submit to stores
         env:
           EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: eas submit --platform all --profile production --non-interactive
+        run: eas submit --platform all --profile production --latest --non-interactive
