@@ -2,7 +2,7 @@ import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
-import { usePropertyFavorites } from '@/hooks/useProperty';
+import { useFavorites } from '@/hooks/useFavorites';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -48,7 +48,7 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
-  const { toggleFavorite, isFavorited } = usePropertyFavorites();
+  const { toggleFavorite, isFavorited } = useFavorites();
 
   const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const text = useThemeColor({}, 'text');

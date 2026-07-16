@@ -323,10 +323,10 @@ export default function ProfileScreen() {
 
   const menuItems: MenuItem[] = [
     { id: 'properties', label: 'My Properties', icon: 'home', route: '/(tabs)/host' },
-    { id: 'favorites', label: 'Favorites', icon: 'heart' },
-    { id: 'bookings', label: 'My Trips', icon: 'airplane', route: '/(tabs)/trips' },
-    { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/inbox' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
+    { id: 'favorites', label: 'Favorites', icon: 'heart', route: '/profile/favorites' as Href },
+    { id: 'bookings', label: 'My Trips', icon: 'airplane', route: '/(tabs)/trips' as Href },
+    { id: 'messages', label: 'Messages', icon: 'chatbubbles', route: '/(tabs)/inbox' as Href },
+    { id: 'settings', label: 'Settings', icon: 'settings', route: '/profile/settings' as Href },
     { id: 'help', label: 'Help & Support', icon: 'help-circle', action: () => setShowContactSupport(true) },
   ];
 

@@ -6,7 +6,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { CreatePropertyDraftInput, PropertyCard } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { createPropertyDraft, deactivateShortTermProperty, toggleFavorite as toggleFavoriteMutation } from '@/lib/graphql/mutations';
+import { createPropertyDraft, deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { getMe, getPropertiesByLocation } from '@/lib/graphql/queries';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -25,90 +25,6 @@ interface PropertyFilters {
   duration?: number;
   q?: string;
   priceSort?: 'asc' | 'desc';
-}
-
-// =============================================================================
-// FAVORITES MANAGEMENT
-// =============================================================================
-
-export function usePropertyFavorites(backendFavorites?: PropertyCard[], userId?: string) {
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    if (backendFavorites && backendFavorites.length > 0) {
-      return new Set(backendFavorites.map(p => p.propertyId));
-    }
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('ndotoni_favorites');
-        if (stored) return new Set(JSON.parse(stored));
-      } catch (error) {
-        console.warn('Failed to load favorites from localStorage:', error);
-      }
-    }
-    return new Set();
-  });
-
-  useEffect(() => {
-    if (backendFavorites && backendFavorites.length > 0) {
-      const backendFavoriteIds = new Set(backendFavorites.map(p => p.propertyId));
-      setFavorites(backendFavoriteIds);
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('ndotoni_favorites', JSON.stringify(Array.from(backendFavoriteIds)));
-        } catch (error) {
-          console.warn('Failed to sync favorites to localStorage:', error);
-        }
-      }
-    }
-  }, [backendFavorites]);
-
-  const toggleFavorite = useCallback(async (propertyId: string) => {
-    try {
-      const response = await cachedGraphQL.queryAuthenticated({
-        query: toggleFavoriteMutation,
-        variables: { propertyId }, // Remove userId - it comes from auth context
-      });
-
-      const result = response.data?.toggleFavorite;
-      if (result?.success) {
-        setFavorites(prev => {
-          const newFavorites = new Set(prev);
-          if (result.isFavorited) newFavorites.add(propertyId);
-          else newFavorites.delete(propertyId);
-
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('ndotoni_favorites', JSON.stringify(Array.from(newFavorites)));
-            } catch {}
-          }
-          return newFavorites;
-        });
-      } else {
-        console.error('Failed to toggle favorite:', result?.message);
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message?.includes('Authentication required')) {
-        console.warn('Cannot toggle favorite: user not authenticated');
-        return;
-      }
-      console.error('Error toggling favorite:', error);
-      setFavorites(prev => {
-        const newFavorites = new Set(prev);
-        if (newFavorites.has(propertyId)) newFavorites.delete(propertyId);
-        else newFavorites.add(propertyId);
-
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('ndotoni_favorites', JSON.stringify(Array.from(newFavorites)));
-          } catch {}
-        }
-        return newFavorites;
-      });
-    }
-  }, []);
-
-  const isFavorited = useCallback((propertyId: string) => favorites.has(propertyId), [favorites]);
-
-  return { favorites: Array.from(favorites), toggleFavorite, isFavorited };
 }
 
 // =============================================================================

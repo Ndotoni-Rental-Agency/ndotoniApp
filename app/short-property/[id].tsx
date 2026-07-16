@@ -10,7 +10,7 @@ import PropertyRules from '@/components/property/PropertyRules';
 import ReservationModal from '@/components/property/ReservationModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
-import { usePropertyFavorites } from '@/hooks/useProperty';
+import { useFavorites } from '@/hooks/useFavorites';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +47,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const [galleryStart, setGalleryStart] = useState(0);
 
   const { property, loading, error, retry } = useShortTermPropertyDetail(propertyId);
-  const { toggleFavorite, isFavorited } = usePropertyFavorites();
+  const { toggleFavorite, isFavorited } = useFavorites();
   const { coordinates } = usePropertyGeocode(property);
 
   const bg = useThemeColor({}, 'background');
