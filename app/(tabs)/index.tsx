@@ -48,7 +48,7 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
-  const { toggleFavorite, isFavorited } = useFavorites();
+  const { toggleFavorite, isFavorited, rev } = useFavorites();
 
   const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const text = useThemeColor({}, 'text');
@@ -249,6 +249,7 @@ export default function HomeScreen() {
       ) : (
         <FlatList
           data={rest}
+          extraData={rev}
           keyExtractor={(p: any) => p.propertyId}
           renderItem={renderFeedItem}
           ListHeaderComponent={ListHeader}

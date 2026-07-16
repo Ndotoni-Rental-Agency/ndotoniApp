@@ -69,11 +69,12 @@ export function useFavorites() {
     return () => { listeners.delete(forceUpdate); };
   }, []);
 
-  // isFavorited depends on `rev` so it returns a new function ref after each change,
-  // causing consumers to re-render with the correct value.
+  // isFavorited is a stable function — it always reads from the mutable globalFavorites.
+  // The component re-renders via forceUpdate (from notifyAll), which causes the render
+  // to call isFavorited again and get the fresh value. No new function reference needed.
   const isFavorited = useCallback(
     (propertyId: string) => globalFavorites.has(propertyId),
-    [rev] // eslint-disable-line react-hooks/exhaustive-deps
+    [] // stable — globalFavorites is mutated in place
   );
 
   const toggleFavorite = useCallback(async (propertyId: string) => {
@@ -119,7 +120,7 @@ export function useFavorites() {
     }
   }, []);
 
-  return { isFavorited, toggleFavorite };
+  return { isFavorited, toggleFavorite, rev };
 }
 
 // =============================================================================
