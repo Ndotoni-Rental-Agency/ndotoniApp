@@ -4,7 +4,6 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { getMediaUploadUrl } from '@/lib/graphql/mutations';
 import { getMediaLibrary } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
-import { ResizeMode, Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
@@ -500,17 +499,9 @@ export default function MediaSelector({
                       onPress={() => toggleLibraryMedia(url)}
                     >
                       {isVideo ? (
-                        <Video
-                          source={{ uri: url }}
-                          style={styles.libraryImage}
-                          resizeMode={ResizeMode.COVER}
-                          shouldPlay={false}
-                          isLooping={false}
-                          isMuted
-                          usePoster
-                          posterSource={{ uri: url }}
-                          posterStyle={styles.libraryImage}
-                        />
+                        <View style={[styles.libraryImage, styles.videoPlaceholder]}>
+                          <Ionicons name="videocam" size={24} color="#fff" />
+                        </View>
                       ) : (
                         <Image 
                           source={{ uri: url }} 
