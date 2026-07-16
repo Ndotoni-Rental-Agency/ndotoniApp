@@ -104,7 +104,7 @@ export default function CreatePropertyScreen() {
       case 3: return !!form.region && !!form.district;
       case 4: return true;
       case 5: return !!form.nightlyRate && parseFloat(form.nightlyRate) > 0;
-      case 6: return form.images.length > 0;
+      case 6: return form.images.length > 0 || form.videos.length > 0;
       case 7: return !!form.title;
       default: return true;
     }
@@ -120,8 +120,8 @@ export default function CreatePropertyScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || form.images.length === 0) {
-      Alert.alert('Missing info', 'Please add a title and at least one photo.');
+    if (!form.title || (form.images.length === 0 && form.videos.length === 0)) {
+      Alert.alert('Missing info', 'Please add a title and at least one photo or video.');
       return;
     }
 

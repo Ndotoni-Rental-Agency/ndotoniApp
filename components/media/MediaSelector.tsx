@@ -499,19 +499,15 @@ export default function MediaSelector({
                       onPress={() => toggleLibraryMedia(url)}
                     >
                       {isVideo ? (
-                        <View style={[styles.libraryImage, styles.videoPlaceholder]}>
-                          <Ionicons name="videocam" size={24} color="#fff" />
+                        <View style={[styles.libraryImage, styles.libraryVideoThumb]}>
+                          <Ionicons name="film-outline" size={20} color="rgba(255,255,255,0.7)" />
+                          <Ionicons name="play-circle" size={28} color="#fff" style={styles.libraryVideoPlay} />
                         </View>
                       ) : (
                         <Image 
                           source={{ uri: url }} 
                           style={styles.libraryImage}
                         />
-                      )}
-                      {isVideo && (
-                        <View style={styles.playIconOverlay} pointerEvents="none">
-                          <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
-                        </View>
                       )}
                       {isSelected && (
                         <View style={[styles.selectedBadge, { backgroundColor: tintColor }]}>
@@ -723,6 +719,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     marginTop: 4,
+  },
+  libraryVideoThumb: {
+    backgroundColor: '#1f2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  libraryVideoPlay: {
+    position: 'absolute',
   },
   playIconOverlay: {
     position: 'absolute',
