@@ -325,6 +325,11 @@ export default function ConversationScreen() {
       </View>
 
       {/* Messages List */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 30}
+      >
       {loadingMessages ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColor} />
@@ -349,10 +354,6 @@ export default function ConversationScreen() {
       )}
 
       {/* Input Area - Elevated and Prominent */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
         <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
           <View style={[styles.inputWrapper, { backgroundColor, borderColor }]}>
             <TextInput
