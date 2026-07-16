@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { useAuth } from './AuthContext';
 import { Conversation, ChatMessage } from '@/lib/API';
@@ -309,6 +310,51 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Initial load
     loadConversations();
     refreshUnreadCount();
+  }, [isAuthenticated]);
+
+  // Poll conversations and unread count while app is in foreground
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const POLL_INTERVAL = 30000; // 30 seconds
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let appStateRef = AppState.currentState;
+
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        loadConversations();
+        refreshUnreadCount();
+      }, POLL_INTERVAL);
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    // Start polling when authenticated
+    startPolling();
+
+    // Pause when backgrounded, resume + refresh when foregrounded
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (appStateRef.match(/inactive|background/) && nextState === 'active') {
+        // App came to foreground — refresh immediately and resume polling
+        loadConversations();
+        refreshUnreadCount();
+        startPolling();
+      } else if (nextState.match(/inactive|background/)) {
+        stopPolling();
+      }
+      appStateRef = nextState;
+    });
+
+    return () => {
+      stopPolling();
+      subscription.remove();
+    };
   }, [isAuthenticated]);
 
   const value: ChatContextType = {
