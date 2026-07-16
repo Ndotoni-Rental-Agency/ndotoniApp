@@ -549,10 +549,17 @@ export default function MediaSelector({
               
               return (
                 <View key={index} style={styles.mediaItem}>
-                  <Image 
-                    source={{ uri: thumbnailUri || url }} 
-                    style={styles.mediaImage} 
-                  />
+                  {isVideo && !thumbnailUri ? (
+                    <View style={[styles.mediaImage, styles.videoPlaceholder]}>
+                      <Ionicons name="videocam" size={28} color="#fff" />
+                      <Text style={styles.videoPlaceholderText}>Video</Text>
+                    </View>
+                  ) : (
+                    <Image 
+                      source={{ uri: thumbnailUri || url }} 
+                      style={styles.mediaImage} 
+                    />
+                  )}
                   {isVideo && (
                     <View style={styles.playIconOverlay}>
                       <Ionicons name="play-circle" size={40} color="rgba(255,255,255,0.9)" />
@@ -714,6 +721,17 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
+  },
+  videoPlaceholder: {
+    backgroundColor: '#374151',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoPlaceholderText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
   },
   playIconOverlay: {
     position: 'absolute',
