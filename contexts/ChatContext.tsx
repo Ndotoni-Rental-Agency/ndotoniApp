@@ -46,6 +46,7 @@ interface ChatContextType {
   refreshUnreadCount: () => Promise<void>;
   clearMessages: () => void;
   selectConversation: (conversation: Conversation | null) => void;
+  addMessageFromSubscription: (message: ChatMessage) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -266,6 +267,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setSelectedConversation(conversation);
   };
 
+  // Add a message received from a real-time subscription
+  const addMessageFromSubscription = (message: ChatMessage): void => {
+    // Avoid duplicates (e.g. if the same message arrives via both subscription and polling)
+    setMessages(prev => {
+      if (prev.some(m => m.id === message.id)) {
+        return prev;
+      }
+      return [...prev, message];
+    });
+
+    // Update the conversation's last message in the list
+    setConversations(prev =>
+      prev.map(conv =>
+        conv.id === message.conversationId
+          ? {
+              ...conv,
+              lastMessage: message.content,
+              lastMessageTime: message.timestamp,
+              updatedAt: message.timestamp,
+            }
+          : conv
+      ).sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime())
+    );
+  };
+
   // Set up initial load when user is authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -304,6 +330,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     refreshUnreadCount,
     clearMessages,
     selectConversation,
+    addMessageFromSubscription,
   };
 
   return (

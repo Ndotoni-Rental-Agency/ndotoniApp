@@ -1,10 +1,11 @@
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChatDeletion } from '@/hooks/useChatDeletion';
+import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscription';
 import { ChatMessage } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -40,6 +41,7 @@ export default function ConversationScreen() {
     sendingMessage,
     conversations,
     loadConversations,
+    addMessageFromSubscription,
   } = useChat();
 
   const { deleteMessage: deleteChatMessage } = useChatDeletion();
@@ -52,6 +54,30 @@ export default function ConversationScreen() {
   // Decode the conversation ID from the URL parameter
   const decodedId = id ? decodeURIComponent(id as string) : '';
   const conversation = conversations.find(c => c.id === decodedId);
+
+  // Real-time subscription for new messages
+  const handleNewMessage = useCallback((message: SubscriptionMessage) => {
+    // Don't add messages we sent ourselves (already added optimistically by sendMessage)
+    if (message.isMine) return;
+
+    // Add the message to the chat context
+    addMessageFromSubscription({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderName: message.senderName,
+      content: message.content,
+      timestamp: message.timestamp,
+      isRead: message.isRead,
+      isMine: false,
+      __typename: 'ChatMessage',
+    });
+  }, []);
+
+  useChatSubscription({
+    conversationId: decodedId || null,
+    onMessageReceived: handleNewMessage,
+    enabled: !!decodedId,
+  });
 
   useEffect(() => {
     if (id) {
