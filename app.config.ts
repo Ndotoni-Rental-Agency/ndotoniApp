@@ -63,6 +63,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           },
         },
       ],
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#16a34a",
+          sounds: [],
+        },
+      ],
       "@react-native-community/datetimepicker",
       [
         "expo-location",

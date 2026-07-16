@@ -11,6 +11,7 @@ import { AlertProvider } from '@/contexts/AlertContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { PushNotificationProvider } from '@/contexts/PushNotificationContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Initialize Amplify configuration
@@ -54,11 +55,13 @@ export default function RootLayout() {
       <LanguageProvider>
         <AuthProvider>
           <ChatProvider>
-            <AlertProvider>
-              <ErrorBoundary>
-                <RootLayoutContent />
-              </ErrorBoundary>
-            </AlertProvider>
+            <PushNotificationProvider>
+              <AlertProvider>
+                <ErrorBoundary>
+                  <RootLayoutContent />
+                </ErrorBoundary>
+              </AlertProvider>
+            </PushNotificationProvider>
           </ChatProvider>
         </AuthProvider>
       </LanguageProvider>
