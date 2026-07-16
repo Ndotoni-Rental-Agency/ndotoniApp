@@ -16,7 +16,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -52,6 +52,15 @@ export default function HostDashboardScreen() {
   const { deletePropertyById } = useDeleteProperty();
   const { showAlert } = useAlert();
   const firstName = user?.firstName || 'Host';
+  const navigation = useNavigation();
+
+  // Reset to home when user taps the Host tab while on a subpage
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress' as any, () => {
+      if (page !== 'home') setPage('home');
+    });
+    return unsubscribe;
+  }, [navigation, page]);
 
   useEffect(() => {
     if (properties.length > 0 && isAuthenticated) fetchStats();
