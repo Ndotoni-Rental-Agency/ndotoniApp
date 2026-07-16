@@ -1,10 +1,10 @@
-import PropertyCard from '@/components/property/PropertyCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getShortTermProperty } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -14,6 +14,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,10 +38,13 @@ interface FavoriteProperty {
   thumbnail: string | null;
   propertyType: string;
   maxGuests: number;
+  averageRating: number;
+  instantBookEnabled: boolean;
 }
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { width: W } = useWindowDimensions();
   const { isAuthenticated } = useAuth();
   const { toggleFavorite } = useFavorites();
 
@@ -52,24 +56,20 @@ export default function FavoritesScreen() {
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
 
   const fetchFavorites = useCallback(async () => {
     if (!isAuthenticated) {
-      console.log('[Favorites] Not authenticated, skipping fetch');
       setProperties([]);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('[Favorites] Fetching favorite IDs from server...');
-
-      // Step 1: Get favorite property IDs (minimal query, no propertyType to avoid enum issues)
       const res = await GraphQLClient.executeAuthenticated<{
         getPropertiesByCategory: { properties: { propertyId: string }[] };
       }>(getFavoriteIds);
       const favoriteIds = (res?.getPropertiesByCategory?.properties || []).map(p => p.propertyId);
-      console.log('[Favorites] Got IDs:', { count: favoriteIds.length, ids: favoriteIds });
 
       if (!favoriteIds.length) {
         setProperties([]);
@@ -77,7 +77,6 @@ export default function FavoritesScreen() {
         return;
       }
 
-      // Step 2: Fetch each as a short-term property (returns null for long-term)
       const results = await Promise.all(
         favoriteIds.map(async (id) => {
           try {
@@ -87,12 +86,11 @@ export default function FavoritesScreen() {
             );
             return data?.getShortTermProperty || null;
           } catch {
-            return null; // Not a short-term property or error
+            return null;
           }
         })
       );
 
-      // Step 3: Filter out nulls (long-term properties) and map to our shape
       const shortTermFavorites = results
         .filter((p): p is any => p !== null && p.status === 'AVAILABLE')
         .map((p) => ({
@@ -105,12 +103,9 @@ export default function FavoritesScreen() {
           thumbnail: p.thumbnail || p.images?.[0] || null,
           propertyType: p.propertyType || '',
           maxGuests: p.maxGuests || 0,
+          averageRating: p.averageRating || p.ratingSummary?.averageRating || 0,
+          instantBookEnabled: p.instantBookEnabled || false,
         }));
-
-      console.log('[Favorites] Short-term properties:', {
-        count: shortTermFavorites.length,
-        titles: shortTermFavorites.map(p => p.title),
-      });
 
       setProperties(shortTermFavorites);
     } catch (error) {
@@ -132,61 +127,108 @@ export default function FavoritesScreen() {
   };
 
   const handleToggleFavorite = async (propertyId: string) => {
-    console.log('[Favorites] Removing favorite:', propertyId);
     await toggleFavorite(propertyId);
     setProperties(prev => prev.filter(p => p.propertyId !== propertyId));
   };
 
-  const renderProperty = ({ item }: { item: FavoriteProperty }) => (
-    <PropertyCard
-      propertyId={item.propertyId}
-      title={item.title}
-      location={[item.district, item.region].filter(Boolean).join(', ')}
-      price={item.nightlyRate}
-      currency={item.currency}
-      thumbnail={item.thumbnail || undefined}
-      bedrooms={item.maxGuests}
-      priceUnit="night"
-      propertyType={item.propertyType}
-      isFavorited={true}
-      onFavoritePress={() => handleToggleFavorite(item.propertyId)}
+  const CARD_WIDTH = (W - 48) / 2;
+  const IMG_HEIGHT = CARD_WIDTH * 1.15;
+
+  const renderCard = ({ item }: { item: FavoriteProperty }) => (
+    <TouchableOpacity
+      style={[styles.card, { width: CARD_WIDTH }]}
+      activeOpacity={0.92}
       onPress={() => router.push(`/short-property/${item.propertyId}`)}
-    />
+    >
+      <View style={[styles.imgWrap, { height: IMG_HEIGHT, backgroundColor: cardBg }]}>
+        <Image
+          source={{ uri: item.thumbnail || undefined }}
+          style={styles.img}
+          contentFit="cover"
+          transition={200}
+        />
+        {/* Heart button */}
+        <TouchableOpacity
+          style={styles.heart}
+          onPress={() => handleToggleFavorite(item.propertyId)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="heart" size={18} color="#ff385c" />
+        </TouchableOpacity>
+        {/* Rating badge */}
+        {item.averageRating > 0 && (
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={10} color="#fff" />
+            <Text style={styles.ratingText}>{item.averageRating.toFixed(1)}</Text>
+          </View>
+        )}
+        {/* Instant book badge */}
+        {item.instantBookEnabled && (
+          <View style={styles.instantBadge}>
+            <Ionicons name="flash" size={9} color="#fff" />
+            <Text style={styles.instantText}>Instant</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.meta}>
+        <Text style={[styles.location, { color: text }]} numberOfLines={1}>
+          {item.district || item.region}
+        </Text>
+        <Text style={[styles.title, { color: subtle }]} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={[styles.price, { color: text }]}>
+          {item.currency === 'TZS' ? 'Tshs' : item.currency} {item.nightlyRate.toLocaleString()}
+          <Text style={{ color: subtle, fontWeight: '400' }}> /night</Text>
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: text }]}>Favorites</Text>
-        <View style={styles.backButton} />
+        <View>
+          <Text style={[styles.headerTitle, { color: text }]}>Favorites</Text>
+          {properties.length > 0 && (
+            <Text style={[styles.headerCount, { color: subtle }]}>
+              {properties.length} saved {properties.length === 1 ? 'stay' : 'stays'}
+            </Text>
+          )}
+        </View>
+        <View style={styles.backBtn} />
       </View>
 
       {loading ? (
-        <View style={styles.centerWrap}>
+        <View style={styles.center}>
           <ActivityIndicator size="large" color={tint} />
         </View>
       ) : (
         <FlatList
           data={properties}
           keyExtractor={(item) => item.propertyId}
-          renderItem={renderProperty}
+          renderItem={renderCard}
           numColumns={2}
           columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={properties.length === 0 ? styles.emptyList : styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />
           }
           ListEmptyComponent={
-            <View style={styles.centerWrap}>
-              <Ionicons name="heart-outline" size={48} color={subtle} />
-              <Text style={[styles.emptyTitle, { color: text }]}>No favorites yet</Text>
+            <View style={styles.emptyWrap}>
+              <View style={[styles.emptyIcon, { backgroundColor: `${tint}15` }]}>
+                <Ionicons name="heart-outline" size={40} color={tint} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: text }]}>
+                No saved stays yet
+              </Text>
               <Text style={[styles.emptySub, { color: subtle }]}>
-                Properties you favorite will appear here
+                Tap the heart on any property to save it here for later
               </Text>
               <TouchableOpacity
                 style={[styles.exploreBtn, { backgroundColor: tint }]}
@@ -203,61 +245,115 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 4,
+    paddingBottom: 16,
   },
-  backButton: {
+  backBtn: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  headerTitle: { fontSize: 20, fontWeight: '800' },
+  headerCount: { fontSize: 13, marginTop: 2 },
+
+  // List
+  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  emptyList: { flexGrow: 1 },
+  row: { justifyContent: 'space-between', marginBottom: 20 },
+
+  // Card
+  card: { marginBottom: 0 },
+  imgWrap: { borderRadius: 14, overflow: 'hidden' },
+  img: { width: '100%', height: '100%' },
+  heart: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 3,
   },
-  list: {
-    padding: 16,
-    paddingBottom: 40,
+  ratingBadge: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  row: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
+  ratingText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  instantBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#10b981',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  centerWrap: {
+  instantText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+
+  // Meta
+  meta: { paddingTop: 8 },
+  location: { fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
+  title: { fontSize: 12, marginTop: 2 },
+  price: { fontSize: 13, fontWeight: '600', marginTop: 4 },
+
+  // Center / loading
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // Empty state
+  emptyWrap: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingVertical: 80,
+    paddingBottom: 40,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
+  emptyTitle: { fontSize: 20, fontWeight: '700' },
   emptySub: {
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   exploreBtn: {
-    marginTop: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
+    marginTop: 28,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
   },
-  exploreBtnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
+  exploreBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
