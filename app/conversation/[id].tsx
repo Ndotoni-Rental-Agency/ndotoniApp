@@ -57,10 +57,7 @@ export default function ConversationScreen() {
 
   // Real-time subscription for new messages
   const handleNewMessage = useCallback((message: SubscriptionMessage) => {
-    // Don't add messages we sent ourselves (already added optimistically by sendMessage)
-    if (message.isMine) return;
-
-    // Add the message to the chat context
+    // Add the message to the chat context (deduplication by ID handles messages we sent ourselves)
     addMessageFromSubscription({
       id: message.id,
       conversationId: message.conversationId,
@@ -68,7 +65,7 @@ export default function ConversationScreen() {
       content: message.content,
       timestamp: message.timestamp,
       isRead: message.isRead,
-      isMine: false,
+      isMine: message.isMine,
       __typename: 'ChatMessage',
     });
   }, []);
