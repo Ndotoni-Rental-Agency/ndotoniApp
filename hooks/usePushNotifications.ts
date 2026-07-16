@@ -1,43 +1,66 @@
+/**
+ * Push Notifications Hook
+ *
+ * Uses expo-notifications for push token registration and notification handling.
+ * Gracefully no-ops when running in Expo Go (where the native module isn't available).
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { type EventSubscription } from 'expo-notifications';
-import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 
-// Configure how notifications are handled when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Lazy-load expo-notifications and expo-device to avoid bundler crash in Expo Go
+let Notifications: typeof import('expo-notifications') | null = null;
+let Device: typeof import('expo-device') | null = null;
+
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+
+  // Configure foreground notification behavior
+  if (Notifications) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+} catch (e) {
+  console.log('[PushNotifications] expo-notifications not available (Expo Go?). Push notifications disabled.');
+}
 
 export interface PushNotificationState {
   expoPushToken: string | null;
-  notification: Notifications.Notification | null;
+  notification: any | null;
   error: string | null;
 }
 
 /**
  * Hook to manage push notification registration, permissions, and listeners.
  * Returns the Expo push token and handles notification tap navigation.
+ * No-ops gracefully when expo-notifications is unavailable (Expo Go).
  */
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const notificationListener = useRef<EventSubscription | null>(null);
-  const responseListener = useRef<EventSubscription | null>(null);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
   const router = useRouter();
 
   /**
    * Register for push notifications and return the Expo push token.
    */
   const registerForPushNotifications = useCallback(async (): Promise<string | null> => {
+    if (!Notifications || !Device) {
+      console.log('[PushNotifications] Native module not available, skipping registration');
+      return null;
+    }
+
     try {
       // Push notifications only work on physical devices
       if (!Device.isDevice) {
@@ -93,17 +116,19 @@ export function usePushNotifications() {
   }, []);
 
   useEffect(() => {
+    if (!Notifications) return;
+
     // Listen for incoming notifications (foreground)
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        console.log('[PushNotifications] Notification received:', notification.request.content.title);
-        setNotification(notification);
+      (notif: any) => {
+        console.log('[PushNotifications] Notification received:', notif.request.content.title);
+        setNotification(notif);
       }
     );
 
     // Listen for notification taps (user interaction)
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+      (response: any) => {
         const data = response.notification.request.content.data;
         console.log('[PushNotifications] Notification tapped, data:', data);
 
