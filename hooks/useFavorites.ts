@@ -21,6 +21,7 @@ import { useCallback, useEffect, useReducer } from 'react';
 const STORAGE_KEY = 'ndotoni_favorites';
 
 const globalFavorites = new Set<string>();
+const inFlightToggles = new Set<string>(); // prevents double-toggling
 let initialized = false;
 let version = 0; // increment on every mutation to bust memoization
 
@@ -76,6 +77,10 @@ export function useFavorites() {
   );
 
   const toggleFavorite = useCallback(async (propertyId: string) => {
+    // Prevent double-toggling while a request is in-flight
+    if (inFlightToggles.has(propertyId)) return;
+    inFlightToggles.add(propertyId);
+
     const wasAlreadyFavorited = globalFavorites.has(propertyId);
 
     // ─── Optimistic update (mutate in place) ───
@@ -109,6 +114,8 @@ export function useFavorites() {
     } catch (error) {
       console.error('[useFavorites] Error toggling favorite:', error);
       revert(propertyId, wasAlreadyFavorited);
+    } finally {
+      inFlightToggles.delete(propertyId);
     }
   }, []);
 
