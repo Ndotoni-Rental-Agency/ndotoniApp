@@ -177,10 +177,12 @@ export default function HostDashboardScreen() {
         <View style={s.listingsSection}>
           <View style={s.listingsHeader}>
             <Text style={[s.sectionTitle, { color: text }]}>Your listings</Text>
-            <TouchableOpacity onPress={() => router.push('/landlord/short-property/create')} style={[s.newBtn, { backgroundColor: tint }]}>
-              <Ionicons name="add" size={16} color="#fff" />
-              <Text style={s.newBtnText}>New</Text>
-            </TouchableOpacity>
+            {properties.length > 0 && (
+              <TouchableOpacity onPress={() => router.push('/landlord/short-property/create')} style={[s.newBtn, { backgroundColor: tint }]}>
+                <Ionicons name="add" size={16} color="#fff" />
+                <Text style={s.newBtnText}>New</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {propsLoading ? <ActivityIndicator color={tint} style={{ paddingVertical: 40 }} /> : properties.length === 0 ? (
@@ -214,7 +216,7 @@ export default function HostDashboardScreen() {
         </View>
 
         {/* Quick actions */}
-        {properties.length > 0 && <QuickActions colors={colors} pendingCount={pendingCount} onAction={setPage} />}
+        <QuickActions colors={colors} pendingCount={pendingCount} onAction={setPage} />
 
         <View style={{ height: 40 }} />
       </ScrollView>
