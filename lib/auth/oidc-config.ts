@@ -7,15 +7,15 @@ import Constants from 'expo-constants';
 
 // Get configuration from environment variables
 const getUserPoolId = () => {
-  return process.env.EXPO_PUBLIC_USER_POOL_ID || 'us-west-2_N7XRQtTla';
+  return process.env.EXPO_PUBLIC_USER_POOL_ID!;
 };
 
 const getMobileClientId = () => {
-  return process.env.EXPO_PUBLIC_MOBILE_CLIENT_ID || 'djgqjttrjucdoah5ap41ojcjh';
+  return process.env.EXPO_PUBLIC_MOBILE_CLIENT_ID!;
 };
 
 const getCognitoDomain = () => {
-  return process.env.EXPO_PUBLIC_COGNITO_DOMAIN || 'auth-beta.ndotoni.com';
+  return process.env.EXPO_PUBLIC_COGNITO_DOMAIN!;
 };
 
 const getRegion = () => {

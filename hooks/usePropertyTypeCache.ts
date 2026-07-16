@@ -8,8 +8,8 @@
 import { PropertyCard } from '@/lib/API';
 import { useCallback, useEffect, useState } from 'react';
 
-const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d2bstvyam1bm1f.cloudfront.net';
-const STAGE = process.env.EXPO_PUBLIC_STAGE || 'dev';
+const CLOUDFRONT_DOMAIN = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN!;
+const STAGE = process.env.EXPO_PUBLIC_STAGE!;
 
 export interface PropertyTypeData {
   propertyType: string;

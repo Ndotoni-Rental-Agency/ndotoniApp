@@ -16,8 +16,8 @@ import HybridAuthService from './auth/hybrid-auth-service';
 import './amplify';
 
 // Get AppSync configuration
-const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 'https://otp4pddzjjhvzdwcexgxcuopp4.appsync-api.us-west-2.amazonaws.com/graphql';
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY || 'da2-ncvexbs4sfc7jol4gzs2ts3fdm';
+const GRAPHQL_ENDPOINT = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT!;
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY!;
 
 // Initialize Amplify client
 const amplifyClient = generateClient();

@@ -4,7 +4,7 @@
  * Always tries CloudFront first, falls back to GraphQL automatically
  */
 
-const CDN_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d3qiuw9agheakm.cloudfront.net';
+const CDN_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_DOMAIN!;
 
 export interface PropertyCacheData {
   propertyId: string;

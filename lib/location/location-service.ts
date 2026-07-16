@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LocationData, FlattenedLocation } from './types';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const CLOUDFRONT_URL = 'https://d2bstvyam1bm1f.cloudfront.net/api/locations-current.json';
+const CLOUDFRONT_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_URL!;
 const STORAGE_KEY = 'ndotoni_locations';
 const STORAGE_TIMESTAMP_KEY = 'ndotoni_locations_timestamp';
 const CACHE_DURATION = 30 * ONE_DAY_MS; // 30 days

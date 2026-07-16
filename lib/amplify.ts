@@ -9,14 +9,14 @@ import type { ResourcesConfig } from 'aws-amplify';
 
 // Get configuration from environment variables
 const getConfig = (): ResourcesConfig => {
-  const userPoolId = process.env.EXPO_PUBLIC_USER_POOL_ID || 'us-west-2_N7XRQtTla';
-  const userPoolClientId = process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID || 'djgqjttrjucdoah5ap41ojcjh';
-  const cognitoDomain = process.env.EXPO_PUBLIC_COGNITO_DOMAIN || 'auth-beta.ndotoni.com';
+  const userPoolId = process.env.EXPO_PUBLIC_USER_POOL_ID!;
+  const userPoolClientId = process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID!;
+  const cognitoDomain = process.env.EXPO_PUBLIC_COGNITO_DOMAIN!;
   const redirectSignIn = process.env.EXPO_PUBLIC_REDIRECT_SIGN_IN || 'ndotoniapp://';
   const redirectSignOut = process.env.EXPO_PUBLIC_REDIRECT_SIGN_OUT || 'ndotoniapp://';
-  const graphqlEndpoint = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT || 'https://otp4pddzjjhvzdwcexgxcuopp4.appsync-api.us-west-2.amazonaws.com/graphql';
+  const graphqlEndpoint = process.env.EXPO_PUBLIC_GRAPHQL_ENDPOINT!;
   const graphqlRegion = process.env.EXPO_PUBLIC_GRAPHQL_REGION || 'us-west-2';
-  const apiKey = process.env.EXPO_PUBLIC_API_KEY || 'da2-ncvexbs4sfc7jol4gzs2ts3fdm';
+  const apiKey = process.env.EXPO_PUBLIC_API_KEY!;
 
   return {
     Auth: {

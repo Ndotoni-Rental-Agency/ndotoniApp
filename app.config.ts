@@ -2,7 +2,7 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const googleMapsApiKey =
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w";
+    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY!;
 
   return {
     name: "ndotoni Stays",

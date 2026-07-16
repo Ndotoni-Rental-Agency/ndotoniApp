@@ -65,11 +65,11 @@ export const env: EnvConfig = {
   AWS_APPSYNC_API_KEY: getEnvVar('AWS_APPSYNC_API_KEY'),
   
   // Google Maps
-  GOOGLE_MAPS_API_KEY: getEnvVar('GOOGLE_MAPS_API_KEY', 'AIzaSyAmuUwdIwg_Jz6TGqOpzpWDvKl5YdvNP6w'),
+  GOOGLE_MAPS_API_KEY: getEnvVar('GOOGLE_MAPS_API_KEY'),
   
   // CloudFront & S3
-  CLOUDFRONT_DOMAIN: getEnvVar('CLOUDFRONT_DOMAIN', 'https://d2bstvyam1bm1f.cloudfront.net'),
-  S3_BUCKET: getEnvVar('S3_BUCKET', 'ndotoni-media-storage-dev'),
+  CLOUDFRONT_DOMAIN: getEnvVar('CLOUDFRONT_DOMAIN'),
+  S3_BUCKET: getEnvVar('S3_BUCKET'),
   
   // Environment
   ENV: (getEnvVar('ENV', 'development') as EnvConfig['ENV']),

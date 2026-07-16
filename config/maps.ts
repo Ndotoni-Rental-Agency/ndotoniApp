@@ -6,10 +6,7 @@
 export const MAPS_CONFIG = {
   // Google Maps API Key
   // Used for: Geocoding, Maps Display, Places API
-  GOOGLE_API_KEY: 'AIzaSyAA79IOdXt_LrssAhIYer_ZQQHNeD8Xogs',
-  
-  // URL Signing Secret (optional, for enhanced security)
-  URL_SIGNING_SECRET: 'c4Wnwr0M6DfAQHazFGrzBjaZXKY=',
+  GOOGLE_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY!,
   
   // Default map settings
   DEFAULT_REGION: {
