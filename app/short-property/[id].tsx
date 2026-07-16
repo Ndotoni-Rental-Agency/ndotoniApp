@@ -1,3 +1,4 @@
+import FavoriteButton from '@/components/FavoriteButton';
 import FullScreenGallery from '@/components/property/FullScreenGallery';
 import GalleryCarousel from '@/components/property/GalleryCarousel';
 import HighlightCard from '@/components/property/HighlightCard';
@@ -10,7 +11,6 @@ import PropertyRules from '@/components/property/PropertyRules';
 import ReservationModal from '@/components/property/ReservationModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
-import { useFavorites } from '@/hooks/useFavorites';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +47,6 @@ export default function ShortTermPropertyDetailsScreen() {
   const [galleryStart, setGalleryStart] = useState(0);
 
   const { property, loading, error, retry } = useShortTermPropertyDetail(propertyId);
-  const { toggleFavorite, isFavorited } = useFavorites();
   const { coordinates } = usePropertyGeocode(property);
 
   const bg = useThemeColor({}, 'background');
@@ -150,9 +149,7 @@ export default function ShortTermPropertyDetailsScreen() {
           <TouchableOpacity style={styles.stickyBtn} onPress={handleShare}>
             <Ionicons name="share-outline" size={18} color={text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.stickyBtn} onPress={() => toggleFavorite(propertyId)}>
-            <Ionicons name={isFavorited(propertyId) ? 'heart' : 'heart-outline'} size={18} color={isFavorited(propertyId) ? '#ff385c' : text} />
-          </TouchableOpacity>
+          <FavoriteButton propertyId={propertyId} size={18} variant="light-bg" style={styles.stickyBtn} />
         </View>
       </Animated.View>
 
@@ -187,13 +184,7 @@ export default function ShortTermPropertyDetailsScreen() {
               <TouchableOpacity style={styles.navBtn} onPress={handleShare}>
                 <Ionicons name="share-outline" size={20} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.navBtn} onPress={() => toggleFavorite(propertyId)}>
-                <Ionicons
-                  name={isFavorited(propertyId) ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={isFavorited(propertyId) ? '#ff385c' : '#fff'}
-                />
-              </TouchableOpacity>
+              <FavoriteButton propertyId={propertyId} size={20} style={styles.navBtn} />
             </View>
           </View>
 

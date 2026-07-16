@@ -60,7 +60,7 @@ async function loadFromStorage() {
 
 export function useFavorites() {
   // forceUpdate triggers a re-render so isFavorited reads fresh global state
-  const [rev, forceUpdate] = useReducer(x => x + 1, 0);
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
 
   // Subscribe to global changes
   useEffect(() => {
@@ -120,7 +120,7 @@ export function useFavorites() {
     }
   }, []);
 
-  return { isFavorited, toggleFavorite, rev };
+  return { isFavorited, toggleFavorite };
 }
 
 // =============================================================================

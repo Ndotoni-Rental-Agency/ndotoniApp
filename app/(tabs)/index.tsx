@@ -1,8 +1,8 @@
+import FavoriteButton from '@/components/FavoriteButton';
 import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
-import { useFavorites } from '@/hooks/useFavorites';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -48,7 +48,6 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
-  const { toggleFavorite, isFavorited, rev } = useFavorites();
 
   const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const text = useThemeColor({}, 'text');
@@ -101,9 +100,7 @@ export default function HomeScreen() {
     <TouchableOpacity style={styles.wideCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
       <View style={[styles.wideImgWrap, { height: W * 0.55 }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
-        <TouchableOpacity style={styles.heart} onPress={() => toggleFavorite(p.propertyId)}>
-          <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={20} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
-        </TouchableOpacity>
+        <FavoriteButton propertyId={p.propertyId} size={20} style={styles.heart} />
         {p.instantBookEnabled && (
           <View style={styles.instantBadge}>
             <Ionicons name="flash" size={11} color="#fff" />
@@ -132,9 +129,7 @@ export default function HomeScreen() {
     <TouchableOpacity style={styles.compactCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
       <View style={[styles.compactImgWrap, { height: (W - 44) / 2 * 1.1 }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
-        <TouchableOpacity style={styles.heartSmall} onPress={() => toggleFavorite(p.propertyId)}>
-          <Ionicons name={isFavorited(p.propertyId) ? 'heart' : 'heart-outline'} size={16} color={isFavorited(p.propertyId) ? '#ff385c' : '#fff'} />
-        </TouchableOpacity>
+        <FavoriteButton propertyId={p.propertyId} size={16} style={styles.heartSmall} />
         {p.instantBookEnabled && (
           <View style={styles.instantBadgeSmall}>
             <Ionicons name="flash" size={9} color="#fff" />
@@ -165,9 +160,7 @@ export default function HomeScreen() {
         >
           <Image source={{ uri: featured.thumbnail || undefined }} style={[styles.fill, { height: W * 0.85 }]} contentFit="cover" transition={300} />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroGradient} />
-          <TouchableOpacity style={styles.heroHeart} onPress={() => toggleFavorite(featured.propertyId)}>
-            <Ionicons name={isFavorited(featured.propertyId) ? 'heart' : 'heart-outline'} size={22} color={isFavorited(featured.propertyId) ? '#ff385c' : '#fff'} />
-          </TouchableOpacity>
+          <FavoriteButton propertyId={featured.propertyId} size={22} style={styles.heroHeart} />
           <View style={styles.heroInfo}>
             <Text style={styles.heroLoc}>{featured.district || featured.region}</Text>
             <Text style={styles.heroTitle} numberOfLines={2}>{featured.title}</Text>
@@ -249,7 +242,6 @@ export default function HomeScreen() {
       ) : (
         <FlatList
           data={rest}
-          extraData={rev}
           keyExtractor={(p: any) => p.propertyId}
           renderItem={renderFeedItem}
           ListHeaderComponent={ListHeader}

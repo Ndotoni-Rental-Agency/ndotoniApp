@@ -1,3 +1,4 @@
+import FavoriteButton from '@/components/FavoriteButton';
 import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -165,9 +166,7 @@ export default function SearchScreen() {
           contentFit="cover"
           transition={200}
         />
-        <TouchableOpacity style={styles.cardFav}>
-          <Ionicons name="heart-outline" size={20} color="#fff" />
-        </TouchableOpacity>
+        <FavoriteButton propertyId={property.propertyId} size={20} style={styles.cardFav} />
         {property.instantBookEnabled && (
           <View style={styles.cardInstantBadge}>
             <Ionicons name="flash" size={11} color="#fff" />
