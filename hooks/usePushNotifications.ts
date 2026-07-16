@@ -134,7 +134,8 @@ export function usePushNotifications() {
 
         // Navigate to the conversation when a message notification is tapped
         if (data?.conversationId) {
-          router.push(`/conversation/${data.conversationId}` as any);
+          const encodedId = encodeURIComponent(data.conversationId);
+          router.push(`/conversation/${encodedId}` as any);
         }
       }
     );
