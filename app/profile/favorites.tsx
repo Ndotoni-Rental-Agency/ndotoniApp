@@ -2,9 +2,8 @@ import PropertyCard from '@/components/property/PropertyCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { GetPropertiesByCategoryQuery } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { getPropertiesByCategory, getShortTermProperty } from '@/lib/graphql/queries';
+import { getShortTermProperty } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -18,6 +17,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Minimal query to get just favorite IDs — avoids PropertyType enum serialization issues
+const getFavoriteIds = /* GraphQL */ `query GetFavoriteIds {
+  getPropertiesByCategory(category: FAVORITES, limit: 50) {
+    properties {
+      propertyId
+    }
+  }
+}`;
 
 interface FavoriteProperty {
   propertyId: string;
@@ -56,11 +64,10 @@ export default function FavoritesScreen() {
     try {
       console.log('[Favorites] Fetching favorite IDs from server...');
 
-      // Step 1: Get favorite property IDs
-      const res = await GraphQLClient.executeAuthenticated<GetPropertiesByCategoryQuery>(
-        getPropertiesByCategory,
-        { category: 'FAVORITES', limit: 50 }
-      );
+      // Step 1: Get favorite property IDs (minimal query, no propertyType to avoid enum issues)
+      const res = await GraphQLClient.executeAuthenticated<{
+        getPropertiesByCategory: { properties: { propertyId: string }[] };
+      }>(getFavoriteIds);
       const favoriteIds = (res?.getPropertiesByCategory?.properties || []).map(p => p.propertyId);
       console.log('[Favorites] Got IDs:', { count: favoriteIds.length, ids: favoriteIds });
 
