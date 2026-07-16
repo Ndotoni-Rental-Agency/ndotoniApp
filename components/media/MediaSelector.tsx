@@ -509,7 +509,7 @@ export default function MediaSelector({
                         />
                       )}
                       {isVideo && (
-                        <View style={styles.playIconOverlay}>
+                        <View style={styles.playIconOverlay} pointerEvents="none">
                           <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
                         </View>
                       )}
@@ -552,7 +552,7 @@ export default function MediaSelector({
                     />
                   )}
                   {isVideo && (
-                    <View style={styles.playIconOverlay}>
+                    <View style={styles.playIconOverlay} pointerEvents="none">
                       <Ionicons name="play-circle" size={40} color="rgba(255,255,255,0.9)" />
                     </View>
                   )}
