@@ -12,6 +12,7 @@ export interface CreateListingForm {
   bathrooms: string;
   instantBookEnabled: boolean;
   images: string[];
+  videos: string[];
 }
 
 export interface StepProps {

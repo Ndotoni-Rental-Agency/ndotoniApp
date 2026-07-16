@@ -57,6 +57,7 @@ export default function CreatePropertyScreen() {
     bathrooms: '1',
     instantBookEnabled: false,
     images: [],
+    videos: [],
   });
 
   // Animations
@@ -142,6 +143,7 @@ export default function CreatePropertyScreen() {
             bathrooms: parseInt(form.bathrooms) || 1,
             instantBookEnabled: form.instantBookEnabled,
             images: form.images,
+            videos: form.videos.length > 0 ? form.videos : undefined,
             guestPhoneNumber: user?.phoneNumber || undefined,
             guestWhatsappNumber:
               user?.whatsappNumber || user?.phoneNumber || undefined,

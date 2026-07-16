@@ -6,25 +6,38 @@ import { StepProps } from './types';
 export default function StepPhotos({ form, updateField, colors }: StepProps) {
   const { text, tint, subtle } = colors;
 
+  const allMedia = [...(form.images || []), ...(form.videos || [])];
+
+  const handleMediaChange = (urls: string[], images: string[], videos: string[]) => {
+    updateField('images', images);
+    updateField('videos', videos);
+  };
+
+  const imageCount = form.images?.length || 0;
+  const videoCount = form.videos?.length || 0;
+
   return (
     <>
       <Text style={[styles.heading, { color: text }]}>
-        Add some photos{'\n'}of your place
+        Add photos & videos{'\n'}of your place
       </Text>
       <Text style={[styles.subtitle, { color: subtle }]}>
-        You'll need at least 1 photo to get started.{'\n'}You can add more later.
+        You'll need at least 1 photo to get started.{'\n'}Videos help guests get a better feel for the space.
       </Text>
 
       <View style={styles.mediaWrap}>
         <MediaSelector
-          selectedMedia={form.images}
-          onMediaChange={(_urls: string[], imgs: string[]) => updateField('images', imgs)}
+          selectedMedia={allMedia}
+          onMediaChange={handleMediaChange}
         />
       </View>
 
-      {form.images.length > 0 && (
+      {(imageCount > 0 || videoCount > 0) && (
         <Text style={[styles.count, { color: tint }]}>
-          {form.images.length} photo{form.images.length !== 1 ? 's' : ''} added ✓
+          {imageCount > 0 && `${imageCount} photo${imageCount !== 1 ? 's' : ''}`}
+          {imageCount > 0 && videoCount > 0 && ' · '}
+          {videoCount > 0 && `${videoCount} video${videoCount !== 1 ? 's' : ''}`}
+          {' ✓'}
         </Text>
       )}
     </>
