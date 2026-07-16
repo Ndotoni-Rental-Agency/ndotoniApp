@@ -2,9 +2,9 @@ import PropertyCard from '@/components/property/PropertyCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { GetPropertiesByCategoryQuery, PropertyCard as PropertyCardType } from '@/lib/API';
+import { GetPropertiesByCategoryQuery } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { getPropertiesByCategory } from '@/lib/graphql/queries';
+import { getPropertiesByCategory, getShortTermProperty } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -19,12 +19,24 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+interface FavoriteProperty {
+  propertyId: string;
+  title: string;
+  district: string;
+  region: string;
+  nightlyRate: number;
+  currency: string;
+  thumbnail: string | null;
+  propertyType: string;
+  maxGuests: number;
+}
+
 export default function FavoritesScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { toggleFavorite, isFavorited } = useFavorites();
+  const { toggleFavorite } = useFavorites();
 
-  const [properties, setProperties] = useState<PropertyCardType[]>([]);
+  const [properties, setProperties] = useState<FavoriteProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -42,18 +54,58 @@ export default function FavoritesScreen() {
     }
 
     try {
-      console.log('[Favorites] Fetching favorites from server...');
+      console.log('[Favorites] Fetching favorite IDs from server...');
+
+      // Step 1: Get favorite property IDs
       const res = await GraphQLClient.executeAuthenticated<GetPropertiesByCategoryQuery>(
         getPropertiesByCategory,
         { category: 'FAVORITES', limit: 50 }
       );
-      const items = res?.getPropertiesByCategory?.properties || [];
-      console.log('[Favorites] Received properties:', {
-        count: items.length,
-        ids: items.map(p => p.propertyId),
-        titles: items.map(p => p.title),
+      const favoriteIds = (res?.getPropertiesByCategory?.properties || []).map(p => p.propertyId);
+      console.log('[Favorites] Got IDs:', { count: favoriteIds.length, ids: favoriteIds });
+
+      if (!favoriteIds.length) {
+        setProperties([]);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch each as a short-term property (returns null for long-term)
+      const results = await Promise.all(
+        favoriteIds.map(async (id) => {
+          try {
+            const data = await GraphQLClient.executeAuthenticated<any>(
+              getShortTermProperty,
+              { propertyId: id }
+            );
+            return data?.getShortTermProperty || null;
+          } catch {
+            return null; // Not a short-term property or error
+          }
+        })
+      );
+
+      // Step 3: Filter out nulls (long-term properties) and map to our shape
+      const shortTermFavorites = results
+        .filter((p): p is any => p !== null && p.status === 'AVAILABLE')
+        .map((p) => ({
+          propertyId: p.propertyId,
+          title: p.title,
+          district: p.district || p.address?.district || '',
+          region: p.region || p.address?.region || '',
+          nightlyRate: p.nightlyRate || 0,
+          currency: p.currency || 'TZS',
+          thumbnail: p.thumbnail || p.images?.[0] || null,
+          propertyType: p.propertyType || '',
+          maxGuests: p.maxGuests || 0,
+        }));
+
+      console.log('[Favorites] Short-term properties:', {
+        count: shortTermFavorites.length,
+        titles: shortTermFavorites.map(p => p.title),
       });
-      setProperties(items);
+
+      setProperties(shortTermFavorites);
     } catch (error) {
       console.error('[Favorites] Error fetching favorites:', error);
       setProperties([]);
@@ -75,21 +127,20 @@ export default function FavoritesScreen() {
   const handleToggleFavorite = async (propertyId: string) => {
     console.log('[Favorites] Removing favorite:', propertyId);
     await toggleFavorite(propertyId);
-    // Remove from local list immediately for responsive UI
     setProperties(prev => prev.filter(p => p.propertyId !== propertyId));
   };
 
-  const renderProperty = ({ item }: { item: PropertyCardType }) => (
+  const renderProperty = ({ item }: { item: FavoriteProperty }) => (
     <PropertyCard
       propertyId={item.propertyId}
       title={item.title}
       location={[item.district, item.region].filter(Boolean).join(', ')}
-      price={item.monthlyRent || 0}
-      currency={item.currency || 'TZS'}
+      price={item.nightlyRate}
+      currency={item.currency}
       thumbnail={item.thumbnail || undefined}
-      bedrooms={item.bedrooms || undefined}
+      bedrooms={item.maxGuests}
       priceUnit="night"
-      propertyType={item.propertyType || undefined}
+      propertyType={item.propertyType}
       isFavorited={true}
       onFavoritePress={() => handleToggleFavorite(item.propertyId)}
       onPress={() => router.push(`/short-property/${item.propertyId}`)}
