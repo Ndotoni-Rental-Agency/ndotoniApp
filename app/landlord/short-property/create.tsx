@@ -49,6 +49,7 @@ export default function CreatePropertyScreen() {
     region: '',
     district: '',
     ward: '',
+    googleMapsLink: '',
     title: '',
     nightlyRate: '',
     currency: 'TZS',
@@ -144,6 +145,7 @@ export default function CreatePropertyScreen() {
             instantBookEnabled: form.instantBookEnabled,
             images: form.images,
             videos: form.videos.length > 0 ? form.videos : undefined,
+            googleMapsLink: form.googleMapsLink || undefined,
             guestPhoneNumber: user?.phoneNumber || undefined,
             guestWhatsappNumber:
               user?.whatsappNumber || user?.phoneNumber || undefined,

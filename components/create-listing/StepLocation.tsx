@@ -1,10 +1,11 @@
 import LocationSelector from '@/components/location/LocationSelector';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { StepProps } from './types';
 
 export default function StepLocation({ form, updateField, colors }: StepProps) {
-  const { text, subtle } = colors;
+  const { text, subtle, card, border } = colors;
 
   return (
     <>
@@ -23,6 +24,27 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
             updateField('district', loc.district);
             updateField('ward', loc.ward || '');
           }}
+        />
+      </View>
+
+      <View style={styles.mapsLinkSection}>
+        <View style={styles.mapsLinkHeader}>
+          <Ionicons name="location" size={18} color={colors.tint} />
+          <Text style={[styles.mapsLinkLabel, { color: text }]}>Google Maps link</Text>
+          <Text style={[styles.optionalBadge, { color: subtle }]}>optional</Text>
+        </View>
+        <Text style={[styles.mapsLinkHint, { color: subtle }]}>
+          Paste a Google Maps link to pinpoint your property's exact location on the map.
+        </Text>
+        <TextInput
+          style={[styles.mapsLinkInput, { color: text, borderColor: border, backgroundColor: card }]}
+          value={form.googleMapsLink}
+          onChangeText={(val) => updateField('googleMapsLink', val)}
+          placeholder="e.g. https://maps.google.com/..."
+          placeholderTextColor={subtle}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
         />
       </View>
     </>
@@ -44,5 +66,35 @@ const styles = StyleSheet.create({
   },
   selectorWrap: {
     flex: 1,
+  },
+  mapsLinkSection: {
+    marginTop: 24,
+  },
+  mapsLinkHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  mapsLinkLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  optionalBadge: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  mapsLinkHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  mapsLinkInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 14,
   },
 });

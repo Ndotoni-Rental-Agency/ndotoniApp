@@ -4,6 +4,7 @@ export interface CreateListingForm {
   region: string;
   district: string;
   ward: string;
+  googleMapsLink: string;
   title: string;
   nightlyRate: string;
   currency: string;

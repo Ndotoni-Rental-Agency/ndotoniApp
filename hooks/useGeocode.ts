@@ -4,6 +4,7 @@
  */
 
 import { Coordinates, geocodeLocation, GeocodingResult, LocationInput } from '@/lib/geocoding-service';
+import { GoogleMapsParser, parseGoogleMapsLink } from '@/lib/parse-google-maps-link';
 import { useEffect, useState } from 'react';
 
 interface UseGeocodeOptions {
@@ -93,7 +94,8 @@ export function useGeocode(
 
 /**
  * Hook to get coordinates for a property
- * Handles both saved coordinates and geocoding
+ * Handles saved coordinates, Google Maps link parsing, and geocoding fallback.
+ * Priority: saved coordinates > Google Maps link > geocoding from address
  * 
  * @example
  * ```tsx
@@ -102,7 +104,32 @@ export function useGeocode(
  */
 export function usePropertyGeocode(property: any) {
   const savedCoords = property?.address?.coordinates || property?.coordinates;
+  const googleMapsLink = property?.googleMapsUrl || property?.googleMapsLink;
+  const [resolvedCoords, setResolvedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   
+  // Try to extract precise coordinates from Google Maps link (sync parse for full URLs)
+  let effectiveCoords = savedCoords;
+  if (!effectiveCoords && googleMapsLink) {
+    const parsed = parseGoogleMapsLink(googleMapsLink);
+    if (parsed) {
+      effectiveCoords = parsed;
+    }
+  }
+
+  // Use async-resolved coords if available
+  if (!effectiveCoords && resolvedCoords) {
+    effectiveCoords = resolvedCoords;
+  }
+
+  // If sync parse failed and it's a short link, resolve async
+  useEffect(() => {
+    if (!savedCoords && googleMapsLink && GoogleMapsParser.isShortLink(googleMapsLink)) {
+      GoogleMapsParser.parseAsync(googleMapsLink).then((coords) => {
+        if (coords) setResolvedCoords(coords);
+      });
+    }
+  }, [googleMapsLink, savedCoords]);
+
   const location: LocationInput = {
     region: property?.address?.region || property?.region,
     district: property?.address?.district || property?.district,
@@ -111,7 +138,7 @@ export function usePropertyGeocode(property: any) {
   };
 
   return useGeocode(location, {
-    savedCoordinates: savedCoords,
+    savedCoordinates: effectiveCoords,
     autoGeocode: true,
   });
 }
