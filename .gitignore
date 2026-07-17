@@ -46,3 +46,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Firebase service account key (private)
+ndotoni-6c29c-firebase-adminsdk-*.json

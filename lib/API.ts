@@ -699,14 +699,18 @@ export type ChatLandlordInfo = {
 };
 
 export type InitiatePaymentInput = {
-  bookingId: string,
+  bookingId?: string | null,
   phoneNumber: string,
+  listingPlan?: string | null,
 };
 
 export type InitiatePaymentResponse = {
   __typename: "InitiatePaymentResponse",
+  reference: string,
+  status: string,
+  amount: number,
+  currency: string,
   message: string,
-  payment: Payment,
 };
 
 export type Payment = {
@@ -2665,28 +2669,11 @@ export type InitiatePaymentMutationVariables = {
 export type InitiatePaymentMutation = {
   initiatePayment:  {
     __typename: "InitiatePaymentResponse",
+    reference: string,
+    status: string,
+    amount: number,
+    currency: string,
     message: string,
-    payment:  {
-      __typename: "Payment",
-      amount: number,
-      bookingId: string,
-      completedAt?: string | null,
-      conversationID?: string | null,
-      createdAt: string,
-      currency: string,
-      customerEmail?: string | null,
-      customerPhone?: string | null,
-      errorMessage?: string | null,
-      paymentId: string,
-      provider: PaymentProvider,
-      refundAmount?: number | null,
-      refundReason?: string | null,
-      refundedAt?: string | null,
-      status: PaymentStatus,
-      thirdPartyConversationID: string,
-      transactionID?: string | null,
-      updatedAt: string,
-    },
   },
 };
 

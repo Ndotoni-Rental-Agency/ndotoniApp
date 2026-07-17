@@ -35,6 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
       edgeToEdgeEnabled: true,
+      googleServicesFile: "./google-services.json",
       config: {
         googleMaps: {
           apiKey: googleMapsApiKey,

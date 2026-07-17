@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "731911888884",
+    "project_id": "ndotoni-6c29c",
+    "storage_bucket": "ndotoni-6c29c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731911888884:android:eede248cca0b91c991e3a1",
+        "android_client_info": {
+          "package_name": "com.ndotoni.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6xUmjtM_r-_ce4usJKNZjQogkFTr4oyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

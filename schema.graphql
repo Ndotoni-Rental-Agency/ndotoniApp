@@ -365,8 +365,11 @@ type InitialAppState @aws_api_key @aws_cognito_user_pools {
 }
 
 type InitiatePaymentResponse {
+  reference: String!
+  status: String!
+  amount: Float!
+  currency: String!
   message: String!
-  payment: Payment!
 }
 
 type InquiryTypeCount @aws_cognito_user_pools(cognito_groups : ["ADMINS"]) {
