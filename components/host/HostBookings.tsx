@@ -27,7 +27,7 @@ interface Booking {
   guest: { firstName: string; lastName: string; whatsappNumber?: string } | null;
   guestName: string | null;
   guestPhone: string | null;
-  pricing: { total: number; currency: string; numberOfNights: number };
+  pricing: { total: number; subtotal: number; cleaningFee?: number; currency: string; numberOfNights: number };
   specialRequests: string | null;
   createdAt: string;
   property?: { title: string } | null;
@@ -150,7 +150,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
                   </View>
                   {b.property?.title && <Text style={[styles.bProperty, { color: subtle }]}>{b.property.title}</Text>}
                 </View>
-                <Text style={[styles.bPrice, { color: text }]}>{fmtPrice(b.pricing?.total || 0, b.pricing?.currency || 'TZS')}</Text>
+                <Text style={[styles.bPrice, { color: text }]}>{fmtPrice((b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0), b.pricing?.currency || 'TZS')}</Text>
               </View>
 
               {/* Details */}

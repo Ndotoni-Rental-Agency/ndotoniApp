@@ -80,7 +80,7 @@ export default function HostDashboardScreen() {
         try {
           const res = await GraphQLClient.executeAuthenticated<any>(listPropertyBookings, { propertyId: p.propertyId, limit: 20 });
           for (const b of (res.listPropertyBookings?.bookings || [])) {
-            if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.total || 0);
+            if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0);
             if (b.status === 'PENDING') pending++;
             if (b.status === 'CONFIRMED' && (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') && new Date(b.checkInDate) > new Date()) upcoming++;
           }
