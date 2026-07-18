@@ -47,7 +47,7 @@ export default function HostStats({ propertyIds }: Props) {
 
       // Only paid bookings count
       const paid = allBookings.filter(b => b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED');
-      const total = paid.reduce((s, b) => s + (b.pricing?.total || b.totalPrice || 0), 0);
+      const total = paid.reduce((s, b) => s + ((b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0)), 0);
       const totalNights = paid.reduce((s, b) => s + (b.numberOfNights || 1), 0);
 
       setTotalEarned(total);
@@ -63,7 +63,7 @@ export default function HostStats({ propertyIds }: Props) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const monthBookings = paid.filter(b => (b.checkInDate || b.createdAt || '').startsWith(key));
-        const monthEarnings = monthBookings.reduce((s, b) => s + (b.pricing?.total || b.totalPrice || 0), 0);
+        const monthEarnings = monthBookings.reduce((s, b) => s + ((b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0)), 0);
         months.push({ month: monthNames[d.getMonth()], earnings: monthEarnings, bookings: monthBookings.length });
       }
       setMonthlyData(months);
