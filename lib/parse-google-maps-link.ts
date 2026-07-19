@@ -42,7 +42,10 @@ export class GoogleMapsParser {
 
     // For any URL, fetch the page and extract coordinates from the content
     if (/^https?:\/\//i.test(trimmed)) {
-      return GoogleMapsParser.fetchAndExtract(trimmed);
+      console.log('[GoogleMapsParser] Fetching URL:', trimmed.substring(0, 80));
+      const result = await GoogleMapsParser.fetchAndExtract(trimmed);
+      console.log('[GoogleMapsParser] Fetch result:', result);
+      return result;
     }
 
     return null;
@@ -68,14 +71,26 @@ export class GoogleMapsParser {
 
       // Try extracting from the final resolved URL first
       const finalUrl = response.url;
+      console.log('[GoogleMapsParser] Final resolved URL:', finalUrl?.substring(0, 150));
+
       if (finalUrl) {
         const fromUrl = GoogleMapsParser.extractFromUrl(finalUrl);
-        if (fromUrl) return fromUrl;
+        if (fromUrl) {
+          console.log('[GoogleMapsParser] Extracted from URL:', fromUrl);
+          return fromUrl;
+        }
       }
 
       // Fall back to extracting from the page body
       const body = await response.text();
-      return GoogleMapsParser.extractFromBody(body);
+      console.log('[GoogleMapsParser] Body length:', body.length, 'chars');
+      const fromBody = GoogleMapsParser.extractFromBody(body);
+      if (fromBody) {
+        console.log('[GoogleMapsParser] Extracted from body:', fromBody);
+      } else {
+        console.warn('[GoogleMapsParser] Could not extract coordinates from body');
+      }
+      return fromBody;
     } catch (error) {
       console.warn('[GoogleMapsParser] Failed to fetch URL:', error);
       return null;

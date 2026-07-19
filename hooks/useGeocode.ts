@@ -124,9 +124,15 @@ export function usePropertyGeocode(property: any) {
   // If sync parse failed (it's a URL, not raw coords), resolve async
   useEffect(() => {
     if (!savedCoords && googleMapsLink && !parseGoogleMapsLink(googleMapsLink)) {
+      console.log('[useGeocode] Resolving Google Maps URL async:', googleMapsLink);
       GoogleMapsParser.parseAsync(googleMapsLink).then((coords) => {
+        console.log('[useGeocode] Google Maps URL resolved to:', coords);
         if (coords) setResolvedCoords(coords);
+      }).catch((err) => {
+        console.warn('[useGeocode] Google Maps URL resolution failed:', err);
       });
+    } else if (googleMapsLink) {
+      console.log('[useGeocode] Google Maps link present, savedCoords:', savedCoords, 'syncParse:', parseGoogleMapsLink(googleMapsLink));
     }
   }, [googleMapsLink, savedCoords]);
 
