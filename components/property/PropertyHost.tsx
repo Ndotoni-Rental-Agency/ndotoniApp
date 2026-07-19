@@ -40,13 +40,13 @@ export default function PropertyHost({
         ) : (
           <View style={[styles.avatar, { backgroundColor: tintColor }]}>
             <Text style={styles.initials}>
-              {firstName[0]}{lastName ? lastName[0] : ''}
+              {firstName[0]}
             </Text>
           </View>
         )}
         <View style={styles.hostInfo}>
           <Text style={[styles.hostName, { color: textColor }]}>
-            {firstName}{lastName ? ` ${lastName}` : ''}
+            {firstName}
           </Text>
           <View style={styles.verifiedRow}>
             <Ionicons name="shield-checkmark" size={14} color="#10b981" />

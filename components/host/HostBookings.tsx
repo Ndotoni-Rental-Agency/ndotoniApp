@@ -139,7 +139,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
         </Text>
       ) : (
         filteredBookings.map(b => {
-          const guestName = b.guestName || (b.guest ? `${b.guest.firstName} ${b.guest.lastName || ''}`.trim() : 'Guest');
+          const guestName = b.guest?.firstName || b.guestName?.split(' ')[0] || 'Guest';
           const isProcessing = actionLoading === b.bookingId;
           const isPast = b.checkInDate < today;
 
