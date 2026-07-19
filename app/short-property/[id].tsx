@@ -57,7 +57,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const { property, loading, error, retry } = useShortTermPropertyDetail(propertyId);
   const { coordinates } = usePropertyGeocode(property);
   const { isAuthenticated } = useAuth();
-  const { initializeChat, sendMessage } = useChat();
+  const { initializeChat } = useChat();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -102,13 +102,10 @@ export default function ShortTermPropertyDetailsScreen() {
       const chatData = await initializeChat(propertyId);
       const conversationId = chatData.conversationId;
 
-      // Send a template message with the property link
+      // Navigate to the conversation with the template pre-filled (not auto-sent)
       const propertyUrl = `https://ndotonistays.com/property/${propertyId}`;
       const templateMessage = `Hi, I'm interested in your property: ${property?.title}\n${propertyUrl}`;
-      await sendMessage(conversationId, templateMessage);
-
-      // Navigate to the conversation
-      router.push(`/conversation/${encodeURIComponent(conversationId)}` as any);
+      router.push(`/conversation/${encodeURIComponent(conversationId)}?draft=${encodeURIComponent(templateMessage)}` as any);
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Could not start conversation');
     } finally {

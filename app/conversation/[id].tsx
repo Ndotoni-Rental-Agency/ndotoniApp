@@ -11,6 +11,7 @@ import {
     Alert,
     FlatList,
     KeyboardAvoidingView,
+    Linking,
     Platform,
     StyleSheet,
     Text,
@@ -21,7 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ConversationScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, draft } = useLocalSearchParams<{ id: string; draft?: string }>();
   const router = useRouter();
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -50,6 +51,15 @@ export default function ConversationScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
+  const draftApplied = useRef(false);
+
+  // Pre-fill message input with draft from navigation (e.g. property inquiry)
+  useEffect(() => {
+    if (draft && !draftApplied.current) {
+      setMessageText(decodeURIComponent(draft));
+      draftApplied.current = true;
+    }
+  }, [draft]);
 
   // Decode the conversation ID from the URL parameter
   const decodedId = id ? decodeURIComponent(id as string) : '';
@@ -184,6 +194,42 @@ export default function ConversationScreen() {
     });
   };
 
+  /**
+   * Render message content with clickable links.
+   * URLs matching ndotonistays.com/property/* navigate in-app; others open externally.
+   */
+  const renderMessageContent = (content: string, isMyMessage: boolean) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+
+    if (parts.length === 1) return content;
+
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        // Reset lastIndex since we reuse the regex
+        urlRegex.lastIndex = 0;
+        return (
+          <Text
+            key={index}
+            style={{ textDecorationLine: 'underline', color: isMyMessage ? '#fff' : tintColor }}
+            onPress={() => {
+              // In-app navigation for ndotoni property links
+              const propertyMatch = part.match(/ndotonistays\.com\/property\/([^\s?#]+)/);
+              if (propertyMatch) {
+                router.push(`/short-property/${propertyMatch[1]}` as any);
+              } else {
+                Linking.openURL(part);
+              }
+            }}
+          >
+            {part}
+          </Text>
+        );
+      }
+      return part;
+    });
+  };
+
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isMyMessage = item.isMine;
     const isSelected = selectedMessages.has(item.id);
@@ -252,7 +298,7 @@ export default function ConversationScreen() {
                   { color: isMyMessage ? '#fff' : textColor },
                 ]}
               >
-                {item.content}
+                {renderMessageContent(item.content, isMyMessage)}
               </Text>
               <View style={styles.messageFooter}>
                 <Text
