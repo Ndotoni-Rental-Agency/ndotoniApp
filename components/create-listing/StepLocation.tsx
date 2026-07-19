@@ -1,11 +1,51 @@
 import LocationSelector from '@/components/location/LocationSelector';
+import { GoogleMapsParser } from '@/lib/parse-google-maps-link';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { StepProps } from './types';
+
+/**
+ * Reverse geocode coordinates using Nominatim to get region and district.
+ */
+async function reverseGeocode(lat: number, lng: number): Promise<{ region?: string; district?: string }> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=10`
+    );
+    const data = await res.json();
+    const address = data?.address;
+    if (!address) return {};
+    const region = address.state?.toLowerCase();
+    const district = (address.county || address.city || address.town || address.suburb)?.toLowerCase();
+    return { region: region || undefined, district: district || undefined };
+  } catch {
+    return {};
+  }
+}
 
 export default function StepLocation({ form, updateField, colors }: StepProps) {
   const { text, subtle, card, border } = colors;
+  const [resolving, setResolving] = useState(false);
+  const lastResolved = useRef('');
+
+  // When Google Maps link changes, resolve it and autofill location
+  useEffect(() => {
+    const link = form.googleMapsLink?.trim();
+    if (!link || !link.startsWith('http') || link === lastResolved.current) return;
+
+    lastResolved.current = link;
+    setResolving(true);
+
+    GoogleMapsParser.parseAsync(link).then(async (coords) => {
+      if (coords) {
+        // Reverse geocode to get region/district
+        const location = await reverseGeocode(coords.latitude, coords.longitude);
+        if (location.region && !form.region) updateField('region', location.region);
+        if (location.district && !form.district) updateField('district', location.district);
+      }
+    }).finally(() => setResolving(false));
+  }, [form.googleMapsLink]);
 
   return (
     <>
@@ -34,7 +74,7 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
           <Text style={[styles.optionalBadge, { color: subtle }]}>optional</Text>
         </View>
         <Text style={[styles.mapsLinkHint, { color: subtle }]}>
-          Paste a Google Maps link to pinpoint your property's exact location on the map.
+          {resolving ? 'Resolving location...' : "Paste a Google Maps link to pinpoint your property's exact location on the map."}
         </Text>
         <TextInput
           style={[styles.mapsLinkInput, { color: text, borderColor: border, backgroundColor: card }]}
