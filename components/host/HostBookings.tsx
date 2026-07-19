@@ -4,11 +4,11 @@ import { approveBooking, declineBooking } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
 import { ListPropertyBookingsQuery, BookingStatus } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   StyleSheet,
   Text,
   TextInput,
@@ -27,6 +27,7 @@ type Filter = 'PENDING' | 'CONFIRMED' | 'ALL';
 type TimeFilter = 'upcoming' | 'past';
 
 export default function HostBookings({ propertyIds, onRefresh }: Props) {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('ALL');
@@ -139,7 +140,6 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
       ) : (
         filteredBookings.map(b => {
           const guestName = b.guestName || (b.guest ? `${b.guest.firstName} ${b.guest.lastName || ''}`.trim() : 'Guest');
-          const guestWa = b.guestPhone || b.guest?.whatsappNumber;
           const isProcessing = actionLoading === b.bookingId;
           const isPast = b.checkInDate < today;
 
@@ -195,11 +195,14 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
                 </View>
               )}
 
-              {/* WhatsApp for confirmed */}
-              {b.status === 'CONFIRMED' && guestWa && (
-                <TouchableOpacity style={[styles.waBtn, { borderTopColor: border }]} onPress={() => Linking.openURL(`https://wa.me/${guestWa.replace(/\D/g, '')}`)}>
-                  <Ionicons name="logo-whatsapp" size={16} color="#25d366" />
-                  <Text style={{ color: '#25d366', fontSize: 13, fontWeight: '600' }}>Message Guest</Text>
+              {/* Message guest in-app */}
+              {b.status === 'CONFIRMED' && (
+                <TouchableOpacity style={[styles.messageBtn, { borderTopColor: border }]} onPress={() => {
+                  const conversationId = `${b.guestId}#${b.propertyId}`;
+                  router.push(`/conversation/${encodeURIComponent(conversationId)}` as any);
+                }}>
+                  <Ionicons name="chatbubble-outline" size={16} color={tint} />
+                  <Text style={{ color: tint, fontSize: 13, fontWeight: '600' }}>Message Guest</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -237,5 +240,5 @@ const styles = StyleSheet.create({
   cancelBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1 },
   declineConfirmBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: '#ef4444' },
 
-  waBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  messageBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
 });
