@@ -52,8 +52,8 @@ export class GoogleMapsParser {
   }
 
   /**
-   * Fetch the URL (following all redirects) and extract coordinates
-   * from both the final URL and the page content.
+   * Fetch the URL (following all redirects) and extract coordinates.
+   * Priority: URL coordinate patterns → geocode place name from q= param → page body @lat,lng
    */
   private static async fetchAndExtract(url: string): Promise<Coordinates | null> {
     try {
@@ -69,32 +69,68 @@ export class GoogleMapsParser {
 
       clearTimeout(timeout);
 
-      // Try extracting from the final resolved URL first
       const finalUrl = response.url;
       console.log('[GoogleMapsParser] Final resolved URL:', finalUrl?.substring(0, 150));
 
+      // 1. Try extracting coordinates directly from the URL
       if (finalUrl) {
         const fromUrl = GoogleMapsParser.extractFromUrl(finalUrl);
         if (fromUrl) {
           console.log('[GoogleMapsParser] Extracted from URL:', fromUrl);
           return fromUrl;
         }
+
+        // 2. If the URL has a q= with a place name, geocode it via Nominatim
+        const placeMatch = finalUrl.match(/[?&]q=([^&]+)/);
+        if (placeMatch) {
+          const placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+          // Only geocode if it's NOT a coordinate string
+          if (!/^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/.test(placeName)) {
+            console.log('[GoogleMapsParser] Geocoding place name:', placeName);
+            const geocoded = await GoogleMapsParser.geocodePlace(placeName);
+            if (geocoded) {
+              console.log('[GoogleMapsParser] Geocoded result:', geocoded);
+              return geocoded;
+            }
+          }
+        }
       }
 
-      // Fall back to extracting from the page body
+      // 3. Last resort: look for @lat,lng in the page body (but NOT center= which is unreliable)
       const body = await response.text();
-      console.log('[GoogleMapsParser] Body length:', body.length, 'chars');
-      const fromBody = GoogleMapsParser.extractFromBody(body);
-      if (fromBody) {
-        console.log('[GoogleMapsParser] Extracted from body:', fromBody);
-      } else {
-        console.warn('[GoogleMapsParser] Could not extract coordinates from body');
+      const atMatch = body.match(/@(-?\d+\.\d{4,}),(-?\d+\.\d{4,})/);
+      if (atMatch) {
+        const coords = GoogleMapsParser.validate(parseFloat(atMatch[1]), parseFloat(atMatch[2]));
+        if (coords) {
+          console.log('[GoogleMapsParser] Extracted @ pattern from body:', coords);
+          return coords;
+        }
       }
-      return fromBody;
+
+      console.warn('[GoogleMapsParser] Could not extract coordinates');
+      return null;
     } catch (error) {
       console.warn('[GoogleMapsParser] Failed to fetch URL:', error);
       return null;
     }
+  }
+
+  /**
+   * Geocode a place name using Nominatim (free, no API key).
+   */
+  private static async geocodePlace(placeName: string): Promise<Coordinates | null> {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&limit=1`
+      );
+      const data = await res.json();
+      if (data?.[0]) {
+        return GoogleMapsParser.validate(parseFloat(data[0].lat), parseFloat(data[0].lon));
+      }
+    } catch {
+      // Geocoding failed — not critical
+    }
+    return null;
   }
 
   /**
@@ -124,42 +160,6 @@ export class GoogleMapsParser {
     const pathMatch = url.match(/\/(-?\d+\.\d{4,}),(-?\d+\.\d{4,})/);
     if (pathMatch) {
       return GoogleMapsParser.validate(parseFloat(pathMatch[1]), parseFloat(pathMatch[2]));
-    }
-
-    return null;
-  }
-
-  /**
-   * Extract coordinates from Google Maps page HTML/JS content.
-   * Google always embeds coordinates in static map image URLs or JS data blobs.
-   */
-  private static extractFromBody(html: string): Coordinates | null {
-    // Pattern 1: center=lat%2Clng in static maps image URLs (most reliable)
-    const centerMatch = html.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/);
-    if (centerMatch) {
-      const coords = GoogleMapsParser.validate(parseFloat(centerMatch[1]), parseFloat(centerMatch[2]));
-      if (coords) return coords;
-    }
-
-    // Pattern 2: @lat,lng embedded in any URL within the page
-    const atMatch = html.match(/@(-?\d+\.\d{4,}),(-?\d+\.\d{4,})/);
-    if (atMatch) {
-      const coords = GoogleMapsParser.validate(parseFloat(atMatch[1]), parseFloat(atMatch[2]));
-      if (coords) return coords;
-    }
-
-    // Pattern 3: [null,null,lat,lng] in embedded JS data
-    const nullPattern = html.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
-    if (nullPattern) {
-      const coords = GoogleMapsParser.validate(parseFloat(nullPattern[1]), parseFloat(nullPattern[2]));
-      if (coords) return coords;
-    }
-
-    // Pattern 4: lat,lng with high precision in any context (at least 5 decimal places)
-    const preciseMatch = html.match(/(-?\d{1,3}\.\d{5,}),(-?\d{1,3}\.\d{5,})/);
-    if (preciseMatch) {
-      const coords = GoogleMapsParser.validate(parseFloat(preciseMatch[1]), parseFloat(preciseMatch[2]));
-      if (coords) return coords;
     }
 
     return null;
