@@ -17,19 +17,25 @@ async function reverseGeocode(lat: number, lng: number): Promise<{ region?: stri
     const address = data?.address;
     if (!address) return {};
 
-    // Tanzania structure: state = region, state_district = district, village/suburb = ward
-    const region = (address.state || '')
-      .replace(/\s*region$/i, '')
-      .toLowerCase()
-      .trim() || undefined;
-    const district = (address.state_district || address.county || address.city || '')
-      .toLowerCase()
-      .trim() || undefined;
-    const ward = (address.village || address.suburb || address.neighbourhood || '')
-      .toLowerCase()
-      .trim() || undefined;
+    // Tanzania structure varies:
+    // - state = region (e.g. "Dodoma", "Dar es Salaam")
+    // - state_district or city_district or city = district (e.g. "Dodoma City", "Ilala Municipal")
+    // - village or suburb or ward = ward (e.g. "Ntyuka", "Upanga")
+    const rawRegion = address.state || '';
+    const rawDistrict = address.state_district || address.city_district || address.county || address.city || '';
+    const rawWard = address.village || address.suburb || address.ward || address.neighbourhood || '';
 
-    return { region, district, ward };
+    // Clean up: strip suffixes like "Region", "City", "Municipal", "District", "Urban", "Rural"
+    const clean = (s: string) => s
+      .replace(/\s*(region|city|municipal|district|urban|rural)$/i, '')
+      .toLowerCase()
+      .trim();
+
+    return {
+      region: clean(rawRegion) || undefined,
+      district: clean(rawDistrict) || undefined,
+      ward: rawWard.toLowerCase().trim() || undefined,
+    };
   } catch {
     return {};
   }
