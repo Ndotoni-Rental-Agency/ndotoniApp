@@ -10,6 +10,10 @@ import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyRules from '@/components/property/PropertyRules';
 import ReservationModal from '@/components/property/ReservationModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
+import SignInModal from '@/components/auth/SignInModal';
+import SignUpModal from '@/components/auth/SignUpModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
@@ -21,6 +25,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -45,9 +50,14 @@ export default function ShortTermPropertyDetailsScreen() {
   const [showReservation, setShowReservation] = useState(false);
   const [galleryVisible, setGalleryVisible] = useState(false);
   const [galleryStart, setGalleryStart] = useState(0);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const { property, loading, error, retry } = useShortTermPropertyDetail(propertyId);
   const { coordinates } = usePropertyGeocode(property);
+  const { isAuthenticated } = useAuth();
+  const { initializeChat, sendMessage } = useChat();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -79,6 +89,31 @@ export default function ShortTermPropertyDetailsScreen() {
     try {
       await Share.share({ message: `${property?.title}\nhttps://ndotonistays.com/property/${propertyId}` });
     } catch {}
+  };
+
+  const handleContactHost = async () => {
+    if (!isAuthenticated) {
+      setShowSignIn(true);
+      return;
+    }
+
+    setChatLoading(true);
+    try {
+      const chatData = await initializeChat(propertyId);
+      const conversationId = chatData.conversationId;
+
+      // Send a template message with the property link
+      const propertyUrl = `https://ndotonistays.com/property/${propertyId}`;
+      const templateMessage = `Hi, I'm interested in your property: ${property?.title}\n${propertyUrl}`;
+      await sendMessage(conversationId, templateMessage);
+
+      // Navigate to the conversation
+      router.push(`/conversation/${encodeURIComponent(conversationId)}` as any);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not start conversation');
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const openGallery = (index: number) => {
@@ -266,8 +301,16 @@ export default function ShortTermPropertyDetailsScreen() {
                         : 'Usually responds within a few hours'}
                     </Text>
                   </View>
-                  <TouchableOpacity style={[styles.contactBtn, { borderColor: border }]}>
-                    <Ionicons name="chatbubble-outline" size={16} color={tint} />
+                  <TouchableOpacity
+                    style={[styles.contactBtn, { borderColor: border }]}
+                    onPress={handleContactHost}
+                    disabled={chatLoading}
+                  >
+                    {chatLoading ? (
+                      <ActivityIndicator size="small" color={tint} />
+                    ) : (
+                      <Ionicons name="chatbubble-outline" size={16} color={tint} />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -428,6 +471,21 @@ export default function ShortTermPropertyDetailsScreen() {
           maxGuests={property.maxGuests ?? 10}
         />
       )}
+
+      {/* ─── AUTH MODALS ─── */}
+      <SignInModal
+        visible={showSignIn}
+        onClose={() => setShowSignIn(false)}
+        onSwitchToSignUp={() => { setShowSignIn(false); setShowSignUp(true); }}
+        onForgotPassword={() => {}}
+        onNeedsVerification={() => {}}
+      />
+      <SignUpModal
+        visible={showSignUp}
+        onClose={() => setShowSignUp(false)}
+        onSwitchToSignIn={() => { setShowSignUp(false); setShowSignIn(true); }}
+        onNeedsVerification={() => {}}
+      />
     </View>
   );
 }
