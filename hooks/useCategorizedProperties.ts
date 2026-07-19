@@ -109,6 +109,7 @@ export function useCategorizedProperties(rentalType: RentalType = 'LONG_TERM') {
                 bedrooms: p.maxGuests,
                 monthlyRent: p.nightlyRate, // Use nightlyRate as the price field
                 propertyType: p.propertyType as PropertyType, // Cast to enum
+                verified: false,
               })),
               count: cacheData.lowestPrice.length,
               category: 'LOWEST_PRICE' as const,
@@ -120,6 +121,7 @@ export function useCategorizedProperties(rentalType: RentalType = 'LONG_TERM') {
                 bedrooms: p.maxGuests,
                 monthlyRent: p.nightlyRate,
                 propertyType: p.propertyType as PropertyType,
+                verified: false,
               })),
               count: cacheData.recent.length,
               category: 'NEARBY' as const,
@@ -131,6 +133,7 @@ export function useCategorizedProperties(rentalType: RentalType = 'LONG_TERM') {
                 bedrooms: p.maxGuests,
                 monthlyRent: p.nightlyRate,
                 propertyType: p.propertyType as PropertyType,
+                verified: false,
               })),
               count: cacheData.topRated.length,
               category: 'MOST_VIEWED' as const,
@@ -142,6 +145,7 @@ export function useCategorizedProperties(rentalType: RentalType = 'LONG_TERM') {
                 bedrooms: p.maxGuests,
                 monthlyRent: p.nightlyRate,
                 propertyType: p.propertyType as PropertyType,
+                verified: false,
               })),
               count: cacheData.highestPrice.length,
               category: 'MORE' as const,

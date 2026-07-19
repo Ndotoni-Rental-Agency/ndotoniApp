@@ -1,5 +1,5 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { Review } from '@/lib/API';
+import { Review, PropertyRatingSummary } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getPropertyReviews } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,13 +16,7 @@ interface PropertyReviewsProps {
   propertyId: string;
   averageRating?: number | null;
   totalReviews?: number | null;
-  ratingSummary?: {
-    cleanliness: number;
-    accuracy: number;
-    communication: number;
-    location: number;
-    value: number;
-  } | null;
+  ratingSummary?: PropertyRatingSummary | null;
 }
 
 export default function PropertyReviews({
@@ -69,11 +63,11 @@ export default function PropertyReviews({
 
   // Rating categories for breakdown
   const categories = ratingSummary ? [
-    { label: 'Cleanliness', value: ratingSummary.cleanliness },
-    { label: 'Accuracy', value: ratingSummary.accuracy },
-    { label: 'Communication', value: ratingSummary.communication },
-    { label: 'Location', value: ratingSummary.location },
-    { label: 'Value', value: ratingSummary.value },
+    { label: 'Cleanliness', value: ratingSummary.cleanliness ?? 0 },
+    { label: 'Accuracy', value: ratingSummary.accuracy ?? 0 },
+    { label: 'Communication', value: ratingSummary.communication ?? 0 },
+    { label: 'Location', value: ratingSummary.location ?? 0 },
+    { label: 'Value', value: ratingSummary.value ?? 0 },
   ] : [];
 
   return (
