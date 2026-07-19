@@ -58,9 +58,6 @@ export default function SearchScreen() {
   const fetchProperties = async (loadMore = false) => {
     try {
       if (!loadMore) setError(null);
-      const today = new Date();
-      const monthLater = new Date(today);
-      monthLater.setMonth(monthLater.getMonth() + 1);
 
       const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
         searchShortTermProperties,
@@ -68,8 +65,10 @@ export default function SearchScreen() {
           input: {
             region: selectedRegion || 'Dar es Salaam',
             district: selectedDistrict,
-            checkInDate: (checkInDate || today.toISOString().split('T')[0]).split('T')[0],
-            checkOutDate: (checkOutDate || monthLater.toISOString().split('T')[0]).split('T')[0],
+            ...(checkInDate && checkOutDate ? {
+              checkInDate: checkInDate.split('T')[0],
+              checkOutDate: checkOutDate.split('T')[0],
+            } : {}),
             numberOfGuests: 2,
             limit: 20,
             nextToken: loadMore ? nextToken : null,
