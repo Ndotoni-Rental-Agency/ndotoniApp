@@ -39,11 +39,13 @@ interface Props {
 }
 
 type Filter = 'PENDING' | 'CONFIRMED' | 'ALL';
+type TimeFilter = 'upcoming' | 'past';
 
 export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [declineTarget, setDeclineTarget] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState('');
@@ -112,12 +114,28 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   };
 
   const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
+  const today = new Date().toISOString().split('T')[0];
+  const filteredBookings = bookings.filter(b => {
+    if (timeFilter === 'upcoming') return b.checkOutDate >= today;
+    return b.checkOutDate < today;
+  });
 
   if (loading) return <ActivityIndicator color={tint} style={{ paddingVertical: 40 }} />;
 
   return (
     <View>
-      {/* Filters */}
+      {/* Time toggle */}
+      <View style={styles.filterRow}>
+        {(['upcoming', 'past'] as TimeFilter[]).map(t => (
+          <TouchableOpacity key={t} style={[styles.filterPill, { backgroundColor: timeFilter === t ? text : `${border}` }]} onPress={() => setTimeFilter(t)}>
+            <Text style={[styles.filterText, { color: timeFilter === t ? '#fff' : text }]}>
+              {t === 'upcoming' ? 'Upcoming' : 'Past'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Status filters */}
       <View style={styles.filterRow}>
         {(['PENDING', 'CONFIRMED', 'ALL'] as Filter[]).map(f => (
           <TouchableOpacity key={f} style={[styles.filterPill, { backgroundColor: filter === f ? tint : `${border}` }]} onPress={() => setFilter(f)}>
@@ -129,13 +147,16 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
       </View>
 
       {/* Bookings */}
-      {bookings.length === 0 ? (
-        <Text style={[styles.empty, { color: subtle }]}>No bookings found</Text>
+      {filteredBookings.length === 0 ? (
+        <Text style={[styles.empty, { color: subtle }]}>
+          {timeFilter === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
+        </Text>
       ) : (
-        bookings.map(b => {
+        filteredBookings.map(b => {
           const guestName = b.guestName || (b.guest ? `${b.guest.firstName} ${b.guest.lastName || ''}`.trim() : 'Guest');
           const guestWa = b.guestPhone || b.guest?.whatsappNumber;
           const isProcessing = actionLoading === b.bookingId;
+          const isPast = b.checkInDate < today;
 
           return (
             <View key={b.bookingId} style={[styles.bookingCard, { backgroundColor: card, borderColor: border }]}>
@@ -161,8 +182,8 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
 
               {b.specialRequests && <Text style={[styles.bRequest, { color: subtle, borderColor: border }]}>"{b.specialRequests}"</Text>}
 
-              {/* Actions for pending */}
-              {b.status === 'PENDING' && (
+              {/* Actions for pending (only upcoming) */}
+              {b.status === 'PENDING' && !isPast && (
                 <View style={[styles.bActions, { borderTopColor: border }]}>
                   {declineTarget === b.bookingId ? (
                     <View style={{ gap: 8, flex: 1 }}>
