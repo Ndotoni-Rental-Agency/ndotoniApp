@@ -2,6 +2,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { approveBooking, declineBooking } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
+import { ListPropertyBookingsQuery, BookingStatus } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,23 +16,7 @@ import {
   View,
 } from 'react-native';
 
-interface Booking {
-  bookingId: string;
-  propertyId: string;
-  checkInDate: string;
-  checkOutDate: string;
-  numberOfGuests: number;
-  numberOfNights: number;
-  status: string;
-  paymentStatus: string;
-  guest: { firstName: string; lastName: string; whatsappNumber?: string } | null;
-  guestName: string | null;
-  guestPhone: string | null;
-  pricing: { total: number; subtotal: number; cleaningFee?: number; currency: string; numberOfNights: number };
-  specialRequests: string | null;
-  createdAt: string;
-  property?: { title: string } | null;
-}
+type Booking = ListPropertyBookingsQuery['listPropertyBookings']['bookings'][number];
 
 interface Props {
   propertyIds: string[];
@@ -82,7 +67,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
     setActionLoading(id);
     try {
       await GraphQLClient.executeAuthenticated<any>(approveBooking, { bookingId: id });
-      setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: 'CONFIRMED' } : b));
+      setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.CONFIRMED } : b));
       Alert.alert('✅ Approved', 'Booking confirmed. Guest will be notified.');
       onRefresh?.();
     } catch (err: any) {
@@ -95,7 +80,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
     setActionLoading(id);
     try {
       await GraphQLClient.executeAuthenticated<any>(declineBooking, { bookingId: id, reason: declineReason.trim() });
-      setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: 'DECLINED' } : b));
+      setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.DECLINED } : b));
       setDeclineTarget(null); setDeclineReason('');
       Alert.alert('Declined', 'Booking request declined.');
     } catch (err: any) {
