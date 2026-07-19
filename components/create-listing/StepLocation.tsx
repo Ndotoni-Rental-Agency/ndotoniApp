@@ -45,24 +45,30 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
   const { text, subtle, card, border } = colors;
   const [resolving, setResolving] = useState(false);
   const lastResolved = useRef('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // When Google Maps link changes, resolve it and autofill location
+  // When Google Maps link changes, resolve it with a short debounce
   useEffect(() => {
     const link = form.googleMapsLink?.trim();
     if (!link || !link.startsWith('http') || link === lastResolved.current) return;
 
-    lastResolved.current = link;
-    setResolving(true);
+    // Debounce 600ms to avoid fetching while user is still typing
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      lastResolved.current = link;
+      setResolving(true);
 
-    GoogleMapsParser.parseAsync(link).then(async (coords) => {
-      if (coords) {
-        // Reverse geocode to get region/district/ward
-        const location = await reverseGeocode(coords.latitude, coords.longitude);
-        if (location.region) updateField('region', location.region);
-        if (location.district) updateField('district', location.district);
-        if (location.ward) updateField('ward', location.ward);
-      }
-    }).finally(() => setResolving(false));
+      GoogleMapsParser.parseAsync(link).then(async (coords) => {
+        if (coords) {
+          const location = await reverseGeocode(coords.latitude, coords.longitude);
+          if (location.region) updateField('region', location.region);
+          if (location.district) updateField('district', location.district);
+          if (location.ward) updateField('ward', location.ward);
+        }
+      }).finally(() => setResolving(false));
+    }, 600);
+
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
   }, [form.googleMapsLink]);
 
   return (
