@@ -121,9 +121,9 @@ export function usePropertyGeocode(property: any) {
     effectiveCoords = resolvedCoords;
   }
 
-  // If sync parse failed and it's a short link, resolve async
+  // If sync parse failed (it's a URL, not raw coords), resolve async
   useEffect(() => {
-    if (!savedCoords && googleMapsLink && GoogleMapsParser.isShortLink(googleMapsLink)) {
+    if (!savedCoords && googleMapsLink && !parseGoogleMapsLink(googleMapsLink)) {
       GoogleMapsParser.parseAsync(googleMapsLink).then((coords) => {
         if (coords) setResolvedCoords(coords);
       });
