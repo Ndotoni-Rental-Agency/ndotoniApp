@@ -107,23 +107,27 @@ export function usePropertyGeocode(property: any) {
   const googleMapsLink = property?.googleMapsUrl || property?.googleMapsLink;
   const [resolvedCoords, setResolvedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   
-  // Try to extract precise coordinates from Google Maps link (sync parse for full URLs)
-  let effectiveCoords = savedCoords;
-  if (!effectiveCoords && googleMapsLink) {
-    const parsed = parseGoogleMapsLink(googleMapsLink);
-    if (parsed) {
-      effectiveCoords = parsed;
-    }
-  }
+  // Priority: Google Maps URL (async resolved) → saved coordinates → geocoding from location
+  // Google Maps URL is most reliable because it's the source of truth from the host
+  let effectiveCoords: { latitude: number; longitude: number } | null | undefined = null;
 
-  // Use async-resolved coords if available
-  if (!effectiveCoords && resolvedCoords) {
+  // 1. Use async-resolved coords from Google Maps URL (highest priority)
+  if (resolvedCoords) {
     effectiveCoords = resolvedCoords;
   }
+  // 2. Try sync parse of Google Maps link (handles raw coord text)
+  if (!effectiveCoords && googleMapsLink) {
+    const parsed = parseGoogleMapsLink(googleMapsLink);
+    if (parsed) effectiveCoords = parsed;
+  }
+  // 3. Fall back to saved coordinates from the property record
+  if (!effectiveCoords && savedCoords) {
+    effectiveCoords = savedCoords;
+  }
 
-  // If sync parse failed (it's a URL, not raw coords), resolve async
+  // Always try to resolve Google Maps URL async (it takes priority once resolved)
   useEffect(() => {
-    if (!savedCoords && googleMapsLink && !parseGoogleMapsLink(googleMapsLink)) {
+    if (googleMapsLink && !parseGoogleMapsLink(googleMapsLink)) {
       console.log('[useGeocode] Resolving Google Maps URL async:', googleMapsLink);
       GoogleMapsParser.parseAsync(googleMapsLink).then((coords) => {
         console.log('[useGeocode] Google Maps URL resolved to:', coords);
@@ -131,10 +135,8 @@ export function usePropertyGeocode(property: any) {
       }).catch((err) => {
         console.warn('[useGeocode] Google Maps URL resolution failed:', err);
       });
-    } else if (googleMapsLink) {
-      console.log('[useGeocode] Google Maps link present, savedCoords:', savedCoords, 'syncParse:', parseGoogleMapsLink(googleMapsLink));
     }
-  }, [googleMapsLink, savedCoords]);
+  }, [googleMapsLink]);
 
   const location: LocationInput = {
     region: property?.address?.region || property?.region,
