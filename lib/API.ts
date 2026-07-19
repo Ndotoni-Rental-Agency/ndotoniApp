@@ -2,6 +2,30 @@
 /* eslint-disable */
 //  This file was automatically generated and should not be edited.
 
+export type BusyBlockRecurrenceInput = {
+  days?: Array< number > | null,
+  endDate: string,
+  type: string,
+};
+
+export type BusyBlock = {
+  __typename: "BusyBlock",
+  createdAt: string,
+  endUtc: string,
+  id: string,
+  recurrence?: BusyBlockRecurrence | null,
+  startUtc: string,
+  title?: string | null,
+  userId: string,
+};
+
+export type BusyBlockRecurrence = {
+  __typename: "BusyBlockRecurrence",
+  days?: Array< number > | null,
+  endDate: string,
+  type: string,
+};
+
 export type SuccessResponse = {
   __typename: "SuccessResponse",
   message: string,
@@ -36,8 +60,8 @@ export type Application = {
 
 export type TenantBasicInfo = {
   __typename: "TenantBasicInfo",
-  firstName: string,
-  lastName: string,
+  firstName?: string | null,
+  lastName?: string | null,
   profileImage?: string | null,
 };
 
@@ -72,8 +96,8 @@ export enum SmokingStatus {
 export type LandlordBasicInfo = {
   __typename: "LandlordBasicInfo",
   businessName?: string | null,
-  firstName: string,
-  lastName: string,
+  firstName?: string | null,
+  lastName?: string | null,
   profileImage?: string | null,
 };
 
@@ -86,6 +110,7 @@ export type Property = {
   availability?: PropertyAvailability | null,
   createdAt?: string | null,
   description?: string | null,
+  googleMapsUrl?: string | null,
   landlord?: PropertyUser | null,
   media?: PropertyMedia | null,
   pricing?: PropertyPricing | null,
@@ -95,6 +120,7 @@ export type Property = {
   status: PropertyStatus,
   title: string,
   updatedAt?: string | null,
+  verified: boolean,
   version?: number | null,
 };
 
@@ -171,6 +197,7 @@ export enum PropertyStatus {
   AVAILABLE = "AVAILABLE",
   DELETED = "DELETED",
   DRAFT = "DRAFT",
+  INACTIVE = "INACTIVE",
   MAINTENANCE = "MAINTENANCE",
   RENTED = "RENTED",
 }
@@ -188,7 +215,10 @@ export type Booking = {
   confirmedAt?: string | null,
   createdAt: string,
   guest?: PropertyUser | null,
+  guestEmail?: string | null,
   guestId: string,
+  guestName?: string | null,
+  guestPhone?: string | null,
   hostNotes?: string | null,
   numberOfAdults: number,
   numberOfChildren: number,
@@ -200,6 +230,7 @@ export type Booking = {
   pricing: BookingPricing,
   property?: ShortTermProperty | null,
   propertyId: string,
+  propertySnapshot?: PropertySnapshot | null,
   specialRequests?: string | null,
   status: BookingStatus,
   updatedAt: string,
@@ -247,8 +278,10 @@ export type ShortTermProperty = {
   allowsSmoking?: boolean | null,
   amenities?: Array< string > | null,
   averageRating?: number | null,
+  bathrooms?: number | null,
+  bedrooms?: number | null,
   cancellationPolicy?: CancellationPolicy | null,
-  checkInInstructions?: string | null,
+  checkInInstructions?: CheckInInstructions | null,
   checkInTime?: string | null,
   checkOutTime?: string | null,
   cleaningFee?: number | null,
@@ -257,6 +290,7 @@ export type ShortTermProperty = {
   currency: string,
   description?: string | null,
   district: string,
+  googleMapsUrl?: string | null,
   host?: PropertyUser | null,
   hostId: string,
   houseRules?: Array< string > | null,
@@ -276,10 +310,12 @@ export type ShortTermProperty = {
   region: string,
   serviceFeePercentage?: number | null,
   status: PropertyStatus,
+  stayCategories?: Array< StayCategory > | null,
   taxPercentage?: number | null,
   thumbnail?: string | null,
   title: string,
   updatedAt: string,
+  videos?: Array< string > | null,
 };
 
 export type ShortTermAddress = {
@@ -298,6 +334,19 @@ export enum CancellationPolicy {
   STRICT = "STRICT",
 }
 
+
+export type CheckInInstructions = {
+  __typename: "CheckInInstructions",
+  accessCode?: string | null,
+  additionalNotes?: string | null,
+  contactName?: string | null,
+  contactPhone?: string | null,
+  directions?: string | null,
+  houseRules?: Array< string > | null,
+  parkingInfo?: string | null,
+  wifiName?: string | null,
+  wifiPassword?: string | null,
+};
 
 export enum ShortTermPropertyType {
   APARTMENT = "APARTMENT",
@@ -318,18 +367,55 @@ export enum ShortTermPropertyType {
 
 export type PropertyRatingSummary = {
   __typename: "PropertyRatingSummary",
-  accuracy: number,
+  accuracy?: number | null,
   averageRating: number,
-  cleanliness: number,
-  communication: number,
-  fiveStars: number,
-  fourStars: number,
-  location: number,
-  oneStar: number,
-  threeStars: number,
+  cleanliness?: number | null,
+  communication?: number | null,
+  fiveStars?: number | null,
+  fourStars?: number | null,
+  location?: number | null,
+  oneStar?: number | null,
+  threeStars?: number | null,
   totalReviews: number,
-  twoStars: number,
-  value: number,
+  twoStars?: number | null,
+  value?: number | null,
+};
+
+export enum StayCategory {
+  BEACH = "BEACH",
+  CITY_LIFE = "CITY_LIFE",
+  FILMING = "FILMING",
+  GETAWAY = "GETAWAY",
+  GROUP_TRIP = "GROUP_TRIP",
+  MEETING = "MEETING",
+  NATURE = "NATURE",
+  NIGHTLY_STAY = "NIGHTLY_STAY",
+  PARTY = "PARTY",
+  PHOTOSHOOT = "PHOTOSHOOT",
+  RETREAT = "RETREAT",
+  ROMANTIC = "ROMANTIC",
+  SAFARI = "SAFARI",
+  WEDDING = "WEDDING",
+}
+
+
+export type PropertySnapshot = {
+  __typename: "PropertySnapshot",
+  address?: PropertySnapshotAddress | null,
+  currency: string,
+  images?: Array< string > | null,
+  nightlyRate: number,
+  propertyType: string,
+  thumbnail?: string | null,
+  title: string,
+};
+
+export type PropertySnapshotAddress = {
+  __typename: "PropertySnapshotAddress",
+  city?: string | null,
+  district?: string | null,
+  region?: string | null,
+  street?: string | null,
 };
 
 export enum BookingStatus {
@@ -364,9 +450,18 @@ export type CancelBookingResponse = {
   refundPercentage: number,
 };
 
+export type AssociateWhatsAppResponse = {
+  __typename: "AssociateWhatsAppResponse",
+  message: string,
+  success: boolean,
+};
+
 export type CreateBookingInput = {
   checkInDate: string,
   checkOutDate: string,
+  guestEmail?: string | null,
+  guestName?: string | null,
+  guestPhone?: string | null,
   numberOfAdults: number,
   numberOfChildren: number,
   numberOfGuests: number,
@@ -382,6 +477,49 @@ export type CreateBookingResponse = {
   message: string,
   paymentStatus: PaymentStatus,
 };
+
+export enum HousingRequestSource {
+  ADMIN = "ADMIN",
+  WEB = "WEB",
+  WHATSAPP = "WHATSAPP",
+}
+
+
+export type HousingRequest = {
+  __typename: "HousingRequest",
+  adminNotes?: string | null,
+  assignedAdmin?: string | null,
+  bedrooms?: number | null,
+  contactName?: string | null,
+  createdAt: string,
+  currency: string,
+  description: string,
+  district?: string | null,
+  fulfilledPropertyId?: string | null,
+  matchedLandlords?: Array< string > | null,
+  maxBudget?: number | null,
+  minBudget?: number | null,
+  moveInDate?: string | null,
+  phone: string,
+  propertyType?: string | null,
+  region?: string | null,
+  requestId: string,
+  source: HousingRequestSource,
+  status: HousingRequestStatus,
+  street?: string | null,
+  updatedAt: string,
+  userId?: string | null,
+  ward?: string | null,
+};
+
+export enum HousingRequestStatus {
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
+  FULFILLED = "FULFILLED",
+  MATCHED = "MATCHED",
+  OPEN = "OPEN",
+}
+
 
 export type CreateLocationInput = {
   name: string,
@@ -558,7 +696,7 @@ export type CreateShortTermPropertyInput = {
   allowsSmoking: boolean,
   amenities: Array< string >,
   cancellationPolicy: CancellationPolicy,
-  checkInInstructions?: string | null,
+  checkInInstructions?: CheckInInstructionsInput | null,
   checkInTime: string,
   checkOutTime: string,
   cleaningFee?: number | null,
@@ -579,9 +717,11 @@ export type CreateShortTermPropertyInput = {
   propertyType: ShortTermPropertyType,
   region: string,
   serviceFeePercentage: number,
+  stayCategories?: Array< StayCategory > | null,
   taxPercentage: number,
   thumbnail: string,
   title: string,
+  videos?: Array< string > | null,
 };
 
 export type ShortTermAddressInput = {
@@ -593,16 +733,30 @@ export type ShortTermAddressInput = {
   street: string,
 };
 
+export type CheckInInstructionsInput = {
+  accessCode?: string | null,
+  additionalNotes?: string | null,
+  contactName?: string | null,
+  contactPhone?: string | null,
+  directions?: string | null,
+  houseRules?: Array< string > | null,
+  parkingInfo?: string | null,
+  wifiName?: string | null,
+  wifiPassword?: string | null,
+};
+
 export type CreateShortTermPropertyDraftInput = {
   bathrooms?: number | null,
   bedrooms?: number | null,
   cleaningFee?: number | null,
   currency: string,
   district: string,
+  googleMapsLink?: string | null,
   guestEmail?: string | null,
   guestPhoneNumber?: string | null,
   guestWhatsappNumber?: string | null,
   images?: Array< string > | null,
+  instantBookEnabled?: boolean | null,
   latitude?: number | null,
   longitude?: number | null,
   maxGuests?: number | null,
@@ -610,6 +764,7 @@ export type CreateShortTermPropertyDraftInput = {
   nightlyRate: number,
   propertyType: ShortTermPropertyType,
   region: string,
+  stayCategories?: Array< StayCategory > | null,
   title: string,
   videos?: Array< string > | null,
 };
@@ -621,6 +776,14 @@ export type CreateShortTermPropertyResponse = {
   propertyId?: string | null,
   status: PropertyStatus,
   success: boolean,
+};
+
+export type StripePaymentIntentResponse = {
+  __typename: "StripePaymentIntentResponse",
+  amount: number,
+  clientSecret: string,
+  currency: string,
+  paymentIntentId: string,
 };
 
 export type DeleteResponse = {
@@ -682,6 +845,31 @@ export type PropertyImportResult = {
   updated: number,
 };
 
+export type DirectChatInitializationResponse = {
+  __typename: "DirectChatInitializationResponse",
+  conversationId: string,
+  targetUserInfo: ChatUser,
+};
+
+export type ChatUser = {
+  __typename: "ChatUser",
+  businessName?: string | null,
+  firstName: string,
+  lastName: string,
+  profileImage?: string | null,
+  userId: string,
+  userType: UserType,
+};
+
+export enum UserType {
+  ADMIN = "ADMIN",
+  AGENT = "AGENT",
+  GUEST = "GUEST",
+  LANDLORD = "LANDLORD",
+  TENANT = "TENANT",
+}
+
+
 export type ChatInitializationResponse = {
   __typename: "ChatInitializationResponse",
   conversationId: string,
@@ -700,50 +888,29 @@ export type ChatLandlordInfo = {
 
 export type InitiatePaymentInput = {
   bookingId?: string | null,
+  listingPlan?: ListingPlan | null,
   phoneNumber: string,
-  listingPlan?: string | null,
 };
 
-export type InitiatePaymentResponse = {
-  __typename: "InitiatePaymentResponse",
-  reference: string,
-  status: string,
-  amount: number,
-  currency: string,
-  message: string,
-};
-
-export type Payment = {
-  __typename: "Payment",
-  amount: number,
-  bookingId: string,
-  completedAt?: string | null,
-  conversationID?: string | null,
-  createdAt: string,
-  currency: string,
-  customerEmail?: string | null,
-  customerPhone?: string | null,
-  errorMessage?: string | null,
-  paymentId: string,
-  provider: PaymentProvider,
-  refundAmount?: number | null,
-  refundReason?: string | null,
-  refundedAt?: string | null,
-  status: PaymentStatus,
-  thirdPartyConversationID: string,
-  transactionID?: string | null,
-  updatedAt: string,
-};
-
-export enum PaymentProvider {
-  MPESA = "MPESA",
-  PAYPAL = "PAYPAL",
-  STRIPE = "STRIPE",
+export enum ListingPlan {
+  MONTHLY = "MONTHLY",
+  PER_LISTING = "PER_LISTING",
+  YEARLY = "YEARLY",
 }
 
 
+export type InitiatePaymentResponse = {
+  __typename: "InitiatePaymentResponse",
+  amount: number,
+  currency: string,
+  message: string,
+  reference: string,
+  status: string,
+};
+
 export type Conversation = {
   __typename: "Conversation",
+  conversationType?: string | null,
   createdAt: string,
   id: string,
   lastMessage: string,
@@ -807,6 +974,14 @@ export type PropertyChange = {
   oldValue?: string | null,
 };
 
+export type RefundResponse = {
+  __typename: "RefundResponse",
+  amount: number,
+  currency: string,
+  refundId: string,
+  success: boolean,
+};
+
 export type LocationJsonResponse = {
   __typename: "LocationJsonResponse",
   cloudfrontUrl: string,
@@ -844,6 +1019,40 @@ export type LandlordApplication = {
   submittedAt?: string | null,
   updatedAt?: string | null,
   userId: string,
+};
+
+export type TeamMeeting = {
+  __typename: "TeamMeeting",
+  attendeeIds: Array< string >,
+  createdAt: string,
+  createdBy: string,
+  createdByName: string,
+  description?: string | null,
+  endUtc: string,
+  id: string,
+  link?: string | null,
+  startUtc: string,
+  title: string,
+};
+
+export type SendCheckInInstructionsInput = {
+  bookingId: string,
+  customAccessCode?: string | null,
+  customAdditionalNotes?: string | null,
+  customContactName?: string | null,
+  customContactPhone?: string | null,
+  customDirections?: string | null,
+  customHouseRules?: Array< string > | null,
+  customParkingInfo?: string | null,
+  customWifiName?: string | null,
+  customWifiPassword?: string | null,
+};
+
+export type SendCheckInInstructionsResponse = {
+  __typename: "SendCheckInInstructionsResponse",
+  message: string,
+  sentVia: Array< string >,
+  success: boolean,
 };
 
 export type SendMessageInput = {
@@ -954,6 +1163,39 @@ export type ApplicationResponse = {
   success: boolean,
 };
 
+export type LandlordRegistration = {
+  __typename: "LandlordRegistration",
+  adminNotes?: Array< string > | null,
+  area?: string | null,
+  assignedTo?: string | null,
+  createdAt: string,
+  name: string,
+  notes?: string | null,
+  phone: string,
+  registrationId: string,
+  status: string,
+  updatedAt?: string | null,
+};
+
+export type ReferralSubmission = {
+  __typename: "ReferralSubmission",
+  adminNotes?: Array< string > | null,
+  assignedTo?: string | null,
+  createdAt: string,
+  landlordArea: string,
+  landlordName: string,
+  landlordNotes?: string | null,
+  landlordPhone: string,
+  listingRewardStatus: string,
+  profitShareRewardStatus: string,
+  referralId: string,
+  referrerName: string,
+  referrerNida?: string | null,
+  referrerPhone: string,
+  status: string,
+  updatedAt?: string | null,
+};
+
 export type FavoriteResponse = {
   __typename: "FavoriteResponse",
   isFavorited: boolean,
@@ -1013,12 +1255,14 @@ export type UpdatePropertyInput = {
   amenities?: Array< string > | null,
   availability?: PropertyAvailabilityInput | null,
   description?: string | null,
+  googleMapsUrl?: string | null,
   media?: PropertyMediaInput | null,
   pricing?: PropertyPricingInput | null,
   propertyType?: PropertyType | null,
   specifications?: PropertySpecificationsInput | null,
   status?: PropertyStatus | null,
   title?: string | null,
+  verified?: boolean | null,
 };
 
 export type UpdateShortTermPropertyInput = {
@@ -1029,8 +1273,10 @@ export type UpdateShortTermPropertyInput = {
   allowsPets?: boolean | null,
   allowsSmoking?: boolean | null,
   amenities?: Array< string > | null,
+  bathrooms?: number | null,
+  bedrooms?: number | null,
   cancellationPolicy?: CancellationPolicy | null,
-  checkInInstructions?: string | null,
+  checkInInstructions?: CheckInInstructionsInput | null,
   checkInTime?: string | null,
   checkOutTime?: string | null,
   cleaningFee?: number | null,
@@ -1038,6 +1284,7 @@ export type UpdateShortTermPropertyInput = {
   currency?: string | null,
   description?: string | null,
   district?: string | null,
+  googleMapsUrl?: string | null,
   houseRules?: Array< string > | null,
   images?: Array< string > | null,
   instantBookEnabled?: boolean | null,
@@ -1052,9 +1299,11 @@ export type UpdateShortTermPropertyInput = {
   region?: string | null,
   serviceFeePercentage?: number | null,
   status?: PropertyStatus | null,
+  stayCategories?: Array< StayCategory > | null,
   taxPercentage?: number | null,
   thumbnail?: string | null,
   title?: string | null,
+  videos?: Array< string > | null,
 };
 
 export type UpdateUserInput = {
@@ -1070,6 +1319,13 @@ export type UpdateUserInput = {
   lastName?: string | null,
   nationalId?: string | null,
   occupation?: string | null,
+  payoutBankAccountName?: string | null,
+  payoutBankAccountNumber?: string | null,
+  payoutBankBranch?: string | null,
+  payoutBankName?: string | null,
+  payoutMethod?: PayoutMethod | null,
+  payoutMpesaName?: string | null,
+  payoutMpesaPhone?: string | null,
   phoneNumber?: string | null,
   preferences?: string | null,
   profileImage?: string | null,
@@ -1079,12 +1335,9 @@ export type UpdateUserInput = {
   whatsappNumber?: string | null,
 };
 
-export enum UserType {
-  ADMIN = "ADMIN",
-  AGENT = "AGENT",
-  GUEST = "GUEST",
-  LANDLORD = "LANDLORD",
-  TENANT = "TENANT",
+export enum PayoutMethod {
+  BANK = "BANK",
+  MPESA = "MPESA",
 }
 
 
@@ -1103,6 +1356,14 @@ export type PropertyAvailabilityRange = {
   propertyId: string,
   startDate: string,
   unavailableDates: Array< string >,
+};
+
+export type ListingEntitlement = {
+  __typename: "ListingEntitlement",
+  activePlan?: string | null,
+  canList: boolean,
+  freeListingsRemaining: number,
+  message: string,
 };
 
 export type ApplicationStats = {
@@ -1139,6 +1400,35 @@ export type BlockedDateRange = {
   reason?: string | null,
   startDate: string,
 };
+
+export type Payment = {
+  __typename: "Payment",
+  amount: number,
+  bookingId: string,
+  completedAt?: string | null,
+  conversationID?: string | null,
+  createdAt: string,
+  currency: string,
+  customerEmail?: string | null,
+  customerPhone?: string | null,
+  errorMessage?: string | null,
+  paymentId: string,
+  provider: PaymentProvider,
+  refundAmount?: number | null,
+  refundReason?: string | null,
+  refundedAt?: string | null,
+  status: PaymentStatus,
+  thirdPartyConversationID: string,
+  transactionID?: string | null,
+  updatedAt: string,
+};
+
+export enum PaymentProvider {
+  MPESA = "MPESA",
+  PAYPAL = "PAYPAL",
+  STRIPE = "STRIPE",
+}
+
 
 export type CategorizedPropertiesResponse = {
   __typename: "CategorizedPropertiesResponse",
@@ -1179,6 +1469,7 @@ export type PropertyCard = {
   region: string,
   thumbnail?: string | null,
   title: string,
+  verified: boolean,
 };
 
 export type ContactInquiryStats = {
@@ -1210,6 +1501,28 @@ export type LandlordApplicationStats = {
   underReview: number,
 };
 
+export type LandlordPropertiesInfo = {
+  __typename: "LandlordPropertiesInfo",
+  count: number,
+  landlord: LandlordPublicInfo,
+  nextToken?: string | null,
+  properties:  Array<Property >,
+};
+
+export type LandlordPublicInfo = {
+  __typename: "LandlordPublicInfo",
+  businessName?: string | null,
+  createdAt?: string | null,
+  district?: string | null,
+  email?: string | null,
+  firstName?: string | null,
+  lastName?: string | null,
+  phoneNumber?: string | null,
+  profileImage?: string | null,
+  region?: string | null,
+  whatsappNumber?: string | null,
+};
+
 export type UserProfile = Admin | Agent | Landlord | Tenant
 
 
@@ -1222,18 +1535,25 @@ export type Admin = {
   currency?: string | null,
   dateOfBirth?: string | null,
   district?: string | null,
-  email: string,
+  email?: string | null,
   emailNotifications?: boolean | null,
   emergencyContactName?: string | null,
   emergencyContactPhone?: string | null,
-  firstName: string,
+  firstName?: string | null,
   gender?: string | null,
-  hasProperties: boolean,
+  hasProperties?: boolean | null,
   isEmailVerified?: boolean | null,
   language?: string | null,
-  lastName: string,
+  lastName?: string | null,
   nationalIdLast4?: string | null,
   occupation?: string | null,
+  payoutBankAccountName?: string | null,
+  payoutBankAccountNumber?: string | null,
+  payoutBankBranch?: string | null,
+  payoutBankName?: string | null,
+  payoutMethod?: PayoutMethod | null,
+  payoutMpesaName?: string | null,
+  payoutMpesaPhone?: string | null,
   permissions?: Array< string > | null,
   phoneNumber?: string | null,
   profileImage?: string | null,
@@ -1257,16 +1577,16 @@ export type Agent = {
   currency?: string | null,
   dateOfBirth?: string | null,
   district?: string | null,
-  email: string,
+  email?: string | null,
   emailNotifications?: boolean | null,
   emergencyContactName?: string | null,
   emergencyContactPhone?: string | null,
-  firstName: string,
+  firstName?: string | null,
   gender?: string | null,
-  hasProperties: boolean,
+  hasProperties?: boolean | null,
   isEmailVerified?: boolean | null,
   language?: string | null,
-  lastName: string,
+  lastName?: string | null,
   licenseNumber?: string | null,
   nationalIdLast4?: string | null,
   occupation?: string | null,
@@ -1294,18 +1614,25 @@ export type Landlord = {
   currency?: string | null,
   dateOfBirth?: string | null,
   district?: string | null,
-  email: string,
+  email?: string | null,
   emailNotifications?: boolean | null,
   emergencyContactName?: string | null,
   emergencyContactPhone?: string | null,
-  firstName: string,
+  firstName?: string | null,
   gender?: string | null,
-  hasProperties: boolean,
+  hasProperties?: boolean | null,
   isEmailVerified?: boolean | null,
   language?: string | null,
-  lastName: string,
+  lastName?: string | null,
   nationalIdLast4?: string | null,
   occupation?: string | null,
+  payoutBankAccountName?: string | null,
+  payoutBankAccountNumber?: string | null,
+  payoutBankBranch?: string | null,
+  payoutBankName?: string | null,
+  payoutMethod?: PayoutMethod | null,
+  payoutMpesaName?: string | null,
+  payoutMpesaPhone?: string | null,
   phoneNumber?: string | null,
   profileImage?: string | null,
   pushNotifications?: boolean | null,
@@ -1329,18 +1656,25 @@ export type Tenant = {
   currency?: string | null,
   dateOfBirth?: string | null,
   district?: string | null,
-  email: string,
+  email?: string | null,
   emailNotifications?: boolean | null,
   emergencyContactName?: string | null,
   emergencyContactPhone?: string | null,
-  firstName: string,
+  firstName?: string | null,
   gender?: string | null,
-  hasProperties: boolean,
+  hasProperties?: boolean | null,
   isEmailVerified?: boolean | null,
   language?: string | null,
-  lastName: string,
+  lastName?: string | null,
   nationalIdLast4?: string | null,
   occupation?: string | null,
+  payoutBankAccountName?: string | null,
+  payoutBankAccountNumber?: string | null,
+  payoutBankBranch?: string | null,
+  payoutBankName?: string | null,
+  payoutMethod?: PayoutMethod | null,
+  payoutMpesaName?: string | null,
+  payoutMpesaPhone?: string | null,
   phoneNumber?: string | null,
   profileImage?: string | null,
   pushNotifications?: boolean | null,
@@ -1381,6 +1715,40 @@ export type RelatedPropertiesResponse = {
   similarPriceProperties:  Array<PropertyCard >,
 };
 
+export type SuggestedLandlord = {
+  __typename: "SuggestedLandlord",
+  landlord: LandlordProfile,
+  matchReasons: Array< string >,
+};
+
+export type LandlordProfile = {
+  __typename: "LandlordProfile",
+  businessName?: string | null,
+  createdAt?: string | null,
+  currency?: string | null,
+  district?: string | null,
+  firstName?: string | null,
+  lastName?: string | null,
+  maxPrice?: number | null,
+  minPrice?: number | null,
+  operatingDistricts: Array< string >,
+  operatingRegions: Array< string >,
+  phoneNumber?: string | null,
+  profileImage?: string | null,
+  propertyCount: number,
+  propertyTypes: Array< string >,
+  region?: string | null,
+  userId: string,
+  ward?: string | null,
+  whatsappNumber?: string | null,
+};
+
+export type TeamAvailabilityResponse = {
+  __typename: "TeamAvailabilityResponse",
+  busyBlocks:  Array<BusyBlock >,
+  meetings:  Array<TeamMeeting >,
+};
+
 export type UserStats = {
   __typename: "UserStats",
   activeUsers: number,
@@ -1391,6 +1759,42 @@ export type UserStats = {
   totalLandlords: number,
   totalTenants: number,
   totalUsers: number,
+};
+
+export type WhatsAppConversationSummary = {
+  __typename: "WhatsAppConversationSummary",
+  contactName?: string | null,
+  entries:  Array<WhatsAppChatEntry >,
+  hasMore?: boolean | null,
+  lastMessageAt?: string | null,
+  linkedUser?: WhatsAppLinkedUser | null,
+  messageCount: number,
+  oldestTs?: string | null,
+  phone: string,
+};
+
+export type WhatsAppChatEntry = {
+  __typename: "WhatsAppChatEntry",
+  direction: string,
+  lang?: string | null,
+  phone: string,
+  replyId?: string | null,
+  source?: string | null,
+  step?: string | null,
+  text?: string | null,
+  ts: string,
+  type: string,
+};
+
+export type WhatsAppLinkedUser = {
+  __typename: "WhatsAppLinkedUser",
+  email?: string | null,
+  firstName: string,
+  lastName: string,
+  phoneNumber?: string | null,
+  userId: string,
+  userType: string,
+  whatsappNumber?: string | null,
 };
 
 export type PropertyListResponse = {
@@ -1442,6 +1846,20 @@ export type ContactInquiryListResponse = {
   nextToken?: string | null,
 };
 
+export type HousingRequestListResponse = {
+  __typename: "HousingRequestListResponse",
+  count: number,
+  nextToken?: string | null,
+  requests:  Array<HousingRequest >,
+};
+
+export type LandlordRegistrationListResponse = {
+  __typename: "LandlordRegistrationListResponse",
+  count: number,
+  nextToken?: string | null,
+  registrations:  Array<LandlordRegistration >,
+};
+
 export type BookingListResponse = {
   __typename: "BookingListResponse",
   bookings:  Array<Booking >,
@@ -1455,8 +1873,33 @@ export type ShortTermPropertyListResponse = {
   properties:  Array<ShortTermProperty >,
 };
 
+export type LandlordProfileListResponse = {
+  __typename: "LandlordProfileListResponse",
+  count: number,
+  landlords:  Array<LandlordProfile >,
+  nextToken?: string | null,
+};
+
+export type ReferralSubmissionListResponse = {
+  __typename: "ReferralSubmissionListResponse",
+  count: number,
+  nextToken?: string | null,
+  submissions:  Array<ReferralSubmission >,
+};
+
+export type WhatsAppConversationRow = {
+  __typename: "WhatsAppConversationRow",
+  contactName?: string | null,
+  createdAt: string,
+  lang?: string | null,
+  lastMessageAt: string,
+  phoneNumber: string,
+  step: string,
+};
+
 export type ShortTermSearchInput = {
   amenities?: Array< string > | null,
+  bedrooms?: number | null,
   checkInDate: string,
   checkOutDate: string,
   district?: string | null,
@@ -1473,6 +1916,7 @@ export type ShortTermSearchInput = {
   propertyType?: ShortTermPropertyType | null,
   region: string,
   sortBy?: ShortTermSortOption | null,
+  stayCategory?: StayCategory | null,
 };
 
 export enum ShortTermSortOption {
@@ -1483,6 +1927,59 @@ export enum ShortTermSortOption {
   ROTATION = "ROTATION",
 }
 
+
+export type AddBusyBlockMutationVariables = {
+  endUtc: string,
+  recurrence?: BusyBlockRecurrenceInput | null,
+  startUtc: string,
+  title?: string | null,
+};
+
+export type AddBusyBlockMutation = {
+  addBusyBlock:  {
+    __typename: "BusyBlock",
+    createdAt: string,
+    endUtc: string,
+    id: string,
+    recurrence?:  {
+      __typename: "BusyBlockRecurrence",
+      days?: Array< number > | null,
+      endDate: string,
+      type: string,
+    } | null,
+    startUtc: string,
+    title?: string | null,
+    userId: string,
+  },
+};
+
+export type AddLandlordRegistrationNoteMutationVariables = {
+  createdAt: string,
+  note: string,
+  registrationId: string,
+};
+
+export type AddLandlordRegistrationNoteMutation = {
+  addLandlordRegistrationNote:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
+
+export type AddReferralNoteMutationVariables = {
+  createdAt: string,
+  note: string,
+  referralId: string,
+};
+
+export type AddReferralNoteMutation = {
+  addReferralNote:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
 
 export type AdminDeleteApplicationMutationVariables = {
   applicationId: string,
@@ -1531,8 +2028,8 @@ export type AdminUpdateApplicationStatusMutation = {
     __typename: "Application",
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicantDetails:  {
@@ -1558,8 +2055,8 @@ export type AdminUpdateApplicationStatusMutation = {
     landlord?:  {
       __typename: "LandlordBasicInfo",
       businessName?: string | null,
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     landlordNotes?: string | null,
@@ -1582,6 +2079,7 @@ export type AdminUpdateApplicationStatusMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -1595,10 +2093,12 @@ export type AdminUpdateApplicationStatusMutation = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -1630,6 +2130,7 @@ export type AdminUpdateApplicationStatusMutation = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } | null,
     propertyId: string,
@@ -1657,6 +2158,7 @@ export type AdminUpdatePropertyStatusMutation = {
 export type ApproveBookingMutationVariables = {
   bookingId: string,
   hostNotes?: string | null,
+  token?: string | null,
 };
 
 export type ApproveBookingMutation = {
@@ -1675,9 +2177,13 @@ export type ApproveBookingMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
+    guestEmail?: string | null,
     guestId: string,
+    guestName?: string | null,
+    guestPhone?: string | null,
     hostNotes?: string | null,
     numberOfAdults: number,
     numberOfChildren: number,
@@ -1717,8 +2223,21 @@ export type ApproveBookingMutation = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -1731,10 +2250,12 @@ export type ApproveBookingMutation = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -1753,28 +2274,46 @@ export type ApproveBookingMutation = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } | null,
     propertyId: string,
+    propertySnapshot?:  {
+      __typename: "PropertySnapshot",
+      address?:  {
+        __typename: "PropertySnapshotAddress",
+        city?: string | null,
+        district?: string | null,
+        region?: string | null,
+        street?: string | null,
+      } | null,
+      currency: string,
+      images?: Array< string > | null,
+      nightlyRate: number,
+      propertyType: string,
+      thumbnail?: string | null,
+      title: string,
+    } | null,
     specialRequests?: string | null,
     status: BookingStatus,
     updatedAt: string,
@@ -1832,6 +2371,7 @@ export type AssociateMediaWithPropertyMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     agentId?: string | null,
@@ -1845,10 +2385,12 @@ export type AssociateMediaWithPropertyMutation = {
     } | null,
     createdAt?: string | null,
     description?: string | null,
+    googleMapsUrl?: string | null,
     landlord?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     media?:  {
@@ -1880,6 +2422,7 @@ export type AssociateMediaWithPropertyMutation = {
     status: PropertyStatus,
     title: string,
     updatedAt?: string | null,
+    verified: boolean,
     version?: number | null,
   },
 };
@@ -1919,9 +2462,13 @@ export type CancelBookingMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
+      guestEmail?: string | null,
       guestId: string,
+      guestName?: string | null,
+      guestPhone?: string | null,
       hostNotes?: string | null,
       numberOfAdults: number,
       numberOfChildren: number,
@@ -1961,8 +2508,21 @@ export type CancelBookingMutation = {
         allowsSmoking?: boolean | null,
         amenities?: Array< string > | null,
         averageRating?: number | null,
+        bathrooms?: number | null,
+        bedrooms?: number | null,
         cancellationPolicy?: CancellationPolicy | null,
-        checkInInstructions?: string | null,
+        checkInInstructions?:  {
+          __typename: "CheckInInstructions",
+          accessCode?: string | null,
+          additionalNotes?: string | null,
+          contactName?: string | null,
+          contactPhone?: string | null,
+          directions?: string | null,
+          houseRules?: Array< string > | null,
+          parkingInfo?: string | null,
+          wifiName?: string | null,
+          wifiPassword?: string | null,
+        } | null,
         checkInTime?: string | null,
         checkOutTime?: string | null,
         cleaningFee?: number | null,
@@ -1975,10 +2535,12 @@ export type CancelBookingMutation = {
         currency: string,
         description?: string | null,
         district: string,
+        googleMapsUrl?: string | null,
         host?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         hostId: string,
@@ -1997,28 +2559,46 @@ export type CancelBookingMutation = {
         publishedAt?: string | null,
         ratingSummary?:  {
           __typename: "PropertyRatingSummary",
-          accuracy: number,
+          accuracy?: number | null,
           averageRating: number,
-          cleanliness: number,
-          communication: number,
-          fiveStars: number,
-          fourStars: number,
-          location: number,
-          oneStar: number,
-          threeStars: number,
+          cleanliness?: number | null,
+          communication?: number | null,
+          fiveStars?: number | null,
+          fourStars?: number | null,
+          location?: number | null,
+          oneStar?: number | null,
+          threeStars?: number | null,
           totalReviews: number,
-          twoStars: number,
-          value: number,
+          twoStars?: number | null,
+          value?: number | null,
         } | null,
         region: string,
         serviceFeePercentage?: number | null,
         status: PropertyStatus,
+        stayCategories?: Array< StayCategory > | null,
         taxPercentage?: number | null,
         thumbnail?: string | null,
         title: string,
         updatedAt: string,
+        videos?: Array< string > | null,
       } | null,
       propertyId: string,
+      propertySnapshot?:  {
+        __typename: "PropertySnapshot",
+        address?:  {
+          __typename: "PropertySnapshotAddress",
+          city?: string | null,
+          district?: string | null,
+          region?: string | null,
+          street?: string | null,
+        } | null,
+        currency: string,
+        images?: Array< string > | null,
+        nightlyRate: number,
+        propertyType: string,
+        thumbnail?: string | null,
+        title: string,
+      } | null,
       specialRequests?: string | null,
       status: BookingStatus,
       updatedAt: string,
@@ -2026,6 +2606,19 @@ export type CancelBookingMutation = {
     message: string,
     refundAmount: number,
     refundPercentage: number,
+  },
+};
+
+export type ConfirmWhatsAppAssociationMutationVariables = {
+  code: string,
+  whatsappNumber: string,
+};
+
+export type ConfirmWhatsAppAssociationMutation = {
+  confirmWhatsAppAssociation:  {
+    __typename: "AssociateWhatsAppResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -2051,9 +2644,13 @@ export type CreateBookingMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
+      guestEmail?: string | null,
       guestId: string,
+      guestName?: string | null,
+      guestPhone?: string | null,
       hostNotes?: string | null,
       numberOfAdults: number,
       numberOfChildren: number,
@@ -2093,8 +2690,21 @@ export type CreateBookingMutation = {
         allowsSmoking?: boolean | null,
         amenities?: Array< string > | null,
         averageRating?: number | null,
+        bathrooms?: number | null,
+        bedrooms?: number | null,
         cancellationPolicy?: CancellationPolicy | null,
-        checkInInstructions?: string | null,
+        checkInInstructions?:  {
+          __typename: "CheckInInstructions",
+          accessCode?: string | null,
+          additionalNotes?: string | null,
+          contactName?: string | null,
+          contactPhone?: string | null,
+          directions?: string | null,
+          houseRules?: Array< string > | null,
+          parkingInfo?: string | null,
+          wifiName?: string | null,
+          wifiPassword?: string | null,
+        } | null,
         checkInTime?: string | null,
         checkOutTime?: string | null,
         cleaningFee?: number | null,
@@ -2107,10 +2717,12 @@ export type CreateBookingMutation = {
         currency: string,
         description?: string | null,
         district: string,
+        googleMapsUrl?: string | null,
         host?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         hostId: string,
@@ -2129,34 +2741,98 @@ export type CreateBookingMutation = {
         publishedAt?: string | null,
         ratingSummary?:  {
           __typename: "PropertyRatingSummary",
-          accuracy: number,
+          accuracy?: number | null,
           averageRating: number,
-          cleanliness: number,
-          communication: number,
-          fiveStars: number,
-          fourStars: number,
-          location: number,
-          oneStar: number,
-          threeStars: number,
+          cleanliness?: number | null,
+          communication?: number | null,
+          fiveStars?: number | null,
+          fourStars?: number | null,
+          location?: number | null,
+          oneStar?: number | null,
+          threeStars?: number | null,
           totalReviews: number,
-          twoStars: number,
-          value: number,
+          twoStars?: number | null,
+          value?: number | null,
         } | null,
         region: string,
         serviceFeePercentage?: number | null,
         status: PropertyStatus,
+        stayCategories?: Array< StayCategory > | null,
         taxPercentage?: number | null,
         thumbnail?: string | null,
         title: string,
         updatedAt: string,
+        videos?: Array< string > | null,
       } | null,
       propertyId: string,
+      propertySnapshot?:  {
+        __typename: "PropertySnapshot",
+        address?:  {
+          __typename: "PropertySnapshotAddress",
+          city?: string | null,
+          district?: string | null,
+          region?: string | null,
+          street?: string | null,
+        } | null,
+        currency: string,
+        images?: Array< string > | null,
+        nightlyRate: number,
+        propertyType: string,
+        thumbnail?: string | null,
+        title: string,
+      } | null,
       specialRequests?: string | null,
       status: BookingStatus,
       updatedAt: string,
     },
     message: string,
     paymentStatus: PaymentStatus,
+  },
+};
+
+export type CreateHousingRequestMutationVariables = {
+  bedrooms?: number | null,
+  contactName?: string | null,
+  currency?: string | null,
+  description: string,
+  district?: string | null,
+  maxBudget?: number | null,
+  minBudget?: number | null,
+  moveInDate?: string | null,
+  phone: string,
+  propertyType?: string | null,
+  region?: string | null,
+  source: HousingRequestSource,
+  street?: string | null,
+  ward?: string | null,
+};
+
+export type CreateHousingRequestMutation = {
+  createHousingRequest:  {
+    __typename: "HousingRequest",
+    adminNotes?: string | null,
+    assignedAdmin?: string | null,
+    bedrooms?: number | null,
+    contactName?: string | null,
+    createdAt: string,
+    currency: string,
+    description: string,
+    district?: string | null,
+    fulfilledPropertyId?: string | null,
+    matchedLandlords?: Array< string > | null,
+    maxBudget?: number | null,
+    minBudget?: number | null,
+    moveInDate?: string | null,
+    phone: string,
+    propertyType?: string | null,
+    region?: string | null,
+    requestId: string,
+    source: HousingRequestSource,
+    status: HousingRequestStatus,
+    street?: string | null,
+    updatedAt: string,
+    userId?: string | null,
+    ward?: string | null,
   },
 };
 
@@ -2240,6 +2916,7 @@ export type CreateReviewMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     guestId: string,
@@ -2279,8 +2956,21 @@ export type CreateShortTermPropertyMutation = {
     allowsSmoking?: boolean | null,
     amenities?: Array< string > | null,
     averageRating?: number | null,
+    bathrooms?: number | null,
+    bedrooms?: number | null,
     cancellationPolicy?: CancellationPolicy | null,
-    checkInInstructions?: string | null,
+    checkInInstructions?:  {
+      __typename: "CheckInInstructions",
+      accessCode?: string | null,
+      additionalNotes?: string | null,
+      contactName?: string | null,
+      contactPhone?: string | null,
+      directions?: string | null,
+      houseRules?: Array< string > | null,
+      parkingInfo?: string | null,
+      wifiName?: string | null,
+      wifiPassword?: string | null,
+    } | null,
     checkInTime?: string | null,
     checkOutTime?: string | null,
     cleaningFee?: number | null,
@@ -2293,10 +2983,12 @@ export type CreateShortTermPropertyMutation = {
     currency: string,
     description?: string | null,
     district: string,
+    googleMapsUrl?: string | null,
     host?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     hostId: string,
@@ -2315,26 +3007,28 @@ export type CreateShortTermPropertyMutation = {
     publishedAt?: string | null,
     ratingSummary?:  {
       __typename: "PropertyRatingSummary",
-      accuracy: number,
+      accuracy?: number | null,
       averageRating: number,
-      cleanliness: number,
-      communication: number,
-      fiveStars: number,
-      fourStars: number,
-      location: number,
-      oneStar: number,
-      threeStars: number,
+      cleanliness?: number | null,
+      communication?: number | null,
+      fiveStars?: number | null,
+      fourStars?: number | null,
+      location?: number | null,
+      oneStar?: number | null,
+      threeStars?: number | null,
       totalReviews: number,
-      twoStars: number,
-      value: number,
+      twoStars?: number | null,
+      value?: number | null,
     } | null,
     region: string,
     serviceFeePercentage?: number | null,
     status: PropertyStatus,
+    stayCategories?: Array< StayCategory > | null,
     taxPercentage?: number | null,
     thumbnail?: string | null,
     title: string,
     updatedAt: string,
+    videos?: Array< string > | null,
   },
 };
 
@@ -2353,6 +3047,21 @@ export type CreateShortTermPropertyDraftMutation = {
   },
 };
 
+export type CreateStripePaymentIntentMutationVariables = {
+  bookingId: string,
+  currency?: string | null,
+};
+
+export type CreateStripePaymentIntentMutation = {
+  createStripePaymentIntent:  {
+    __typename: "StripePaymentIntentResponse",
+    amount: number,
+    clientSecret: string,
+    currency: string,
+    paymentIntentId: string,
+  },
+};
+
 export type DeactivateShortTermPropertyMutationVariables = {
   propertyId: string,
 };
@@ -2368,6 +3077,7 @@ export type DeactivateShortTermPropertyMutation = {
 export type DeclineBookingMutationVariables = {
   bookingId: string,
   reason: string,
+  token?: string | null,
 };
 
 export type DeclineBookingMutation = {
@@ -2386,9 +3096,13 @@ export type DeclineBookingMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
+    guestEmail?: string | null,
     guestId: string,
+    guestName?: string | null,
+    guestPhone?: string | null,
     hostNotes?: string | null,
     numberOfAdults: number,
     numberOfChildren: number,
@@ -2428,8 +3142,21 @@ export type DeclineBookingMutation = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -2442,10 +3169,12 @@ export type DeclineBookingMutation = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -2464,28 +3193,46 @@ export type DeclineBookingMutation = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } | null,
     propertyId: string,
+    propertySnapshot?:  {
+      __typename: "PropertySnapshot",
+      address?:  {
+        __typename: "PropertySnapshotAddress",
+        city?: string | null,
+        district?: string | null,
+        region?: string | null,
+        street?: string | null,
+      } | null,
+      currency: string,
+      images?: Array< string > | null,
+      nightlyRate: number,
+      propertyType: string,
+      thumbnail?: string | null,
+      title: string,
+    } | null,
     specialRequests?: string | null,
     status: BookingStatus,
     updatedAt: string,
@@ -2547,6 +3294,18 @@ export type DeletePropertyMutationVariables = {
 
 export type DeletePropertyMutation = {
   deleteProperty:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
+
+export type DeleteTeamMeetingMutationVariables = {
+  meetingId: string,
+};
+
+export type DeleteTeamMeetingMutation = {
+  deleteTeamMeeting:  {
     __typename: "SuccessResponse",
     message: string,
     success: boolean,
@@ -2642,6 +3401,26 @@ export type ImportPropertiesFromCSVMutation = {
   },
 };
 
+export type InitializeDirectChatMutationVariables = {
+  targetUserId: string,
+};
+
+export type InitializeDirectChatMutation = {
+  initializeDirectChat:  {
+    __typename: "DirectChatInitializationResponse",
+    conversationId: string,
+    targetUserInfo:  {
+      __typename: "ChatUser",
+      businessName?: string | null,
+      firstName: string,
+      lastName: string,
+      profileImage?: string | null,
+      userId: string,
+      userType: UserType,
+    },
+  },
+};
+
 export type InitializePropertyChatMutationVariables = {
   propertyId: string,
 };
@@ -2669,11 +3448,23 @@ export type InitiatePaymentMutationVariables = {
 export type InitiatePaymentMutation = {
   initiatePayment:  {
     __typename: "InitiatePaymentResponse",
-    reference: string,
-    status: string,
     amount: number,
     currency: string,
     message: string,
+    reference: string,
+    status: string,
+  },
+};
+
+export type InitiateWhatsAppAssociationMutationVariables = {
+  whatsappNumber: string,
+};
+
+export type InitiateWhatsAppAssociationMutation = {
+  initiateWhatsAppAssociation:  {
+    __typename: "AssociateWhatsAppResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -2684,6 +3475,7 @@ export type MarkAsReadMutationVariables = {
 export type MarkAsReadMutation = {
   markAsRead:  {
     __typename: "Conversation",
+    conversationType?: string | null,
     createdAt: string,
     id: string,
     lastMessage: string,
@@ -2693,6 +3485,20 @@ export type MarkAsReadMutation = {
     propertyTitle: string,
     unreadCount: number,
     updatedAt: string,
+  },
+};
+
+export type MarkLandlordContactedMutationVariables = {
+  createdAt: string,
+  landlordId: string,
+  requestId: string,
+};
+
+export type MarkLandlordContactedMutation = {
+  markLandlordContacted:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -2720,6 +3526,7 @@ export type MarkPropertyAsAvailableMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     agentId?: string | null,
@@ -2733,10 +3540,12 @@ export type MarkPropertyAsAvailableMutation = {
     } | null,
     createdAt?: string | null,
     description?: string | null,
+    googleMapsUrl?: string | null,
     landlord?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     media?:  {
@@ -2768,6 +3577,7 @@ export type MarkPropertyAsAvailableMutation = {
     status: PropertyStatus,
     title: string,
     updatedAt?: string | null,
+    verified: boolean,
     version?: number | null,
   },
 };
@@ -2797,6 +3607,7 @@ export type MarkPropertyAsRentedMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     agentId?: string | null,
@@ -2810,10 +3621,12 @@ export type MarkPropertyAsRentedMutation = {
     } | null,
     createdAt?: string | null,
     description?: string | null,
+    googleMapsUrl?: string | null,
     landlord?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     media?:  {
@@ -2845,6 +3658,7 @@ export type MarkPropertyAsRentedMutation = {
     status: PropertyStatus,
     title: string,
     updatedAt?: string | null,
+    verified: boolean,
     version?: number | null,
   },
 };
@@ -2908,6 +3722,7 @@ export type PublishPropertyUpdateEventMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -2921,10 +3736,12 @@ export type PublishPropertyUpdateEventMutation = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -2956,6 +3773,7 @@ export type PublishPropertyUpdateEventMutation = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     },
     propertyId: string,
@@ -2986,8 +3804,21 @@ export type PublishShortTermPropertyMutation = {
     allowsSmoking?: boolean | null,
     amenities?: Array< string > | null,
     averageRating?: number | null,
+    bathrooms?: number | null,
+    bedrooms?: number | null,
     cancellationPolicy?: CancellationPolicy | null,
-    checkInInstructions?: string | null,
+    checkInInstructions?:  {
+      __typename: "CheckInInstructions",
+      accessCode?: string | null,
+      additionalNotes?: string | null,
+      contactName?: string | null,
+      contactPhone?: string | null,
+      directions?: string | null,
+      houseRules?: Array< string > | null,
+      parkingInfo?: string | null,
+      wifiName?: string | null,
+      wifiPassword?: string | null,
+    } | null,
     checkInTime?: string | null,
     checkOutTime?: string | null,
     cleaningFee?: number | null,
@@ -3000,10 +3831,12 @@ export type PublishShortTermPropertyMutation = {
     currency: string,
     description?: string | null,
     district: string,
+    googleMapsUrl?: string | null,
     host?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     hostId: string,
@@ -3022,26 +3855,44 @@ export type PublishShortTermPropertyMutation = {
     publishedAt?: string | null,
     ratingSummary?:  {
       __typename: "PropertyRatingSummary",
-      accuracy: number,
+      accuracy?: number | null,
       averageRating: number,
-      cleanliness: number,
-      communication: number,
-      fiveStars: number,
-      fourStars: number,
-      location: number,
-      oneStar: number,
-      threeStars: number,
+      cleanliness?: number | null,
+      communication?: number | null,
+      fiveStars?: number | null,
+      fourStars?: number | null,
+      location?: number | null,
+      oneStar?: number | null,
+      threeStars?: number | null,
       totalReviews: number,
-      twoStars: number,
-      value: number,
+      twoStars?: number | null,
+      value?: number | null,
     } | null,
     region: string,
     serviceFeePercentage?: number | null,
     status: PropertyStatus,
+    stayCategories?: Array< StayCategory > | null,
     taxPercentage?: number | null,
     thumbnail?: string | null,
     title: string,
     updatedAt: string,
+    videos?: Array< string > | null,
+  },
+};
+
+export type RefundBookingMutationVariables = {
+  amountCents?: number | null,
+  bookingId: string,
+  reason?: string | null,
+};
+
+export type RefundBookingMutation = {
+  refundBooking:  {
+    __typename: "RefundResponse",
+    amount: number,
+    currency: string,
+    refundId: string,
+    success: boolean,
   },
 };
 
@@ -3057,6 +3908,18 @@ export type RegenerateLocationJsonMutation = {
   },
 };
 
+export type RegisterPushTokenMutationVariables = {
+  token: string,
+};
+
+export type RegisterPushTokenMutation = {
+  registerPushToken:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
+
 export type RejectPropertyMutationVariables = {
   propertyId: string,
   reason: string,
@@ -3064,6 +3927,19 @@ export type RejectPropertyMutationVariables = {
 
 export type RejectPropertyMutation = {
   rejectProperty:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
+
+export type RemoveBusyBlockMutationVariables = {
+  blockId: string,
+  blockStartUtc: string,
+};
+
+export type RemoveBusyBlockMutation = {
+  removeBusyBlock:  {
     __typename: "SuccessResponse",
     message: string,
     success: boolean,
@@ -3125,6 +4001,7 @@ export type RespondToReviewMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     guestId: string,
@@ -3155,8 +4032,8 @@ export type ReviewLandlordApplicationMutation = {
     alternatePhone?: string | null,
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicationId: string,
@@ -3170,6 +4047,44 @@ export type ReviewLandlordApplicationMutation = {
     submittedAt?: string | null,
     updatedAt?: string | null,
     userId: string,
+  },
+};
+
+export type ScheduleMeetingMutationVariables = {
+  attendeeIds: Array< string >,
+  description?: string | null,
+  endUtc: string,
+  link?: string | null,
+  startUtc: string,
+  title: string,
+};
+
+export type ScheduleMeetingMutation = {
+  scheduleMeeting:  {
+    __typename: "TeamMeeting",
+    attendeeIds: Array< string >,
+    createdAt: string,
+    createdBy: string,
+    createdByName: string,
+    description?: string | null,
+    endUtc: string,
+    id: string,
+    link?: string | null,
+    startUtc: string,
+    title: string,
+  },
+};
+
+export type SendCheckInInstructionsMutationVariables = {
+  input: SendCheckInInstructionsInput,
+};
+
+export type SendCheckInInstructionsMutation = {
+  sendCheckInInstructions:  {
+    __typename: "SendCheckInInstructionsResponse",
+    message: string,
+    sentVia: Array< string >,
+    success: boolean,
   },
 };
 
@@ -3188,6 +4103,19 @@ export type SendMessageMutation = {
     senderId?: string | null,
     senderName: string,
     timestamp: string,
+  },
+};
+
+export type SendWhatsAppMessageMutationVariables = {
+  message: string,
+  phone: string,
+};
+
+export type SendWhatsAppMessageMutation = {
+  sendWhatsAppMessage:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -3225,8 +4153,8 @@ export type SubmitApplicationMutation = {
     __typename: "Application",
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicantDetails:  {
@@ -3252,8 +4180,8 @@ export type SubmitApplicationMutation = {
     landlord?:  {
       __typename: "LandlordBasicInfo",
       businessName?: string | null,
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     landlordNotes?: string | null,
@@ -3276,6 +4204,7 @@ export type SubmitApplicationMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -3289,10 +4218,12 @@ export type SubmitApplicationMutation = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -3324,6 +4255,7 @@ export type SubmitApplicationMutation = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } | null,
     propertyId: string,
@@ -3362,6 +4294,60 @@ export type SubmitLandlordApplicationMutation = {
   },
 };
 
+export type SubmitLandlordRegistrationMutationVariables = {
+  area?: string | null,
+  name: string,
+  notes?: string | null,
+  phone: string,
+};
+
+export type SubmitLandlordRegistrationMutation = {
+  submitLandlordRegistration:  {
+    __typename: "LandlordRegistration",
+    adminNotes?: Array< string > | null,
+    area?: string | null,
+    assignedTo?: string | null,
+    createdAt: string,
+    name: string,
+    notes?: string | null,
+    phone: string,
+    registrationId: string,
+    status: string,
+    updatedAt?: string | null,
+  },
+};
+
+export type SubmitReferralMutationVariables = {
+  landlordArea: string,
+  landlordName: string,
+  landlordNotes?: string | null,
+  landlordPhone: string,
+  referrerName: string,
+  referrerNida?: string | null,
+  referrerPhone: string,
+};
+
+export type SubmitReferralMutation = {
+  submitReferral:  {
+    __typename: "ReferralSubmission",
+    adminNotes?: Array< string > | null,
+    assignedTo?: string | null,
+    createdAt: string,
+    landlordArea: string,
+    landlordName: string,
+    landlordNotes?: string | null,
+    landlordPhone: string,
+    listingRewardStatus: string,
+    profitShareRewardStatus: string,
+    referralId: string,
+    referrerName: string,
+    referrerNida?: string | null,
+    referrerPhone: string,
+    status: string,
+    updatedAt?: string | null,
+  },
+};
+
 export type ToggleFavoriteMutationVariables = {
   propertyId: string,
 };
@@ -3397,8 +4383,8 @@ export type UpdateApplicationMutation = {
     __typename: "Application",
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicantDetails:  {
@@ -3424,8 +4410,8 @@ export type UpdateApplicationMutation = {
     landlord?:  {
       __typename: "LandlordBasicInfo",
       businessName?: string | null,
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     landlordNotes?: string | null,
@@ -3448,6 +4434,7 @@ export type UpdateApplicationMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -3461,10 +4448,12 @@ export type UpdateApplicationMutation = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -3496,6 +4485,7 @@ export type UpdateApplicationMutation = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } | null,
     propertyId: string,
@@ -3516,8 +4506,8 @@ export type UpdateApplicationStatusMutation = {
     __typename: "Application",
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicantDetails:  {
@@ -3543,8 +4533,8 @@ export type UpdateApplicationStatusMutation = {
     landlord?:  {
       __typename: "LandlordBasicInfo",
       businessName?: string | null,
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     landlordNotes?: string | null,
@@ -3567,6 +4557,7 @@ export type UpdateApplicationStatusMutation = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -3580,10 +4571,12 @@ export type UpdateApplicationStatusMutation = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -3615,6 +4608,7 @@ export type UpdateApplicationStatusMutation = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } | null,
     propertyId: string,
@@ -3646,6 +4640,36 @@ export type UpdateContactInquiryStatusMutation = {
     status: InquiryStatus,
     subject: string,
     updatedAt: string,
+  },
+};
+
+export type UpdateHousingRequestStatusMutationVariables = {
+  adminNotes?: string | null,
+  createdAt: string,
+  requestId: string,
+  status: HousingRequestStatus,
+};
+
+export type UpdateHousingRequestStatusMutation = {
+  updateHousingRequestStatus:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
+  },
+};
+
+export type UpdateLandlordRegistrationStatusMutationVariables = {
+  adminNotes?: string | null,
+  createdAt: string,
+  registrationId: string,
+  status: string,
+};
+
+export type UpdateLandlordRegistrationStatusMutation = {
+  updateLandlordRegistrationStatus:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -3705,6 +4729,7 @@ export type UpdatePropertyStatusMutation = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     agentId?: string | null,
@@ -3718,10 +4743,12 @@ export type UpdatePropertyStatusMutation = {
     } | null,
     createdAt?: string | null,
     description?: string | null,
+    googleMapsUrl?: string | null,
     landlord?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     media?:  {
@@ -3753,7 +4780,23 @@ export type UpdatePropertyStatusMutation = {
     status: PropertyStatus,
     title: string,
     updatedAt?: string | null,
+    verified: boolean,
     version?: number | null,
+  },
+};
+
+export type UpdateReferralStatusMutationVariables = {
+  adminNotes?: string | null,
+  createdAt: string,
+  referralId: string,
+  status: string,
+};
+
+export type UpdateReferralStatusMutation = {
+  updateReferralStatus:  {
+    __typename: "SuccessResponse",
+    message: string,
+    success: boolean,
   },
 };
 
@@ -3781,8 +4824,21 @@ export type UpdateShortTermPropertyMutation = {
     allowsSmoking?: boolean | null,
     amenities?: Array< string > | null,
     averageRating?: number | null,
+    bathrooms?: number | null,
+    bedrooms?: number | null,
     cancellationPolicy?: CancellationPolicy | null,
-    checkInInstructions?: string | null,
+    checkInInstructions?:  {
+      __typename: "CheckInInstructions",
+      accessCode?: string | null,
+      additionalNotes?: string | null,
+      contactName?: string | null,
+      contactPhone?: string | null,
+      directions?: string | null,
+      houseRules?: Array< string > | null,
+      parkingInfo?: string | null,
+      wifiName?: string | null,
+      wifiPassword?: string | null,
+    } | null,
     checkInTime?: string | null,
     checkOutTime?: string | null,
     cleaningFee?: number | null,
@@ -3795,10 +4851,12 @@ export type UpdateShortTermPropertyMutation = {
     currency: string,
     description?: string | null,
     district: string,
+    googleMapsUrl?: string | null,
     host?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     hostId: string,
@@ -3817,26 +4875,28 @@ export type UpdateShortTermPropertyMutation = {
     publishedAt?: string | null,
     ratingSummary?:  {
       __typename: "PropertyRatingSummary",
-      accuracy: number,
+      accuracy?: number | null,
       averageRating: number,
-      cleanliness: number,
-      communication: number,
-      fiveStars: number,
-      fourStars: number,
-      location: number,
-      oneStar: number,
-      threeStars: number,
+      cleanliness?: number | null,
+      communication?: number | null,
+      fiveStars?: number | null,
+      fourStars?: number | null,
+      location?: number | null,
+      oneStar?: number | null,
+      threeStars?: number | null,
       totalReviews: number,
-      twoStars: number,
-      value: number,
+      twoStars?: number | null,
+      value?: number | null,
     } | null,
     region: string,
     serviceFeePercentage?: number | null,
     status: PropertyStatus,
+    stayCategories?: Array< StayCategory > | null,
     taxPercentage?: number | null,
     thumbnail?: string | null,
     title: string,
     updatedAt: string,
+    videos?: Array< string > | null,
   },
 };
 
@@ -3939,6 +4999,33 @@ export type CheckAvailabilityQuery = {
   },
 };
 
+export type CheckListingEntitlementQueryVariables = {
+};
+
+export type CheckListingEntitlementQuery = {
+  checkListingEntitlement:  {
+    __typename: "ListingEntitlement",
+    activePlan?: string | null,
+    canList: boolean,
+    freeListingsRemaining: number,
+    message: string,
+  },
+};
+
+export type CheckPhoneEntitlementQueryVariables = {
+  phoneNumber: string,
+};
+
+export type CheckPhoneEntitlementQuery = {
+  checkPhoneEntitlement:  {
+    __typename: "ListingEntitlement",
+    activePlan?: string | null,
+    canList: boolean,
+    freeListingsRemaining: number,
+    message: string,
+  },
+};
+
 export type DummyQueryQueryVariables = {
 };
 
@@ -3987,8 +5074,8 @@ export type GetApplicationQuery = {
     __typename: "Application",
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicantDetails:  {
@@ -4014,8 +5101,8 @@ export type GetApplicationQuery = {
     landlord?:  {
       __typename: "LandlordBasicInfo",
       businessName?: string | null,
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     landlordNotes?: string | null,
@@ -4038,6 +5125,7 @@ export type GetApplicationQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -4051,10 +5139,12 @@ export type GetApplicationQuery = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -4086,6 +5176,7 @@ export type GetApplicationQuery = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } | null,
     propertyId: string,
@@ -4166,9 +5257,13 @@ export type GetBookingQuery = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
+    guestEmail?: string | null,
     guestId: string,
+    guestName?: string | null,
+    guestPhone?: string | null,
     hostNotes?: string | null,
     numberOfAdults: number,
     numberOfChildren: number,
@@ -4208,8 +5303,21 @@ export type GetBookingQuery = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -4222,10 +5330,12 @@ export type GetBookingQuery = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -4244,28 +5354,46 @@ export type GetBookingQuery = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } | null,
     propertyId: string,
+    propertySnapshot?:  {
+      __typename: "PropertySnapshot",
+      address?:  {
+        __typename: "PropertySnapshotAddress",
+        city?: string | null,
+        district?: string | null,
+        region?: string | null,
+        street?: string | null,
+      } | null,
+      currency: string,
+      images?: Array< string > | null,
+      nightlyRate: number,
+      propertyType: string,
+      thumbnail?: string | null,
+      title: string,
+    } | null,
     specialRequests?: string | null,
     status: BookingStatus,
     updatedAt: string,
@@ -4323,6 +5451,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     } | null,
     lowestPrice:  {
@@ -4341,6 +5470,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     },
     more?:  {
@@ -4359,6 +5489,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     } | null,
     mostViewed?:  {
@@ -4377,6 +5508,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     } | null,
     nearby:  {
@@ -4395,6 +5527,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     },
     recentlyViewed?:  {
@@ -4413,6 +5546,7 @@ export type GetCategorizedPropertiesQuery = {
         region: string,
         thumbnail?: string | null,
         title: string,
+        verified: boolean,
       } >,
     } | null,
   },
@@ -4489,6 +5623,40 @@ export type GetDistrictsQuery = {
   } >,
 };
 
+export type GetHousingRequestQueryVariables = {
+  createdAt: string,
+  requestId: string,
+};
+
+export type GetHousingRequestQuery = {
+  getHousingRequest?:  {
+    __typename: "HousingRequest",
+    adminNotes?: string | null,
+    assignedAdmin?: string | null,
+    bedrooms?: number | null,
+    contactName?: string | null,
+    createdAt: string,
+    currency: string,
+    description: string,
+    district?: string | null,
+    fulfilledPropertyId?: string | null,
+    matchedLandlords?: Array< string > | null,
+    maxBudget?: number | null,
+    minBudget?: number | null,
+    moveInDate?: string | null,
+    phone: string,
+    propertyType?: string | null,
+    region?: string | null,
+    requestId: string,
+    source: HousingRequestSource,
+    status: HousingRequestStatus,
+    street?: string | null,
+    updatedAt: string,
+    userId?: string | null,
+    ward?: string | null,
+  } | null,
+};
+
 export type GetInitialAppStateQueryVariables = {
   limitPerCategory?: number | null,
 };
@@ -4514,6 +5682,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       lowestPrice:  {
@@ -4532,6 +5701,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       },
       more?:  {
@@ -4550,6 +5720,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       mostViewed?:  {
@@ -4568,6 +5739,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       nearby:  {
@@ -4586,6 +5758,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       },
       recentlyViewed?:  {
@@ -4604,6 +5777,7 @@ export type GetInitialAppStateQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
     },
@@ -4635,6 +5809,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       lowestPrice:  {
@@ -4653,6 +5828,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       },
       more?:  {
@@ -4671,6 +5847,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       mostViewed?:  {
@@ -4689,6 +5866,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
       nearby:  {
@@ -4707,6 +5885,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       },
       recentlyViewed?:  {
@@ -4725,6 +5904,7 @@ export type GetInitialAppStateFastQuery = {
           region: string,
           thumbnail?: string | null,
           title: string,
+          verified: boolean,
         } >,
       } | null,
     },
@@ -4743,8 +5923,8 @@ export type GetLandlordApplicationQuery = {
     alternatePhone?: string | null,
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicationId: string,
@@ -4775,6 +5955,127 @@ export type GetLandlordApplicationStatsQuery = {
   },
 };
 
+export type GetLandlordPropertiesInfoQueryVariables = {
+  limit?: number | null,
+  nextToken?: string | null,
+  phone: string,
+};
+
+export type GetLandlordPropertiesInfoQuery = {
+  getLandlordPropertiesInfo:  {
+    __typename: "LandlordPropertiesInfo",
+    count: number,
+    landlord:  {
+      __typename: "LandlordPublicInfo",
+      businessName?: string | null,
+      createdAt?: string | null,
+      district?: string | null,
+      email?: string | null,
+      firstName?: string | null,
+      lastName?: string | null,
+      phoneNumber?: string | null,
+      profileImage?: string | null,
+      region?: string | null,
+      whatsappNumber?: string | null,
+    },
+    nextToken?: string | null,
+    properties:  Array< {
+      __typename: "Property",
+      address:  {
+        __typename: "Address",
+        coordinates?:  {
+          __typename: "Coordinates",
+          latitude: number,
+          longitude: number,
+        } | null,
+        district: string,
+        postalCode?: string | null,
+        region: string,
+        street?: string | null,
+        ward?: string | null,
+      },
+      agent?:  {
+        __typename: "PropertyUser",
+        firstName: string,
+        lastName: string,
+        profileImage?: string | null,
+        whatsappNumber?: string | null,
+      } | null,
+      agentId?: string | null,
+      amenities?: Array< string | null > | null,
+      availability?:  {
+        __typename: "PropertyAvailability",
+        available: boolean,
+        availableFrom?: string | null,
+        maximumLeaseTerm?: number | null,
+        minimumLeaseTerm?: number | null,
+      } | null,
+      createdAt?: string | null,
+      description?: string | null,
+      googleMapsUrl?: string | null,
+      landlord?:  {
+        __typename: "PropertyUser",
+        firstName: string,
+        lastName: string,
+        profileImage?: string | null,
+        whatsappNumber?: string | null,
+      } | null,
+      media?:  {
+        __typename: "PropertyMedia",
+        floorPlan?: string | null,
+        images?: Array< string > | null,
+        videos?: Array< string > | null,
+        virtualTour?: string | null,
+      } | null,
+      pricing?:  {
+        __typename: "PropertyPricing",
+        currency: string,
+        deposit?: number | null,
+        monthlyRent: number,
+        serviceCharge?: number | null,
+        utilitiesIncluded?: boolean | null,
+      } | null,
+      propertyId: string,
+      propertyType: PropertyType,
+      specifications?:  {
+        __typename: "PropertySpecifications",
+        bathrooms?: number | null,
+        bedrooms?: number | null,
+        floors?: number | null,
+        furnished?: boolean | null,
+        parkingSpaces?: number | null,
+        squareMeters?: number | null,
+      } | null,
+      status: PropertyStatus,
+      title: string,
+      updatedAt?: string | null,
+      verified: boolean,
+      version?: number | null,
+    } >,
+  },
+};
+
+export type GetLandlordRegistrationQueryVariables = {
+  createdAt: string,
+  registrationId: string,
+};
+
+export type GetLandlordRegistrationQuery = {
+  getLandlordRegistration?:  {
+    __typename: "LandlordRegistration",
+    adminNotes?: Array< string > | null,
+    area?: string | null,
+    assignedTo?: string | null,
+    createdAt: string,
+    name: string,
+    notes?: string | null,
+    phone: string,
+    registrationId: string,
+    status: string,
+    updatedAt?: string | null,
+  } | null,
+};
+
 export type GetMeQueryVariables = {
 };
 
@@ -4788,18 +6089,25 @@ export type GetMeQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       permissions?: Array< string > | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
@@ -4821,16 +6129,16 @@ export type GetMeQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       licenseNumber?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
@@ -4856,18 +6164,25 @@ export type GetMeQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -4889,18 +6204,25 @@ export type GetMeQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -4939,6 +6261,27 @@ export type GetMediaLibraryQuery = {
   } | null,
 };
 
+export type GetMyBusyBlocksQueryVariables = {
+};
+
+export type GetMyBusyBlocksQuery = {
+  getMyBusyBlocks:  Array< {
+    __typename: "BusyBlock",
+    createdAt: string,
+    endUtc: string,
+    id: string,
+    recurrence?:  {
+      __typename: "BusyBlockRecurrence",
+      days?: Array< number > | null,
+      endDate: string,
+      type: string,
+    } | null,
+    startUtc: string,
+    title?: string | null,
+    userId: string,
+  } >,
+};
+
 export type GetMyLandlordApplicationQueryVariables = {
 };
 
@@ -4950,8 +6293,8 @@ export type GetMyLandlordApplicationQuery = {
     alternatePhone?: string | null,
     applicant?:  {
       __typename: "TenantBasicInfo",
-      firstName: string,
-      lastName: string,
+      firstName?: string | null,
+      lastName?: string | null,
       profileImage?: string | null,
     } | null,
     applicationId: string,
@@ -5019,6 +6362,7 @@ export type GetPropertiesByCategoryQuery = {
       region: string,
       thumbnail?: string | null,
       title: string,
+      verified: boolean,
     } >,
   },
 };
@@ -5053,6 +6397,7 @@ export type GetPropertiesByLocationQuery = {
       region: string,
       thumbnail?: string | null,
       title: string,
+      verified: boolean,
     } >,
   },
 };
@@ -5081,6 +6426,7 @@ export type GetPropertyQuery = {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     agentId?: string | null,
@@ -5094,10 +6440,12 @@ export type GetPropertyQuery = {
     } | null,
     createdAt?: string | null,
     description?: string | null,
+    googleMapsUrl?: string | null,
     landlord?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     media?:  {
@@ -5129,6 +6477,7 @@ export type GetPropertyQuery = {
     status: PropertyStatus,
     title: string,
     updatedAt?: string | null,
+    verified: boolean,
     version?: number | null,
   } | null,
 };
@@ -5140,18 +6489,18 @@ export type GetPropertyRatingSummaryQueryVariables = {
 export type GetPropertyRatingSummaryQuery = {
   getPropertyRatingSummary:  {
     __typename: "PropertyRatingSummary",
-    accuracy: number,
+    accuracy?: number | null,
     averageRating: number,
-    cleanliness: number,
-    communication: number,
-    fiveStars: number,
-    fourStars: number,
-    location: number,
-    oneStar: number,
-    threeStars: number,
+    cleanliness?: number | null,
+    communication?: number | null,
+    fiveStars?: number | null,
+    fourStars?: number | null,
+    location?: number | null,
+    oneStar?: number | null,
+    threeStars?: number | null,
     totalReviews: number,
-    twoStars: number,
-    value: number,
+    twoStars?: number | null,
+    value?: number | null,
   },
 };
 
@@ -5178,6 +6527,7 @@ export type GetPropertyReviewsQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       guestId: string,
@@ -5193,6 +6543,32 @@ export type GetPropertyReviewsQuery = {
       verifiedStay: boolean,
     } >,
   },
+};
+
+export type GetReferralSubmissionQueryVariables = {
+  createdAt: string,
+  referralId: string,
+};
+
+export type GetReferralSubmissionQuery = {
+  getReferralSubmission?:  {
+    __typename: "ReferralSubmission",
+    adminNotes?: Array< string > | null,
+    assignedTo?: string | null,
+    createdAt: string,
+    landlordArea: string,
+    landlordName: string,
+    landlordNotes?: string | null,
+    landlordPhone: string,
+    listingRewardStatus: string,
+    profitShareRewardStatus: string,
+    referralId: string,
+    referrerName: string,
+    referrerNida?: string | null,
+    referrerPhone: string,
+    status: string,
+    updatedAt?: string | null,
+  } | null,
 };
 
 export type GetRegionsQueryVariables = {
@@ -5227,6 +6603,7 @@ export type GetRelatedPropertiesQuery = {
       region: string,
       thumbnail?: string | null,
       title: string,
+      verified: boolean,
     } >,
     similarLocationProperties:  Array< {
       __typename: "PropertyCard",
@@ -5239,6 +6616,7 @@ export type GetRelatedPropertiesQuery = {
       region: string,
       thumbnail?: string | null,
       title: string,
+      verified: boolean,
     } >,
     similarPriceProperties:  Array< {
       __typename: "PropertyCard",
@@ -5251,6 +6629,7 @@ export type GetRelatedPropertiesQuery = {
       region: string,
       thumbnail?: string | null,
       title: string,
+      verified: boolean,
     } >,
   },
 };
@@ -5278,8 +6657,21 @@ export type GetShortTermPropertyQuery = {
     allowsSmoking?: boolean | null,
     amenities?: Array< string > | null,
     averageRating?: number | null,
+    bathrooms?: number | null,
+    bedrooms?: number | null,
     cancellationPolicy?: CancellationPolicy | null,
-    checkInInstructions?: string | null,
+    checkInInstructions?:  {
+      __typename: "CheckInInstructions",
+      accessCode?: string | null,
+      additionalNotes?: string | null,
+      contactName?: string | null,
+      contactPhone?: string | null,
+      directions?: string | null,
+      houseRules?: Array< string > | null,
+      parkingInfo?: string | null,
+      wifiName?: string | null,
+      wifiPassword?: string | null,
+    } | null,
     checkInTime?: string | null,
     checkOutTime?: string | null,
     cleaningFee?: number | null,
@@ -5292,10 +6684,12 @@ export type GetShortTermPropertyQuery = {
     currency: string,
     description?: string | null,
     district: string,
+    googleMapsUrl?: string | null,
     host?:  {
       __typename: "PropertyUser",
       firstName: string,
       lastName: string,
+      profileImage?: string | null,
       whatsappNumber?: string | null,
     } | null,
     hostId: string,
@@ -5314,26 +6708,28 @@ export type GetShortTermPropertyQuery = {
     publishedAt?: string | null,
     ratingSummary?:  {
       __typename: "PropertyRatingSummary",
-      accuracy: number,
+      accuracy?: number | null,
       averageRating: number,
-      cleanliness: number,
-      communication: number,
-      fiveStars: number,
-      fourStars: number,
-      location: number,
-      oneStar: number,
-      threeStars: number,
+      cleanliness?: number | null,
+      communication?: number | null,
+      fiveStars?: number | null,
+      fourStars?: number | null,
+      location?: number | null,
+      oneStar?: number | null,
+      threeStars?: number | null,
       totalReviews: number,
-      twoStars: number,
-      value: number,
+      twoStars?: number | null,
+      value?: number | null,
     } | null,
     region: string,
     serviceFeePercentage?: number | null,
     status: PropertyStatus,
+    stayCategories?: Array< StayCategory > | null,
     taxPercentage?: number | null,
     thumbnail?: string | null,
     title: string,
     updatedAt: string,
+    videos?: Array< string > | null,
   } | null,
 };
 
@@ -5348,6 +6744,78 @@ export type GetStreetsQuery = {
     name: string,
     wardId: string,
   } >,
+};
+
+export type GetSuggestedLandlordsQueryVariables = {
+  createdAt: string,
+  requestId: string,
+};
+
+export type GetSuggestedLandlordsQuery = {
+  getSuggestedLandlords:  Array< {
+    __typename: "SuggestedLandlord",
+    landlord:  {
+      __typename: "LandlordProfile",
+      businessName?: string | null,
+      createdAt?: string | null,
+      currency?: string | null,
+      district?: string | null,
+      firstName?: string | null,
+      lastName?: string | null,
+      maxPrice?: number | null,
+      minPrice?: number | null,
+      operatingDistricts: Array< string >,
+      operatingRegions: Array< string >,
+      phoneNumber?: string | null,
+      profileImage?: string | null,
+      propertyCount: number,
+      propertyTypes: Array< string >,
+      region?: string | null,
+      userId: string,
+      ward?: string | null,
+      whatsappNumber?: string | null,
+    },
+    matchReasons: Array< string >,
+  } >,
+};
+
+export type GetTeamAvailabilityQueryVariables = {
+  endDate: string,
+  startDate: string,
+};
+
+export type GetTeamAvailabilityQuery = {
+  getTeamAvailability:  {
+    __typename: "TeamAvailabilityResponse",
+    busyBlocks:  Array< {
+      __typename: "BusyBlock",
+      createdAt: string,
+      endUtc: string,
+      id: string,
+      recurrence?:  {
+        __typename: "BusyBlockRecurrence",
+        days?: Array< number > | null,
+        endDate: string,
+        type: string,
+      } | null,
+      startUtc: string,
+      title?: string | null,
+      userId: string,
+    } >,
+    meetings:  Array< {
+      __typename: "TeamMeeting",
+      attendeeIds: Array< string >,
+      createdAt: string,
+      createdBy: string,
+      createdByName: string,
+      description?: string | null,
+      endUtc: string,
+      id: string,
+      link?: string | null,
+      startUtc: string,
+      title: string,
+    } >,
+  },
 };
 
 export type GetUnreadCountQueryVariables = {
@@ -5371,18 +6839,25 @@ export type GetUserByEmailQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       permissions?: Array< string > | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
@@ -5404,16 +6879,16 @@ export type GetUserByEmailQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       licenseNumber?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
@@ -5439,18 +6914,25 @@ export type GetUserByEmailQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -5472,18 +6954,25 @@ export type GetUserByEmailQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -5512,18 +7001,25 @@ export type GetUserByIdQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       permissions?: Array< string > | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
@@ -5545,16 +7041,16 @@ export type GetUserByIdQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       licenseNumber?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
@@ -5580,18 +7076,25 @@ export type GetUserByIdQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -5613,18 +7116,25 @@ export type GetUserByIdQuery = {
       currency?: string | null,
       dateOfBirth?: string | null,
       district?: string | null,
-      email: string,
+      email?: string | null,
       emailNotifications?: boolean | null,
       emergencyContactName?: string | null,
       emergencyContactPhone?: string | null,
-      firstName: string,
+      firstName?: string | null,
       gender?: string | null,
-      hasProperties: boolean,
+      hasProperties?: boolean | null,
       isEmailVerified?: boolean | null,
       language?: string | null,
-      lastName: string,
+      lastName?: string | null,
       nationalIdLast4?: string | null,
       occupation?: string | null,
+      payoutBankAccountName?: string | null,
+      payoutBankAccountNumber?: string | null,
+      payoutBankBranch?: string | null,
+      payoutBankName?: string | null,
+      payoutMethod?: PayoutMethod | null,
+      payoutMpesaName?: string | null,
+      payoutMpesaPhone?: string | null,
       phoneNumber?: string | null,
       profileImage?: string | null,
       pushNotifications?: boolean | null,
@@ -5645,6 +7155,7 @@ export type GetUserConversationsQueryVariables = {
 export type GetUserConversationsQuery = {
   getUserConversations:  Array< {
     __typename: "Conversation",
+    conversationType?: string | null,
     createdAt: string,
     id: string,
     lastMessage: string,
@@ -5687,6 +7198,46 @@ export type GetWardsQuery = {
   } >,
 };
 
+export type GetWhatsAppChatHistoryQueryVariables = {
+  before?: string | null,
+  limit?: number | null,
+  phone: string,
+};
+
+export type GetWhatsAppChatHistoryQuery = {
+  getWhatsAppChatHistory:  {
+    __typename: "WhatsAppConversationSummary",
+    contactName?: string | null,
+    entries:  Array< {
+      __typename: "WhatsAppChatEntry",
+      direction: string,
+      lang?: string | null,
+      phone: string,
+      replyId?: string | null,
+      source?: string | null,
+      step?: string | null,
+      text?: string | null,
+      ts: string,
+      type: string,
+    } >,
+    hasMore?: boolean | null,
+    lastMessageAt?: string | null,
+    linkedUser?:  {
+      __typename: "WhatsAppLinkedUser",
+      email?: string | null,
+      firstName: string,
+      lastName: string,
+      phoneNumber?: string | null,
+      userId: string,
+      userType: string,
+      whatsappNumber?: string | null,
+    } | null,
+    messageCount: number,
+    oldestTs?: string | null,
+    phone: string,
+  },
+};
+
 export type ListAgentPropertiesQueryVariables = {
   limit?: number | null,
   nextToken?: string | null,
@@ -5716,6 +7267,7 @@ export type ListAgentPropertiesQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -5729,10 +7281,12 @@ export type ListAgentPropertiesQuery = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -5764,6 +7318,7 @@ export type ListAgentPropertiesQuery = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } >,
   },
@@ -5782,8 +7337,8 @@ export type ListAllApplicationsQuery = {
       __typename: "Application",
       applicant?:  {
         __typename: "TenantBasicInfo",
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       applicantDetails:  {
@@ -5809,8 +7364,8 @@ export type ListAllApplicationsQuery = {
       landlord?:  {
         __typename: "LandlordBasicInfo",
         businessName?: string | null,
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       landlordNotes?: string | null,
@@ -5828,6 +7383,7 @@ export type ListAllApplicationsQuery = {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         agentId?: string | null,
@@ -5841,10 +7397,12 @@ export type ListAllApplicationsQuery = {
         } | null,
         createdAt?: string | null,
         description?: string | null,
+        googleMapsUrl?: string | null,
         landlord?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         media?:  {
@@ -5876,6 +7434,7 @@ export type ListAllApplicationsQuery = {
         status: PropertyStatus,
         title: string,
         updatedAt?: string | null,
+        verified: boolean,
         version?: number | null,
       } | null,
       propertyId: string,
@@ -5905,8 +7464,8 @@ export type ListAllLandlordApplicationsQuery = {
       alternatePhone?: string | null,
       applicant?:  {
         __typename: "TenantBasicInfo",
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       applicationId: string,
@@ -5930,6 +7489,7 @@ export type ListAllPropertiesQueryVariables = {
   limit?: number | null,
   nextToken?: string | null,
   propertyType?: string | null,
+  search?: string | null,
   status?: PropertyStatus | null,
 };
 
@@ -5955,6 +7515,7 @@ export type ListAllPropertiesQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -5968,10 +7529,12 @@ export type ListAllPropertiesQuery = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -6003,6 +7566,7 @@ export type ListAllPropertiesQuery = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     } >,
     nextToken?: string | null,
@@ -6024,8 +7588,21 @@ export type ListAllPropertiesQuery = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -6038,10 +7615,12 @@ export type ListAllPropertiesQuery = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -6060,26 +7639,28 @@ export type ListAllPropertiesQuery = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } >,
     totalCount: number,
   },
@@ -6107,18 +7688,25 @@ export type ListAllUsersQuery = {
           currency?: string | null,
           dateOfBirth?: string | null,
           district?: string | null,
-          email: string,
+          email?: string | null,
           emailNotifications?: boolean | null,
           emergencyContactName?: string | null,
           emergencyContactPhone?: string | null,
-          firstName: string,
+          firstName?: string | null,
           gender?: string | null,
-          hasProperties: boolean,
+          hasProperties?: boolean | null,
           isEmailVerified?: boolean | null,
           language?: string | null,
-          lastName: string,
+          lastName?: string | null,
           nationalIdLast4?: string | null,
           occupation?: string | null,
+          payoutBankAccountName?: string | null,
+          payoutBankAccountNumber?: string | null,
+          payoutBankBranch?: string | null,
+          payoutBankName?: string | null,
+          payoutMethod?: PayoutMethod | null,
+          payoutMpesaName?: string | null,
+          payoutMpesaPhone?: string | null,
           permissions?: Array< string > | null,
           phoneNumber?: string | null,
           profileImage?: string | null,
@@ -6140,16 +7728,16 @@ export type ListAllUsersQuery = {
           currency?: string | null,
           dateOfBirth?: string | null,
           district?: string | null,
-          email: string,
+          email?: string | null,
           emailNotifications?: boolean | null,
           emergencyContactName?: string | null,
           emergencyContactPhone?: string | null,
-          firstName: string,
+          firstName?: string | null,
           gender?: string | null,
-          hasProperties: boolean,
+          hasProperties?: boolean | null,
           isEmailVerified?: boolean | null,
           language?: string | null,
-          lastName: string,
+          lastName?: string | null,
           licenseNumber?: string | null,
           nationalIdLast4?: string | null,
           occupation?: string | null,
@@ -6175,18 +7763,25 @@ export type ListAllUsersQuery = {
           currency?: string | null,
           dateOfBirth?: string | null,
           district?: string | null,
-          email: string,
+          email?: string | null,
           emailNotifications?: boolean | null,
           emergencyContactName?: string | null,
           emergencyContactPhone?: string | null,
-          firstName: string,
+          firstName?: string | null,
           gender?: string | null,
-          hasProperties: boolean,
+          hasProperties?: boolean | null,
           isEmailVerified?: boolean | null,
           language?: string | null,
-          lastName: string,
+          lastName?: string | null,
           nationalIdLast4?: string | null,
           occupation?: string | null,
+          payoutBankAccountName?: string | null,
+          payoutBankAccountNumber?: string | null,
+          payoutBankBranch?: string | null,
+          payoutBankName?: string | null,
+          payoutMethod?: PayoutMethod | null,
+          payoutMpesaName?: string | null,
+          payoutMpesaPhone?: string | null,
           phoneNumber?: string | null,
           profileImage?: string | null,
           pushNotifications?: boolean | null,
@@ -6208,18 +7803,25 @@ export type ListAllUsersQuery = {
           currency?: string | null,
           dateOfBirth?: string | null,
           district?: string | null,
-          email: string,
+          email?: string | null,
           emailNotifications?: boolean | null,
           emergencyContactName?: string | null,
           emergencyContactPhone?: string | null,
-          firstName: string,
+          firstName?: string | null,
           gender?: string | null,
-          hasProperties: boolean,
+          hasProperties?: boolean | null,
           isEmailVerified?: boolean | null,
           language?: string | null,
-          lastName: string,
+          lastName?: string | null,
           nationalIdLast4?: string | null,
           occupation?: string | null,
+          payoutBankAccountName?: string | null,
+          payoutBankAccountNumber?: string | null,
+          payoutBankBranch?: string | null,
+          payoutBankName?: string | null,
+          payoutMethod?: PayoutMethod | null,
+          payoutMpesaName?: string | null,
+          payoutMpesaPhone?: string | null,
           phoneNumber?: string | null,
           profileImage?: string | null,
           pushNotifications?: boolean | null,
@@ -6266,6 +7868,46 @@ export type ListContactInquiriesQuery = {
   },
 };
 
+export type ListHousingRequestsQueryVariables = {
+  limit?: number | null,
+  nextToken?: string | null,
+  status?: HousingRequestStatus | null,
+};
+
+export type ListHousingRequestsQuery = {
+  listHousingRequests:  {
+    __typename: "HousingRequestListResponse",
+    count: number,
+    nextToken?: string | null,
+    requests:  Array< {
+      __typename: "HousingRequest",
+      adminNotes?: string | null,
+      assignedAdmin?: string | null,
+      bedrooms?: number | null,
+      contactName?: string | null,
+      createdAt: string,
+      currency: string,
+      description: string,
+      district?: string | null,
+      fulfilledPropertyId?: string | null,
+      matchedLandlords?: Array< string > | null,
+      maxBudget?: number | null,
+      minBudget?: number | null,
+      moveInDate?: string | null,
+      phone: string,
+      propertyType?: string | null,
+      region?: string | null,
+      requestId: string,
+      source: HousingRequestSource,
+      status: HousingRequestStatus,
+      street?: string | null,
+      updatedAt: string,
+      userId?: string | null,
+      ward?: string | null,
+    } >,
+  },
+};
+
 export type ListLandlordPropertiesQueryVariables = {
   limit?: number | null,
   nextToken?: string | null,
@@ -6295,6 +7937,7 @@ export type ListLandlordPropertiesQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -6308,10 +7951,12 @@ export type ListLandlordPropertiesQuery = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -6343,7 +7988,35 @@ export type ListLandlordPropertiesQuery = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
+    } >,
+  },
+};
+
+export type ListLandlordRegistrationsQueryVariables = {
+  limit?: number | null,
+  nextToken?: string | null,
+  status?: string | null,
+};
+
+export type ListLandlordRegistrationsQuery = {
+  listLandlordRegistrations:  {
+    __typename: "LandlordRegistrationListResponse",
+    count: number,
+    nextToken?: string | null,
+    registrations:  Array< {
+      __typename: "LandlordRegistration",
+      adminNotes?: Array< string > | null,
+      area?: string | null,
+      assignedTo?: string | null,
+      createdAt: string,
+      name: string,
+      notes?: string | null,
+      phone: string,
+      registrationId: string,
+      status: string,
+      updatedAt?: string | null,
     } >,
   },
 };
@@ -6361,8 +8034,8 @@ export type ListMyApplicationsQuery = {
       __typename: "Application",
       applicant?:  {
         __typename: "TenantBasicInfo",
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       applicantDetails:  {
@@ -6388,8 +8061,8 @@ export type ListMyApplicationsQuery = {
       landlord?:  {
         __typename: "LandlordBasicInfo",
         businessName?: string | null,
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       landlordNotes?: string | null,
@@ -6407,6 +8080,7 @@ export type ListMyApplicationsQuery = {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         agentId?: string | null,
@@ -6420,10 +8094,12 @@ export type ListMyApplicationsQuery = {
         } | null,
         createdAt?: string | null,
         description?: string | null,
+        googleMapsUrl?: string | null,
         landlord?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         media?:  {
@@ -6455,6 +8131,7 @@ export type ListMyApplicationsQuery = {
         status: PropertyStatus,
         title: string,
         updatedAt?: string | null,
+        verified: boolean,
         version?: number | null,
       } | null,
       propertyId: string,
@@ -6492,9 +8169,13 @@ export type ListMyBookingsQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
+      guestEmail?: string | null,
       guestId: string,
+      guestName?: string | null,
+      guestPhone?: string | null,
       hostNotes?: string | null,
       numberOfAdults: number,
       numberOfChildren: number,
@@ -6534,8 +8215,21 @@ export type ListMyBookingsQuery = {
         allowsSmoking?: boolean | null,
         amenities?: Array< string > | null,
         averageRating?: number | null,
+        bathrooms?: number | null,
+        bedrooms?: number | null,
         cancellationPolicy?: CancellationPolicy | null,
-        checkInInstructions?: string | null,
+        checkInInstructions?:  {
+          __typename: "CheckInInstructions",
+          accessCode?: string | null,
+          additionalNotes?: string | null,
+          contactName?: string | null,
+          contactPhone?: string | null,
+          directions?: string | null,
+          houseRules?: Array< string > | null,
+          parkingInfo?: string | null,
+          wifiName?: string | null,
+          wifiPassword?: string | null,
+        } | null,
         checkInTime?: string | null,
         checkOutTime?: string | null,
         cleaningFee?: number | null,
@@ -6548,10 +8242,12 @@ export type ListMyBookingsQuery = {
         currency: string,
         description?: string | null,
         district: string,
+        googleMapsUrl?: string | null,
         host?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         hostId: string,
@@ -6570,28 +8266,46 @@ export type ListMyBookingsQuery = {
         publishedAt?: string | null,
         ratingSummary?:  {
           __typename: "PropertyRatingSummary",
-          accuracy: number,
+          accuracy?: number | null,
           averageRating: number,
-          cleanliness: number,
-          communication: number,
-          fiveStars: number,
-          fourStars: number,
-          location: number,
-          oneStar: number,
-          threeStars: number,
+          cleanliness?: number | null,
+          communication?: number | null,
+          fiveStars?: number | null,
+          fourStars?: number | null,
+          location?: number | null,
+          oneStar?: number | null,
+          threeStars?: number | null,
           totalReviews: number,
-          twoStars: number,
-          value: number,
+          twoStars?: number | null,
+          value?: number | null,
         } | null,
         region: string,
         serviceFeePercentage?: number | null,
         status: PropertyStatus,
+        stayCategories?: Array< StayCategory > | null,
         taxPercentage?: number | null,
         thumbnail?: string | null,
         title: string,
         updatedAt: string,
+        videos?: Array< string > | null,
       } | null,
       propertyId: string,
+      propertySnapshot?:  {
+        __typename: "PropertySnapshot",
+        address?:  {
+          __typename: "PropertySnapshotAddress",
+          city?: string | null,
+          district?: string | null,
+          region?: string | null,
+          street?: string | null,
+        } | null,
+        currency: string,
+        images?: Array< string > | null,
+        nightlyRate: number,
+        propertyType: string,
+        thumbnail?: string | null,
+        title: string,
+      } | null,
       specialRequests?: string | null,
       status: BookingStatus,
       updatedAt: string,
@@ -6628,8 +8342,21 @@ export type ListMyShortTermPropertiesQuery = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -6642,10 +8369,12 @@ export type ListMyShortTermPropertiesQuery = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -6664,26 +8393,28 @@ export type ListMyShortTermPropertiesQuery = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } >,
   },
 };
@@ -6702,8 +8433,8 @@ export type ListPropertyApplicationsQuery = {
       __typename: "Application",
       applicant?:  {
         __typename: "TenantBasicInfo",
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       applicantDetails:  {
@@ -6729,8 +8460,8 @@ export type ListPropertyApplicationsQuery = {
       landlord?:  {
         __typename: "LandlordBasicInfo",
         businessName?: string | null,
-        firstName: string,
-        lastName: string,
+        firstName?: string | null,
+        lastName?: string | null,
         profileImage?: string | null,
       } | null,
       landlordNotes?: string | null,
@@ -6748,6 +8479,7 @@ export type ListPropertyApplicationsQuery = {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         agentId?: string | null,
@@ -6761,10 +8493,12 @@ export type ListPropertyApplicationsQuery = {
         } | null,
         createdAt?: string | null,
         description?: string | null,
+        googleMapsUrl?: string | null,
         landlord?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         media?:  {
@@ -6796,6 +8530,7 @@ export type ListPropertyApplicationsQuery = {
         status: PropertyStatus,
         title: string,
         updatedAt?: string | null,
+        verified: boolean,
         version?: number | null,
       } | null,
       propertyId: string,
@@ -6836,9 +8571,13 @@ export type ListPropertyBookingsQuery = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
+      guestEmail?: string | null,
       guestId: string,
+      guestName?: string | null,
+      guestPhone?: string | null,
       hostNotes?: string | null,
       numberOfAdults: number,
       numberOfChildren: number,
@@ -6878,8 +8617,21 @@ export type ListPropertyBookingsQuery = {
         allowsSmoking?: boolean | null,
         amenities?: Array< string > | null,
         averageRating?: number | null,
+        bathrooms?: number | null,
+        bedrooms?: number | null,
         cancellationPolicy?: CancellationPolicy | null,
-        checkInInstructions?: string | null,
+        checkInInstructions?:  {
+          __typename: "CheckInInstructions",
+          accessCode?: string | null,
+          additionalNotes?: string | null,
+          contactName?: string | null,
+          contactPhone?: string | null,
+          directions?: string | null,
+          houseRules?: Array< string > | null,
+          parkingInfo?: string | null,
+          wifiName?: string | null,
+          wifiPassword?: string | null,
+        } | null,
         checkInTime?: string | null,
         checkOutTime?: string | null,
         cleaningFee?: number | null,
@@ -6892,10 +8644,12 @@ export type ListPropertyBookingsQuery = {
         currency: string,
         description?: string | null,
         district: string,
+        googleMapsUrl?: string | null,
         host?:  {
           __typename: "PropertyUser",
           firstName: string,
           lastName: string,
+          profileImage?: string | null,
           whatsappNumber?: string | null,
         } | null,
         hostId: string,
@@ -6914,28 +8668,46 @@ export type ListPropertyBookingsQuery = {
         publishedAt?: string | null,
         ratingSummary?:  {
           __typename: "PropertyRatingSummary",
-          accuracy: number,
+          accuracy?: number | null,
           averageRating: number,
-          cleanliness: number,
-          communication: number,
-          fiveStars: number,
-          fourStars: number,
-          location: number,
-          oneStar: number,
-          threeStars: number,
+          cleanliness?: number | null,
+          communication?: number | null,
+          fiveStars?: number | null,
+          fourStars?: number | null,
+          location?: number | null,
+          oneStar?: number | null,
+          threeStars?: number | null,
           totalReviews: number,
-          twoStars: number,
-          value: number,
+          twoStars?: number | null,
+          value?: number | null,
         } | null,
         region: string,
         serviceFeePercentage?: number | null,
         status: PropertyStatus,
+        stayCategories?: Array< StayCategory > | null,
         taxPercentage?: number | null,
         thumbnail?: string | null,
         title: string,
         updatedAt: string,
+        videos?: Array< string > | null,
       } | null,
       propertyId: string,
+      propertySnapshot?:  {
+        __typename: "PropertySnapshot",
+        address?:  {
+          __typename: "PropertySnapshotAddress",
+          city?: string | null,
+          district?: string | null,
+          region?: string | null,
+          street?: string | null,
+        } | null,
+        currency: string,
+        images?: Array< string > | null,
+        nightlyRate: number,
+        propertyType: string,
+        thumbnail?: string | null,
+        title: string,
+      } | null,
       specialRequests?: string | null,
       status: BookingStatus,
       updatedAt: string,
@@ -6943,6 +8715,88 @@ export type ListPropertyBookingsQuery = {
     count: number,
     nextToken?: string | null,
   },
+};
+
+export type ListPropertyOwnersQueryVariables = {
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListPropertyOwnersQuery = {
+  listPropertyOwners:  {
+    __typename: "LandlordProfileListResponse",
+    count: number,
+    landlords:  Array< {
+      __typename: "LandlordProfile",
+      businessName?: string | null,
+      createdAt?: string | null,
+      currency?: string | null,
+      district?: string | null,
+      firstName?: string | null,
+      lastName?: string | null,
+      maxPrice?: number | null,
+      minPrice?: number | null,
+      operatingDistricts: Array< string >,
+      operatingRegions: Array< string >,
+      phoneNumber?: string | null,
+      profileImage?: string | null,
+      propertyCount: number,
+      propertyTypes: Array< string >,
+      region?: string | null,
+      userId: string,
+      ward?: string | null,
+      whatsappNumber?: string | null,
+    } >,
+    nextToken?: string | null,
+  },
+};
+
+export type ListReferralSubmissionsQueryVariables = {
+  limit?: number | null,
+  nextToken?: string | null,
+  status?: string | null,
+};
+
+export type ListReferralSubmissionsQuery = {
+  listReferralSubmissions:  {
+    __typename: "ReferralSubmissionListResponse",
+    count: number,
+    nextToken?: string | null,
+    submissions:  Array< {
+      __typename: "ReferralSubmission",
+      adminNotes?: Array< string > | null,
+      assignedTo?: string | null,
+      createdAt: string,
+      landlordArea: string,
+      landlordName: string,
+      landlordNotes?: string | null,
+      landlordPhone: string,
+      listingRewardStatus: string,
+      profitShareRewardStatus: string,
+      referralId: string,
+      referrerName: string,
+      referrerNida?: string | null,
+      referrerPhone: string,
+      status: string,
+      updatedAt?: string | null,
+    } >,
+  },
+};
+
+export type ListWhatsAppConversationsQueryVariables = {
+  limit?: number | null,
+};
+
+export type ListWhatsAppConversationsQuery = {
+  listWhatsAppConversations:  Array< {
+    __typename: "WhatsAppConversationRow",
+    contactName?: string | null,
+    createdAt: string,
+    lang?: string | null,
+    lastMessageAt: string,
+    phoneNumber: string,
+    step: string,
+  } >,
 };
 
 export type QueryPaymentStatusQueryVariables = {
@@ -6973,6 +8827,63 @@ export type QueryPaymentStatusQuery = {
   },
 };
 
+export type SearchChatUsersQueryVariables = {
+  district?: string | null,
+  limit?: number | null,
+  query: string,
+  region?: string | null,
+  source?: string | null,
+};
+
+export type SearchChatUsersQuery = {
+  searchChatUsers:  Array< {
+    __typename: "ChatUser",
+    businessName?: string | null,
+    firstName: string,
+    lastName: string,
+    profileImage?: string | null,
+    userId: string,
+    userType: UserType,
+  } >,
+};
+
+export type SearchLandlordProfilesQueryVariables = {
+  district?: string | null,
+  limit?: number | null,
+  nextToken?: string | null,
+  propertyType?: string | null,
+  region?: string | null,
+};
+
+export type SearchLandlordProfilesQuery = {
+  searchLandlordProfiles:  {
+    __typename: "LandlordProfileListResponse",
+    count: number,
+    landlords:  Array< {
+      __typename: "LandlordProfile",
+      businessName?: string | null,
+      createdAt?: string | null,
+      currency?: string | null,
+      district?: string | null,
+      firstName?: string | null,
+      lastName?: string | null,
+      maxPrice?: number | null,
+      minPrice?: number | null,
+      operatingDistricts: Array< string >,
+      operatingRegions: Array< string >,
+      phoneNumber?: string | null,
+      profileImage?: string | null,
+      propertyCount: number,
+      propertyTypes: Array< string >,
+      region?: string | null,
+      userId: string,
+      ward?: string | null,
+      whatsappNumber?: string | null,
+    } >,
+    nextToken?: string | null,
+  },
+};
+
 export type SearchShortTermPropertiesQueryVariables = {
   input: ShortTermSearchInput,
 };
@@ -6999,8 +8910,21 @@ export type SearchShortTermPropertiesQuery = {
       allowsSmoking?: boolean | null,
       amenities?: Array< string > | null,
       averageRating?: number | null,
+      bathrooms?: number | null,
+      bedrooms?: number | null,
       cancellationPolicy?: CancellationPolicy | null,
-      checkInInstructions?: string | null,
+      checkInInstructions?:  {
+        __typename: "CheckInInstructions",
+        accessCode?: string | null,
+        additionalNotes?: string | null,
+        contactName?: string | null,
+        contactPhone?: string | null,
+        directions?: string | null,
+        houseRules?: Array< string > | null,
+        parkingInfo?: string | null,
+        wifiName?: string | null,
+        wifiPassword?: string | null,
+      } | null,
       checkInTime?: string | null,
       checkOutTime?: string | null,
       cleaningFee?: number | null,
@@ -7013,10 +8937,12 @@ export type SearchShortTermPropertiesQuery = {
       currency: string,
       description?: string | null,
       district: string,
+      googleMapsUrl?: string | null,
       host?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       hostId: string,
@@ -7035,26 +8961,28 @@ export type SearchShortTermPropertiesQuery = {
       publishedAt?: string | null,
       ratingSummary?:  {
         __typename: "PropertyRatingSummary",
-        accuracy: number,
+        accuracy?: number | null,
         averageRating: number,
-        cleanliness: number,
-        communication: number,
-        fiveStars: number,
-        fourStars: number,
-        location: number,
-        oneStar: number,
-        threeStars: number,
+        cleanliness?: number | null,
+        communication?: number | null,
+        fiveStars?: number | null,
+        fourStars?: number | null,
+        location?: number | null,
+        oneStar?: number | null,
+        threeStars?: number | null,
         totalReviews: number,
-        twoStars: number,
-        value: number,
+        twoStars?: number | null,
+        value?: number | null,
       } | null,
       region: string,
       serviceFeePercentage?: number | null,
       status: PropertyStatus,
+      stayCategories?: Array< StayCategory > | null,
       taxPercentage?: number | null,
       thumbnail?: string | null,
       title: string,
       updatedAt: string,
+      videos?: Array< string > | null,
     } >,
   },
 };
@@ -7130,6 +9058,7 @@ export type OnPropertyUpdatedSubscription = {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       agentId?: string | null,
@@ -7143,10 +9072,12 @@ export type OnPropertyUpdatedSubscription = {
       } | null,
       createdAt?: string | null,
       description?: string | null,
+      googleMapsUrl?: string | null,
       landlord?:  {
         __typename: "PropertyUser",
         firstName: string,
         lastName: string,
+        profileImage?: string | null,
         whatsappNumber?: string | null,
       } | null,
       media?:  {
@@ -7178,6 +9109,7 @@ export type OnPropertyUpdatedSubscription = {
       status: PropertyStatus,
       title: string,
       updatedAt?: string | null,
+      verified: boolean,
       version?: number | null,
     },
     propertyId: string,

@@ -8,6 +8,71 @@ type GeneratedMutation<InputType, OutputType> = string & {
   __generatedMutationOutput: OutputType;
 };
 
+export const addBusyBlock = /* GraphQL */ `mutation AddBusyBlock(
+  $endUtc: String!
+  $recurrence: BusyBlockRecurrenceInput
+  $startUtc: String!
+  $title: String
+) {
+  addBusyBlock(
+    endUtc: $endUtc
+    recurrence: $recurrence
+    startUtc: $startUtc
+    title: $title
+  ) {
+    createdAt
+    endUtc
+    id
+    recurrence {
+      days
+      endDate
+      type
+      __typename
+    }
+    startUtc
+    title
+    userId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.AddBusyBlockMutationVariables,
+  APITypes.AddBusyBlockMutation
+>;
+export const addLandlordRegistrationNote = /* GraphQL */ `mutation AddLandlordRegistrationNote(
+  $createdAt: String!
+  $note: String!
+  $registrationId: ID!
+) {
+  addLandlordRegistrationNote(
+    createdAt: $createdAt
+    note: $note
+    registrationId: $registrationId
+  ) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.AddLandlordRegistrationNoteMutationVariables,
+  APITypes.AddLandlordRegistrationNoteMutation
+>;
+export const addReferralNote = /* GraphQL */ `mutation AddReferralNote(
+  $createdAt: String!
+  $note: String!
+  $referralId: ID!
+) {
+  addReferralNote(createdAt: $createdAt, note: $note, referralId: $referralId) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.AddReferralNoteMutationVariables,
+  APITypes.AddReferralNoteMutation
+>;
 export const adminDeleteApplication = /* GraphQL */ `mutation AdminDeleteApplication($applicationId: ID!) {
   adminDeleteApplication(applicationId: $applicationId) {
     message
@@ -102,6 +167,7 @@ export const adminUpdateApplicationStatus = /* GraphQL */ `mutation AdminUpdateA
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -116,9 +182,11 @@ export const adminUpdateApplicationStatus = /* GraphQL */ `mutation AdminUpdateA
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -151,6 +219,7 @@ export const adminUpdateApplicationStatus = /* GraphQL */ `mutation AdminUpdateA
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
@@ -185,8 +254,8 @@ export const adminUpdatePropertyStatus = /* GraphQL */ `mutation AdminUpdateProp
   APITypes.AdminUpdatePropertyStatusMutationVariables,
   APITypes.AdminUpdatePropertyStatusMutation
 >;
-export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId: ID!, $hostNotes: String) {
-  approveBooking(bookingId: $bookingId, hostNotes: $hostNotes) {
+export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId: ID!, $hostNotes: String, $token: String) {
+  approveBooking(bookingId: $bookingId, hostNotes: $hostNotes, token: $token) {
     bookingId
     bookingType
     cancellationReason
@@ -199,10 +268,14 @@ export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId:
     guest {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
+    guestEmail
     guestId
+    guestName
+    guestPhone
     hostNotes
     numberOfAdults
     numberOfChildren
@@ -241,17 +314,20 @@ export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId:
       allowsSmoking
       amenities
       averageRating
+      bathrooms
+      bedrooms
       cancellationPolicy
       checkInInstructions {
+        accessCode
+        additionalNotes
+        contactName
+        contactPhone
+        directions
+        houseRules
+        parkingInfo
         wifiName
         wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
+        __typename
       }
       checkInTime
       checkOutTime
@@ -265,9 +341,11 @@ export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId:
       currency
       description
       district
+      googleMapsUrl
       host {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -303,13 +381,31 @@ export const approveBooking = /* GraphQL */ `mutation ApproveBooking($bookingId:
       region
       serviceFeePercentage
       status
+      stayCategories
       taxPercentage
       thumbnail
       title
       updatedAt
+      videos
       __typename
     }
     propertyId
+    propertySnapshot {
+      address {
+        city
+        district
+        region
+        street
+        __typename
+      }
+      currency
+      images
+      nightlyRate
+      propertyType
+      thumbnail
+      title
+      __typename
+    }
     specialRequests
     status
     updatedAt
@@ -363,6 +459,7 @@ export const associateMediaWithProperty = /* GraphQL */ `mutation AssociateMedia
     agent {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -377,9 +474,11 @@ export const associateMediaWithProperty = /* GraphQL */ `mutation AssociateMedia
     }
     createdAt
     description
+    googleMapsUrl
     landlord {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -412,6 +511,7 @@ export const associateMediaWithProperty = /* GraphQL */ `mutation AssociateMedia
     status
     title
     updatedAt
+    verified
     version
     __typename
   }
@@ -446,10 +546,14 @@ export const cancelBooking = /* GraphQL */ `mutation CancelBooking($bookingId: I
       guest {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
+      guestEmail
       guestId
+      guestName
+      guestPhone
       hostNotes
       numberOfAdults
       numberOfChildren
@@ -488,18 +592,21 @@ export const cancelBooking = /* GraphQL */ `mutation CancelBooking($bookingId: I
         allowsSmoking
         amenities
         averageRating
+        bathrooms
+        bedrooms
         cancellationPolicy
         checkInInstructions {
-        wifiName
-        wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
-      }
+          accessCode
+          additionalNotes
+          contactName
+          contactPhone
+          directions
+          houseRules
+          parkingInfo
+          wifiName
+          wifiPassword
+          __typename
+        }
         checkInTime
         checkOutTime
         cleaningFee
@@ -512,9 +619,11 @@ export const cancelBooking = /* GraphQL */ `mutation CancelBooking($bookingId: I
         currency
         description
         district
+        googleMapsUrl
         host {
           firstName
           lastName
+          profileImage
           whatsappNumber
           __typename
         }
@@ -550,13 +659,31 @@ export const cancelBooking = /* GraphQL */ `mutation CancelBooking($bookingId: I
         region
         serviceFeePercentage
         status
+        stayCategories
         taxPercentage
         thumbnail
         title
         updatedAt
+        videos
         __typename
       }
       propertyId
+      propertySnapshot {
+        address {
+          city
+          district
+          region
+          street
+          __typename
+        }
+        currency
+        images
+        nightlyRate
+        propertyType
+        thumbnail
+        title
+        __typename
+      }
       specialRequests
       status
       updatedAt
@@ -571,6 +698,17 @@ export const cancelBooking = /* GraphQL */ `mutation CancelBooking($bookingId: I
 ` as GeneratedMutation<
   APITypes.CancelBookingMutationVariables,
   APITypes.CancelBookingMutation
+>;
+export const confirmWhatsAppAssociation = /* GraphQL */ `mutation ConfirmWhatsAppAssociation($code: String!, $whatsappNumber: String!) {
+  confirmWhatsAppAssociation(code: $code, whatsappNumber: $whatsappNumber) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ConfirmWhatsAppAssociationMutationVariables,
+  APITypes.ConfirmWhatsAppAssociationMutation
 >;
 export const createBooking = /* GraphQL */ `mutation CreateBooking($input: CreateBookingInput!) {
   createBooking(input: $input) {
@@ -587,10 +725,14 @@ export const createBooking = /* GraphQL */ `mutation CreateBooking($input: Creat
       guest {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
+      guestEmail
       guestId
+      guestName
+      guestPhone
       hostNotes
       numberOfAdults
       numberOfChildren
@@ -629,18 +771,21 @@ export const createBooking = /* GraphQL */ `mutation CreateBooking($input: Creat
         allowsSmoking
         amenities
         averageRating
+        bathrooms
+        bedrooms
         cancellationPolicy
         checkInInstructions {
-        wifiName
-        wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
-      }
+          accessCode
+          additionalNotes
+          contactName
+          contactPhone
+          directions
+          houseRules
+          parkingInfo
+          wifiName
+          wifiPassword
+          __typename
+        }
         checkInTime
         checkOutTime
         cleaningFee
@@ -653,9 +798,11 @@ export const createBooking = /* GraphQL */ `mutation CreateBooking($input: Creat
         currency
         description
         district
+        googleMapsUrl
         host {
           firstName
           lastName
+          profileImage
           whatsappNumber
           __typename
         }
@@ -691,13 +838,31 @@ export const createBooking = /* GraphQL */ `mutation CreateBooking($input: Creat
         region
         serviceFeePercentage
         status
+        stayCategories
         taxPercentage
         thumbnail
         title
         updatedAt
+        videos
         __typename
       }
       propertyId
+      propertySnapshot {
+        address {
+          city
+          district
+          region
+          street
+          __typename
+        }
+        currency
+        images
+        nightlyRate
+        propertyType
+        thumbnail
+        title
+        __typename
+      }
       specialRequests
       status
       updatedAt
@@ -711,6 +876,68 @@ export const createBooking = /* GraphQL */ `mutation CreateBooking($input: Creat
 ` as GeneratedMutation<
   APITypes.CreateBookingMutationVariables,
   APITypes.CreateBookingMutation
+>;
+export const createHousingRequest = /* GraphQL */ `mutation CreateHousingRequest(
+  $bedrooms: Int
+  $contactName: String
+  $currency: String
+  $description: String!
+  $district: String
+  $maxBudget: Float
+  $minBudget: Float
+  $moveInDate: String
+  $phone: String!
+  $propertyType: String
+  $region: String
+  $source: HousingRequestSource!
+  $street: String
+  $ward: String
+) {
+  createHousingRequest(
+    bedrooms: $bedrooms
+    contactName: $contactName
+    currency: $currency
+    description: $description
+    district: $district
+    maxBudget: $maxBudget
+    minBudget: $minBudget
+    moveInDate: $moveInDate
+    phone: $phone
+    propertyType: $propertyType
+    region: $region
+    source: $source
+    street: $street
+    ward: $ward
+  ) {
+    adminNotes
+    assignedAdmin
+    bedrooms
+    contactName
+    createdAt
+    currency
+    description
+    district
+    fulfilledPropertyId
+    matchedLandlords
+    maxBudget
+    minBudget
+    moveInDate
+    phone
+    propertyType
+    region
+    requestId
+    source
+    status
+    street
+    updatedAt
+    userId
+    ward
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateHousingRequestMutationVariables,
+  APITypes.CreateHousingRequestMutation
 >;
 export const createLocation = /* GraphQL */ `mutation CreateLocation($input: CreateLocationInput!) {
   createLocation(input: $input) {
@@ -783,6 +1010,7 @@ export const createReview = /* GraphQL */ `mutation CreateReview($input: CreateR
     guest {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -822,18 +1050,21 @@ export const createShortTermProperty = /* GraphQL */ `mutation CreateShortTermPr
     allowsSmoking
     amenities
     averageRating
+    bathrooms
+    bedrooms
     cancellationPolicy
     checkInInstructions {
-        wifiName
-        wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
-      }
+      accessCode
+      additionalNotes
+      contactName
+      contactPhone
+      directions
+      houseRules
+      parkingInfo
+      wifiName
+      wifiPassword
+      __typename
+    }
     checkInTime
     checkOutTime
     cleaningFee
@@ -846,9 +1077,11 @@ export const createShortTermProperty = /* GraphQL */ `mutation CreateShortTermPr
     currency
     description
     district
+    googleMapsUrl
     host {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -884,10 +1117,12 @@ export const createShortTermProperty = /* GraphQL */ `mutation CreateShortTermPr
     region
     serviceFeePercentage
     status
+    stayCategories
     taxPercentage
     thumbnail
     title
     updatedAt
+    videos
     __typename
   }
 }
@@ -911,6 +1146,19 @@ export const createShortTermPropertyDraft = /* GraphQL */ `mutation CreateShortT
   APITypes.CreateShortTermPropertyDraftMutationVariables,
   APITypes.CreateShortTermPropertyDraftMutation
 >;
+export const createStripePaymentIntent = /* GraphQL */ `mutation CreateStripePaymentIntent($bookingId: ID!, $currency: String) {
+  createStripePaymentIntent(bookingId: $bookingId, currency: $currency) {
+    amount
+    clientSecret
+    currency
+    paymentIntentId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateStripePaymentIntentMutationVariables,
+  APITypes.CreateStripePaymentIntentMutation
+>;
 export const deactivateShortTermProperty = /* GraphQL */ `mutation DeactivateShortTermProperty($propertyId: ID!) {
   deactivateShortTermProperty(propertyId: $propertyId) {
     message
@@ -922,8 +1170,8 @@ export const deactivateShortTermProperty = /* GraphQL */ `mutation DeactivateSho
   APITypes.DeactivateShortTermPropertyMutationVariables,
   APITypes.DeactivateShortTermPropertyMutation
 >;
-export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId: ID!, $reason: String!) {
-  declineBooking(bookingId: $bookingId, reason: $reason) {
+export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId: ID!, $reason: String!, $token: String) {
+  declineBooking(bookingId: $bookingId, reason: $reason, token: $token) {
     bookingId
     bookingType
     cancellationReason
@@ -936,10 +1184,14 @@ export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId:
     guest {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
+    guestEmail
     guestId
+    guestName
+    guestPhone
     hostNotes
     numberOfAdults
     numberOfChildren
@@ -978,17 +1230,20 @@ export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId:
       allowsSmoking
       amenities
       averageRating
+      bathrooms
+      bedrooms
       cancellationPolicy
       checkInInstructions {
+        accessCode
+        additionalNotes
+        contactName
+        contactPhone
+        directions
+        houseRules
+        parkingInfo
         wifiName
         wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
+        __typename
       }
       checkInTime
       checkOutTime
@@ -1002,9 +1257,11 @@ export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId:
       currency
       description
       district
+      googleMapsUrl
       host {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -1040,13 +1297,31 @@ export const declineBooking = /* GraphQL */ `mutation DeclineBooking($bookingId:
       region
       serviceFeePercentage
       status
+      stayCategories
       taxPercentage
       thumbnail
       title
       updatedAt
+      videos
       __typename
     }
     propertyId
+    propertySnapshot {
+      address {
+        city
+        district
+        region
+        street
+        __typename
+      }
+      currency
+      images
+      nightlyRate
+      propertyType
+      thumbnail
+      title
+      __typename
+    }
     specialRequests
     status
     updatedAt
@@ -1113,6 +1388,17 @@ export const deleteProperty = /* GraphQL */ `mutation DeleteProperty($propertyId
 ` as GeneratedMutation<
   APITypes.DeletePropertyMutationVariables,
   APITypes.DeletePropertyMutation
+>;
+export const deleteTeamMeeting = /* GraphQL */ `mutation DeleteTeamMeeting($meetingId: ID!) {
+  deleteTeamMeeting(meetingId: $meetingId) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteTeamMeetingMutationVariables,
+  APITypes.DeleteTeamMeetingMutation
 >;
 export const deleteUser = /* GraphQL */ `mutation DeleteUser($userId: ID!) {
   deleteUser(userId: $userId) {
@@ -1195,6 +1481,25 @@ export const importPropertiesFromCSV = /* GraphQL */ `mutation ImportPropertiesF
   APITypes.ImportPropertiesFromCSVMutationVariables,
   APITypes.ImportPropertiesFromCSVMutation
 >;
+export const initializeDirectChat = /* GraphQL */ `mutation InitializeDirectChat($targetUserId: ID!) {
+  initializeDirectChat(targetUserId: $targetUserId) {
+    conversationId
+    targetUserInfo {
+      businessName
+      firstName
+      lastName
+      profileImage
+      userId
+      userType
+      __typename
+    }
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.InitializeDirectChatMutationVariables,
+  APITypes.InitializeDirectChatMutation
+>;
 export const initializePropertyChat = /* GraphQL */ `mutation InitializePropertyChat($propertyId: ID!) {
   initializePropertyChat(propertyId: $propertyId) {
     conversationId
@@ -1216,11 +1521,11 @@ export const initializePropertyChat = /* GraphQL */ `mutation InitializeProperty
 >;
 export const initiatePayment = /* GraphQL */ `mutation InitiatePayment($input: InitiatePaymentInput!) {
   initiatePayment(input: $input) {
-    reference
-    status
     amount
     currency
     message
+    reference
+    status
     __typename
   }
 }
@@ -1228,8 +1533,20 @@ export const initiatePayment = /* GraphQL */ `mutation InitiatePayment($input: I
   APITypes.InitiatePaymentMutationVariables,
   APITypes.InitiatePaymentMutation
 >;
+export const initiateWhatsAppAssociation = /* GraphQL */ `mutation InitiateWhatsAppAssociation($whatsappNumber: String!) {
+  initiateWhatsAppAssociation(whatsappNumber: $whatsappNumber) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.InitiateWhatsAppAssociationMutationVariables,
+  APITypes.InitiateWhatsAppAssociationMutation
+>;
 export const markAsRead = /* GraphQL */ `mutation MarkAsRead($conversationId: String!) {
   markAsRead(conversationId: $conversationId) {
+    conversationType
     createdAt
     id
     lastMessage
@@ -1245,6 +1562,25 @@ export const markAsRead = /* GraphQL */ `mutation MarkAsRead($conversationId: St
 ` as GeneratedMutation<
   APITypes.MarkAsReadMutationVariables,
   APITypes.MarkAsReadMutation
+>;
+export const markLandlordContacted = /* GraphQL */ `mutation MarkLandlordContacted(
+  $createdAt: String!
+  $landlordId: ID!
+  $requestId: ID!
+) {
+  markLandlordContacted(
+    createdAt: $createdAt
+    landlordId: $landlordId
+    requestId: $requestId
+  ) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.MarkLandlordContactedMutationVariables,
+  APITypes.MarkLandlordContactedMutation
 >;
 export const markPropertyAsAvailable = /* GraphQL */ `mutation MarkPropertyAsAvailable($propertyId: ID!) {
   markPropertyAsAvailable(propertyId: $propertyId) {
@@ -1264,6 +1600,7 @@ export const markPropertyAsAvailable = /* GraphQL */ `mutation MarkPropertyAsAva
     agent {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1278,9 +1615,11 @@ export const markPropertyAsAvailable = /* GraphQL */ `mutation MarkPropertyAsAva
     }
     createdAt
     description
+    googleMapsUrl
     landlord {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1313,6 +1652,7 @@ export const markPropertyAsAvailable = /* GraphQL */ `mutation MarkPropertyAsAva
     status
     title
     updatedAt
+    verified
     version
     __typename
   }
@@ -1339,6 +1679,7 @@ export const markPropertyAsRented = /* GraphQL */ `mutation MarkPropertyAsRented
     agent {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1353,9 +1694,11 @@ export const markPropertyAsRented = /* GraphQL */ `mutation MarkPropertyAsRented
     }
     createdAt
     description
+    googleMapsUrl
     landlord {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1388,6 +1731,7 @@ export const markPropertyAsRented = /* GraphQL */ `mutation MarkPropertyAsRented
     status
     title
     updatedAt
+    verified
     version
     __typename
   }
@@ -1445,6 +1789,7 @@ export const publishPropertyUpdateEvent = /* GraphQL */ `mutation PublishPropert
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -1459,9 +1804,11 @@ export const publishPropertyUpdateEvent = /* GraphQL */ `mutation PublishPropert
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -1494,6 +1841,7 @@ export const publishPropertyUpdateEvent = /* GraphQL */ `mutation PublishPropert
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
@@ -1524,18 +1872,21 @@ export const publishShortTermProperty = /* GraphQL */ `mutation PublishShortTerm
     allowsSmoking
     amenities
     averageRating
+    bathrooms
+    bedrooms
     cancellationPolicy
     checkInInstructions {
-        wifiName
-        wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
-      }
+      accessCode
+      additionalNotes
+      contactName
+      contactPhone
+      directions
+      houseRules
+      parkingInfo
+      wifiName
+      wifiPassword
+      __typename
+    }
     checkInTime
     checkOutTime
     cleaningFee
@@ -1548,9 +1899,11 @@ export const publishShortTermProperty = /* GraphQL */ `mutation PublishShortTerm
     currency
     description
     district
+    googleMapsUrl
     host {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1586,16 +1939,35 @@ export const publishShortTermProperty = /* GraphQL */ `mutation PublishShortTerm
     region
     serviceFeePercentage
     status
+    stayCategories
     taxPercentage
     thumbnail
     title
     updatedAt
+    videos
     __typename
   }
 }
 ` as GeneratedMutation<
   APITypes.PublishShortTermPropertyMutationVariables,
   APITypes.PublishShortTermPropertyMutation
+>;
+export const refundBooking = /* GraphQL */ `mutation RefundBooking($amountCents: Int, $bookingId: ID!, $reason: String) {
+  refundBooking(
+    amountCents: $amountCents
+    bookingId: $bookingId
+    reason: $reason
+  ) {
+    amount
+    currency
+    refundId
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.RefundBookingMutationVariables,
+  APITypes.RefundBookingMutation
 >;
 export const regenerateLocationJson = /* GraphQL */ `mutation RegenerateLocationJson {
   regenerateLocationJson {
@@ -1609,6 +1981,17 @@ export const regenerateLocationJson = /* GraphQL */ `mutation RegenerateLocation
   APITypes.RegenerateLocationJsonMutationVariables,
   APITypes.RegenerateLocationJsonMutation
 >;
+export const registerPushToken = /* GraphQL */ `mutation RegisterPushToken($token: String!) {
+  registerPushToken(token: $token) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.RegisterPushTokenMutationVariables,
+  APITypes.RegisterPushTokenMutation
+>;
 export const rejectProperty = /* GraphQL */ `mutation RejectProperty($propertyId: ID!, $reason: String!) {
   rejectProperty(propertyId: $propertyId, reason: $reason) {
     message
@@ -1619,6 +2002,17 @@ export const rejectProperty = /* GraphQL */ `mutation RejectProperty($propertyId
 ` as GeneratedMutation<
   APITypes.RejectPropertyMutationVariables,
   APITypes.RejectPropertyMutation
+>;
+export const removeBusyBlock = /* GraphQL */ `mutation RemoveBusyBlock($blockId: ID!, $blockStartUtc: String!) {
+  removeBusyBlock(blockId: $blockId, blockStartUtc: $blockStartUtc) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.RemoveBusyBlockMutationVariables,
+  APITypes.RemoveBusyBlockMutation
 >;
 export const removePropertyAgent = /* GraphQL */ `mutation RemovePropertyAgent($propertyId: ID!) {
   removePropertyAgent(propertyId: $propertyId) {
@@ -1672,6 +2066,7 @@ export const respondToReview = /* GraphQL */ `mutation RespondToReview($input: R
     guest {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -1730,6 +2125,51 @@ export const reviewLandlordApplication = /* GraphQL */ `mutation ReviewLandlordA
   APITypes.ReviewLandlordApplicationMutationVariables,
   APITypes.ReviewLandlordApplicationMutation
 >;
+export const scheduleMeeting = /* GraphQL */ `mutation ScheduleMeeting(
+  $attendeeIds: [String!]!
+  $description: String
+  $endUtc: String!
+  $link: String
+  $startUtc: String!
+  $title: String!
+) {
+  scheduleMeeting(
+    attendeeIds: $attendeeIds
+    description: $description
+    endUtc: $endUtc
+    link: $link
+    startUtc: $startUtc
+    title: $title
+  ) {
+    attendeeIds
+    createdAt
+    createdBy
+    createdByName
+    description
+    endUtc
+    id
+    link
+    startUtc
+    title
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ScheduleMeetingMutationVariables,
+  APITypes.ScheduleMeetingMutation
+>;
+export const sendCheckInInstructions = /* GraphQL */ `mutation SendCheckInInstructions($input: SendCheckInInstructionsInput!) {
+  sendCheckInInstructions(input: $input) {
+    message
+    sentVia
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.SendCheckInInstructionsMutationVariables,
+  APITypes.SendCheckInInstructionsMutation
+>;
 export const sendMessage = /* GraphQL */ `mutation SendMessage($input: SendMessageInput!) {
   sendMessage(input: $input) {
     content
@@ -1746,6 +2186,17 @@ export const sendMessage = /* GraphQL */ `mutation SendMessage($input: SendMessa
 ` as GeneratedMutation<
   APITypes.SendMessageMutationVariables,
   APITypes.SendMessageMutation
+>;
+export const sendWhatsAppMessage = /* GraphQL */ `mutation SendWhatsAppMessage($message: String!, $phone: String!) {
+  sendWhatsAppMessage(message: $message, phone: $phone) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.SendWhatsAppMessageMutationVariables,
+  APITypes.SendWhatsAppMessageMutation
 >;
 export const signIn = /* GraphQL */ `mutation SignIn($email: String!, $password: String!) {
   signIn(email: $email, password: $password) {
@@ -1822,6 +2273,7 @@ export const submitApplication = /* GraphQL */ `mutation SubmitApplication($inpu
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -1836,9 +2288,11 @@ export const submitApplication = /* GraphQL */ `mutation SubmitApplication($inpu
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -1871,6 +2325,7 @@ export const submitApplication = /* GraphQL */ `mutation SubmitApplication($inpu
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
@@ -1911,6 +2366,75 @@ export const submitLandlordApplication = /* GraphQL */ `mutation SubmitLandlordA
 ` as GeneratedMutation<
   APITypes.SubmitLandlordApplicationMutationVariables,
   APITypes.SubmitLandlordApplicationMutation
+>;
+export const submitLandlordRegistration = /* GraphQL */ `mutation SubmitLandlordRegistration(
+  $area: String
+  $name: String!
+  $notes: String
+  $phone: String!
+) {
+  submitLandlordRegistration(
+    area: $area
+    name: $name
+    notes: $notes
+    phone: $phone
+  ) {
+    adminNotes
+    area
+    assignedTo
+    createdAt
+    name
+    notes
+    phone
+    registrationId
+    status
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.SubmitLandlordRegistrationMutationVariables,
+  APITypes.SubmitLandlordRegistrationMutation
+>;
+export const submitReferral = /* GraphQL */ `mutation SubmitReferral(
+  $landlordArea: String!
+  $landlordName: String!
+  $landlordNotes: String
+  $landlordPhone: String!
+  $referrerName: String!
+  $referrerNida: String
+  $referrerPhone: String!
+) {
+  submitReferral(
+    landlordArea: $landlordArea
+    landlordName: $landlordName
+    landlordNotes: $landlordNotes
+    landlordPhone: $landlordPhone
+    referrerName: $referrerName
+    referrerNida: $referrerNida
+    referrerPhone: $referrerPhone
+  ) {
+    adminNotes
+    assignedTo
+    createdAt
+    landlordArea
+    landlordName
+    landlordNotes
+    landlordPhone
+    listingRewardStatus
+    profitShareRewardStatus
+    referralId
+    referrerName
+    referrerNida
+    referrerPhone
+    status
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.SubmitReferralMutationVariables,
+  APITypes.SubmitReferralMutation
 >;
 export const toggleFavorite = /* GraphQL */ `mutation ToggleFavorite($propertyId: ID!) {
   toggleFavorite(propertyId: $propertyId) {
@@ -1991,6 +2515,7 @@ export const updateApplication = /* GraphQL */ `mutation UpdateApplication(
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -2005,9 +2530,11 @@ export const updateApplication = /* GraphQL */ `mutation UpdateApplication(
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -2040,6 +2567,7 @@ export const updateApplication = /* GraphQL */ `mutation UpdateApplication(
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
@@ -2111,6 +2639,7 @@ export const updateApplicationStatus = /* GraphQL */ `mutation UpdateApplication
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -2125,9 +2654,11 @@ export const updateApplicationStatus = /* GraphQL */ `mutation UpdateApplication
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -2160,6 +2691,7 @@ export const updateApplicationStatus = /* GraphQL */ `mutation UpdateApplication
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
@@ -2203,6 +2735,48 @@ export const updateContactInquiryStatus = /* GraphQL */ `mutation UpdateContactI
 ` as GeneratedMutation<
   APITypes.UpdateContactInquiryStatusMutationVariables,
   APITypes.UpdateContactInquiryStatusMutation
+>;
+export const updateHousingRequestStatus = /* GraphQL */ `mutation UpdateHousingRequestStatus(
+  $adminNotes: String
+  $createdAt: String!
+  $requestId: ID!
+  $status: HousingRequestStatus!
+) {
+  updateHousingRequestStatus(
+    adminNotes: $adminNotes
+    createdAt: $createdAt
+    requestId: $requestId
+    status: $status
+  ) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateHousingRequestStatusMutationVariables,
+  APITypes.UpdateHousingRequestStatusMutation
+>;
+export const updateLandlordRegistrationStatus = /* GraphQL */ `mutation UpdateLandlordRegistrationStatus(
+  $adminNotes: String
+  $createdAt: String!
+  $registrationId: ID!
+  $status: String!
+) {
+  updateLandlordRegistrationStatus(
+    adminNotes: $adminNotes
+    createdAt: $createdAt
+    registrationId: $registrationId
+    status: $status
+  ) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateLandlordRegistrationStatusMutationVariables,
+  APITypes.UpdateLandlordRegistrationStatusMutation
 >;
 export const updateLocation = /* GraphQL */ `mutation UpdateLocation($locationId: ID!, $name: String!) {
   updateLocation(locationId: $locationId, name: $name) {
@@ -2249,6 +2823,7 @@ export const updatePropertyStatus = /* GraphQL */ `mutation UpdatePropertyStatus
     agent {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -2263,9 +2838,11 @@ export const updatePropertyStatus = /* GraphQL */ `mutation UpdatePropertyStatus
     }
     createdAt
     description
+    googleMapsUrl
     landlord {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -2298,6 +2875,7 @@ export const updatePropertyStatus = /* GraphQL */ `mutation UpdatePropertyStatus
     status
     title
     updatedAt
+    verified
     version
     __typename
   }
@@ -2305,6 +2883,27 @@ export const updatePropertyStatus = /* GraphQL */ `mutation UpdatePropertyStatus
 ` as GeneratedMutation<
   APITypes.UpdatePropertyStatusMutationVariables,
   APITypes.UpdatePropertyStatusMutation
+>;
+export const updateReferralStatus = /* GraphQL */ `mutation UpdateReferralStatus(
+  $adminNotes: String
+  $createdAt: String!
+  $referralId: ID!
+  $status: String!
+) {
+  updateReferralStatus(
+    adminNotes: $adminNotes
+    createdAt: $createdAt
+    referralId: $referralId
+    status: $status
+  ) {
+    message
+    success
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateReferralStatusMutationVariables,
+  APITypes.UpdateReferralStatusMutation
 >;
 export const updateShortTermProperty = /* GraphQL */ `mutation UpdateShortTermProperty(
   $input: UpdateShortTermPropertyInput!
@@ -2327,18 +2926,21 @@ export const updateShortTermProperty = /* GraphQL */ `mutation UpdateShortTermPr
     allowsSmoking
     amenities
     averageRating
+    bathrooms
+    bedrooms
     cancellationPolicy
     checkInInstructions {
-        wifiName
-        wifiPassword
-        accessCode
-        directions
-        parkingInfo
-        contactPhone
-        contactName
-        additionalNotes
-        houseRules
-      }
+      accessCode
+      additionalNotes
+      contactName
+      contactPhone
+      directions
+      houseRules
+      parkingInfo
+      wifiName
+      wifiPassword
+      __typename
+    }
     checkInTime
     checkOutTime
     cleaningFee
@@ -2351,9 +2953,11 @@ export const updateShortTermProperty = /* GraphQL */ `mutation UpdateShortTermPr
     currency
     description
     district
+    googleMapsUrl
     host {
       firstName
       lastName
+      profileImage
       whatsappNumber
       __typename
     }
@@ -2389,10 +2993,12 @@ export const updateShortTermProperty = /* GraphQL */ `mutation UpdateShortTermPr
     region
     serviceFeePercentage
     status
+    stayCategories
     taxPercentage
     thumbnail
     title
     updatedAt
+    videos
     __typename
   }
 }
@@ -2447,28 +3053,4 @@ export const verifyEmail = /* GraphQL */ `mutation VerifyEmail($code: String!, $
 ` as GeneratedMutation<
   APITypes.VerifyEmailMutationVariables,
   APITypes.VerifyEmailMutation
->;
-
-export const initiateWhatsAppAssociation = /* GraphQL */ `mutation InitiateWhatsAppAssociation($whatsappNumber: String!) {
-  initiateWhatsAppAssociation(whatsappNumber: $whatsappNumber) {
-    message
-    success
-    __typename
-  }
-}
-` as GeneratedMutation<
-  { whatsappNumber: string },
-  { initiateWhatsAppAssociation: { success: boolean; message: string } }
->;
-
-export const confirmWhatsAppAssociation = /* GraphQL */ `mutation ConfirmWhatsAppAssociation($code: String!, $whatsappNumber: String!) {
-  confirmWhatsAppAssociation(code: $code, whatsappNumber: $whatsappNumber) {
-    message
-    success
-    __typename
-  }
-}
-` as GeneratedMutation<
-  { code: string; whatsappNumber: string },
-  { confirmWhatsAppAssociation: { success: boolean; message: string } }
 >;

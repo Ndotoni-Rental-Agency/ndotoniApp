@@ -70,6 +70,7 @@ export const onPropertyUpdated = /* GraphQL */ `subscription OnPropertyUpdated($
       agent {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -84,9 +85,11 @@ export const onPropertyUpdated = /* GraphQL */ `subscription OnPropertyUpdated($
       }
       createdAt
       description
+      googleMapsUrl
       landlord {
         firstName
         lastName
+        profileImage
         whatsappNumber
         __typename
       }
@@ -119,6 +122,7 @@ export const onPropertyUpdated = /* GraphQL */ `subscription OnPropertyUpdated($
       status
       title
       updatedAt
+      verified
       version
       __typename
     }
