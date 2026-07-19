@@ -49,11 +49,17 @@ export default function SearchScreen() {
   const district = params.district as string;
   const checkInDate = params.checkInDate as string;
   const checkOutDate = params.checkOutDate as string;
+  const category = params.category as string;
 
   const [selectedRegion, setSelectedRegion] = useState(region || '');
   const [selectedDistrict, setSelectedDistrict] = useState(district || '');
 
   useEffect(() => { fetchRegions(); }, []);
+
+  const ALL_REGIONS = [
+    'Dar es Salaam', 'Arusha', 'Dodoma', 'Mwanza', 'Zanzibar',
+    'Mbeya', 'Morogoro', 'Tanga', 'Kilimanjaro', 'Iringa',
+  ];
 
   const fetchProperties = async (loadMore = false) => {
     try {
@@ -62,28 +68,54 @@ export default function SearchScreen() {
       const twoDaysLater = new Date(today);
       twoDaysLater.setDate(twoDaysLater.getDate() + 2);
 
-      const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
-        searchShortTermProperties,
-        {
-          input: {
-            region: selectedRegion || 'Dar es Salaam',
-            district: selectedDistrict,
-            checkInDate: (checkInDate || today.toISOString().split('T')[0]).split('T')[0],
-            checkOutDate: (checkOutDate || twoDaysLater.toISOString().split('T')[0]).split('T')[0],
-            numberOfGuests: 2,
-            limit: 20,
-            nextToken: loadMore ? nextToken : null,
-          },
-        }
-      );
-      const result = data.searchShortTermProperties;
-      const newProps = result?.properties || [];
+      const baseInput = {
+        district: selectedDistrict,
+        checkInDate: (checkInDate || today.toISOString().split('T')[0]).split('T')[0],
+        checkOutDate: (checkOutDate || twoDaysLater.toISOString().split('T')[0]).split('T')[0],
+        numberOfGuests: 2,
+        ...(category ? { stayCategory: category } : {}),
+        limit: 20,
+        nextToken: loadMore ? nextToken : null,
+      };
+
+      let newProps: any[] = [];
+      let newNextToken: string | null = null;
+
+      if (selectedRegion) {
+        // Single region query
+        const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
+          searchShortTermProperties,
+          { input: { ...baseInput, region: selectedRegion } }
+        );
+        const result = data.searchShortTermProperties;
+        newProps = result?.properties || [];
+        newNextToken = result?.nextToken || null;
+      } else {
+        // No region selected — query all regions in parallel (like the web)
+        const queries = ALL_REGIONS.map((r) =>
+          GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
+            searchShortTermProperties,
+            { input: { ...baseInput, region: r } }
+          ).then((d) => d.searchShortTermProperties?.properties || [])
+           .catch(() => [] as any[])
+        );
+        const allResults = await Promise.all(queries);
+        const seen = new Set<string>();
+        newProps = allResults.flat().filter((p: any) => {
+          if (seen.has(p.propertyId)) return false;
+          seen.add(p.propertyId);
+          return true;
+        });
+        // Shuffle for variety
+        newProps.sort(() => Math.random() - 0.5);
+      }
+
       if (loadMore) {
         setProperties(prev => [...prev, ...newProps]);
       } else {
         setProperties(newProps);
       }
-      setNextToken(result?.nextToken || null);
+      setNextToken(newNextToken);
     } catch (err) {
       console.error('[Search] Error:', err);
       if (!loadMore) setError('Failed to load stays');
