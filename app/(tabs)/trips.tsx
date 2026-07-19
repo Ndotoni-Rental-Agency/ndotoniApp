@@ -65,21 +65,41 @@ export default function TripsScreen() {
         const pending = Array.isArray(pendingRes?.listMyBookings?.bookings) ? pendingRes.listMyBookings.bookings : [];
         // Filter out bookings where property no longer exists and user hasn't paid
         const isValid = (b: any) => {
-          if (!b.property?.title && b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED') return false;
+          if (!b.property?.title && !b.propertySnapshot?.title && b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED') return false;
           return true;
         };
-        // Combine and sort: awaiting payment first, then by check-in date
-        const all = [...confirmed, ...pending].filter(isValid).sort((a: any, b: any) => {
-          const aNeeds = a.paymentStatus !== 'CAPTURED' && a.paymentStatus !== 'AUTHORIZED';
-          const bNeeds = b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED';
-          if (aNeeds && !bNeeds) return -1;
-          if (!aNeeds && bNeeds) return 1;
-          return new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime();
-        });
+        const today = new Date().toISOString().split('T')[0];
+        // Only show bookings whose checkout is today or in the future
+        const all = [...confirmed, ...pending]
+          .filter(isValid)
+          .filter((b: any) => b.checkOutDate >= today)
+          .sort((a: any, b: any) => {
+            const aNeeds = a.paymentStatus !== 'CAPTURED' && a.paymentStatus !== 'AUTHORIZED';
+            const bNeeds = b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED';
+            if (aNeeds && !bNeeds) return -1;
+            if (!aNeeds && bNeeds) return 1;
+            return new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime();
+          });
+        setBookings(all);
+      } else if (activeTab === 'past') {
+        // Past = COMPLETED status + CONFIRMED/PENDING whose checkout has passed
+        const [completedRes, confirmedRes, pendingRes] = await Promise.all([
+          GraphQLClient.executeAuthenticated<any>(listMyBookings, { status: 'COMPLETED', limit: 50 }),
+          GraphQLClient.executeAuthenticated<any>(listMyBookings, { status: 'CONFIRMED', limit: 50 }),
+          GraphQLClient.executeAuthenticated<any>(listMyBookings, { status: 'PENDING', limit: 50 }),
+        ]);
+        const completed = Array.isArray(completedRes?.listMyBookings?.bookings) ? completedRes.listMyBookings.bookings : [];
+        const confirmed = Array.isArray(confirmedRes?.listMyBookings?.bookings) ? confirmedRes.listMyBookings.bookings : [];
+        const pending = Array.isArray(pendingRes?.listMyBookings?.bookings) ? pendingRes.listMyBookings.bookings : [];
+        const today = new Date().toISOString().split('T')[0];
+        // Include confirmed/pending bookings whose checkout has already passed
+        const pastFromConfirmed = [...confirmed, ...pending].filter((b: any) => b.checkOutDate < today);
+        const all = [...completed, ...pastFromConfirmed].sort(
+          (a: any, b: any) => new Date(b.checkOutDate).getTime() - new Date(a.checkOutDate).getTime()
+        );
         setBookings(all);
       } else {
-        const status = activeTab === 'past' ? 'COMPLETED' : 'CANCELLED';
-        const res = await GraphQLClient.executeAuthenticated<any>(listMyBookings, { status, limit: 50 });
+        const res = await GraphQLClient.executeAuthenticated<any>(listMyBookings, { status: 'CANCELLED', limit: 50 });
         setBookings(Array.isArray(res?.listMyBookings?.bookings) ? res.listMyBookings.bookings : []);
       }
     } catch {
