@@ -41,8 +41,8 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
       if (coords) {
         // Reverse geocode to get region/district
         const location = await reverseGeocode(coords.latitude, coords.longitude);
-        if (location.region && !form.region) updateField('region', location.region);
-        if (location.district && !form.district) updateField('district', location.district);
+        if (location.region) updateField('region', location.region);
+        if (location.district) updateField('district', location.district);
       }
     }).finally(() => setResolving(false));
   }, [form.googleMapsLink]);
@@ -56,6 +56,30 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
         Your address is only shared with guests after they book.
       </Text>
 
+      {/* Google Maps link — primary input */}
+      <View style={styles.mapsLinkSection}>
+        <View style={styles.mapsLinkHeader}>
+          <Ionicons name="location" size={18} color={colors.tint} />
+          <Text style={[styles.mapsLinkLabel, { color: text }]}>Google Maps link</Text>
+        </View>
+        <Text style={[styles.mapsLinkHint, { color: subtle }]}>
+          {resolving ? 'Resolving location...' : 'Paste your Google Maps link to auto-fill location.'}
+        </Text>
+        <TextInput
+          style={[styles.mapsLinkInput, { color: text, borderColor: border, backgroundColor: card }]}
+          value={form.googleMapsLink}
+          onChangeText={(val) => updateField('googleMapsLink', val)}
+          placeholder="e.g. https://maps.app.goo.gl/..."
+          placeholderTextColor={subtle}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+      </View>
+
+      {/* Divider */}
+      <Text style={[styles.divider, { color: subtle }]}>or select manually</Text>
+
       <View style={styles.selectorWrap}>
         <LocationSelector
           value={{ region: form.region, district: form.district, ward: form.ward }}
@@ -64,27 +88,6 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
             updateField('district', loc.district);
             updateField('ward', loc.ward || '');
           }}
-        />
-      </View>
-
-      <View style={styles.mapsLinkSection}>
-        <View style={styles.mapsLinkHeader}>
-          <Ionicons name="location" size={18} color={colors.tint} />
-          <Text style={[styles.mapsLinkLabel, { color: text }]}>Google Maps link</Text>
-          <Text style={[styles.optionalBadge, { color: subtle }]}>optional</Text>
-        </View>
-        <Text style={[styles.mapsLinkHint, { color: subtle }]}>
-          {resolving ? 'Resolving location...' : "Paste a Google Maps link to pinpoint your property's exact location on the map."}
-        </Text>
-        <TextInput
-          style={[styles.mapsLinkInput, { color: text, borderColor: border, backgroundColor: card }]}
-          value={form.googleMapsLink}
-          onChangeText={(val) => updateField('googleMapsLink', val)}
-          placeholder="e.g. https://maps.google.com/..."
-          placeholderTextColor={subtle}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
         />
       </View>
     </>
@@ -108,7 +111,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapsLinkSection: {
-    marginTop: 24,
+    marginBottom: 16,
   },
   mapsLinkHeader: {
     flexDirection: 'row',
@@ -124,6 +127,11 @@ const styles = StyleSheet.create({
   optionalBadge: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  divider: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginVertical: 16,
   },
   mapsLinkHint: {
     fontSize: 13,
