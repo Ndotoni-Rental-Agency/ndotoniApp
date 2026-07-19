@@ -8,17 +8,28 @@ import { StepProps } from './types';
 /**
  * Reverse geocode coordinates using Nominatim to get region and district.
  */
-async function reverseGeocode(lat: number, lng: number): Promise<{ region?: string; district?: string }> {
+async function reverseGeocode(lat: number, lng: number): Promise<{ region?: string; district?: string; ward?: string }> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=10`
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=16`
     );
     const data = await res.json();
     const address = data?.address;
     if (!address) return {};
-    const region = address.state?.toLowerCase();
-    const district = (address.county || address.city || address.town || address.suburb)?.toLowerCase();
-    return { region: region || undefined, district: district || undefined };
+
+    // Tanzania structure: state = region, state_district = district, village/suburb = ward
+    const region = (address.state || '')
+      .replace(/\s*region$/i, '')
+      .toLowerCase()
+      .trim() || undefined;
+    const district = (address.state_district || address.county || address.city || '')
+      .toLowerCase()
+      .trim() || undefined;
+    const ward = (address.village || address.suburb || address.neighbourhood || '')
+      .toLowerCase()
+      .trim() || undefined;
+
+    return { region, district, ward };
   } catch {
     return {};
   }
@@ -39,10 +50,11 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
 
     GoogleMapsParser.parseAsync(link).then(async (coords) => {
       if (coords) {
-        // Reverse geocode to get region/district
+        // Reverse geocode to get region/district/ward
         const location = await reverseGeocode(coords.latitude, coords.longitude);
         if (location.region) updateField('region', location.region);
         if (location.district) updateField('district', location.district);
+        if (location.ward) updateField('ward', location.ward);
       }
     }).finally(() => setResolving(false));
   }, [form.googleMapsLink]);
