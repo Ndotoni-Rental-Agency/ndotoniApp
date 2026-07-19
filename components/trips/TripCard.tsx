@@ -16,10 +16,13 @@ interface TripCardProps {
 
 export default function TripCard({ booking: b, colors, showPayButton, showReviewButton, onPress, onPayPress, onReviewPress }: TripCardProps) {
   const { text, tint, card, border, subtle } = colors;
-  const img = b.property?.thumbnail || b.property?.images?.[0];
+  const img = b.property?.thumbnail || b.property?.images?.[0] || b.propertySnapshot?.thumbnail || b.propertySnapshot?.images?.[0];
+  const title = b.property?.title || b.propertySnapshot?.title || 'Property';
+  const district = b.property?.district || b.propertySnapshot?.address?.district;
+  const region = b.property?.region || b.propertySnapshot?.address?.region;
   const nights = getNights(b.checkInDate, b.checkOutDate);
   const totalAmount = b.pricing?.total ?? b.totalPrice ?? 0;
-  const cur = (b.pricing?.currency || b.property?.currency || 'TZS') === 'TZS' ? 'Tshs' : (b.pricing?.currency || b.property?.currency || 'TZS');
+  const cur = (b.pricing?.currency || b.property?.currency || b.propertySnapshot?.currency || 'TZS') === 'TZS' ? 'Tshs' : (b.pricing?.currency || b.property?.currency || b.propertySnapshot?.currency || 'TZS');
   const statusColor = getStatusColor(b, subtle);
   const statusLabel = getStatusLabel(b);
 
@@ -28,13 +31,13 @@ export default function TripCard({ booking: b, colors, showPayButton, showReview
       {img && <Image source={{ uri: img }} style={s.img} contentFit="cover" transition={200} />}
       <View style={s.body}>
         <View style={s.row}>
-          <Text style={[s.title, { color: text }]} numberOfLines={1}>{b.property?.title || 'Property'}</Text>
+          <Text style={[s.title, { color: text }]} numberOfLines={1}>{title}</Text>
           <View style={[s.pill, { backgroundColor: `${statusColor}15` }]}>
             <Text style={[s.pillText, { color: statusColor }]}>{statusLabel}</Text>
           </View>
         </View>
-        {b.property?.district && (
-          <Text style={[s.loc, { color: subtle }]}>{b.property.district}, {b.property.region}</Text>
+        {district && (
+          <Text style={[s.loc, { color: subtle }]}>{district}, {region}</Text>
         )}
         <View style={s.details}>
           <Text style={[s.date, { color: text }]}>

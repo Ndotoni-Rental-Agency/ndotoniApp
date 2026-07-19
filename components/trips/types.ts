@@ -18,7 +18,7 @@ export interface Booking {
     cleaningFee?: number;
     serviceFee?: number;
   };
-  property: {
+  property?: {
     propertyId: string;
     title: string;
     thumbnail?: string;
@@ -26,7 +26,21 @@ export interface Booking {
     currency?: string;
     district?: string;
     region?: string;
-  };
+  } | null;
+  propertySnapshot?: {
+    title: string;
+    thumbnail?: string;
+    propertyType: string;
+    address?: {
+      city?: string;
+      district?: string;
+      region?: string;
+      street?: string;
+    };
+    nightlyRate: number;
+    currency: string;
+    images?: string[];
+  } | null;
 }
 
 export interface TripColors {

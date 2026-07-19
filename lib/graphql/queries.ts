@@ -402,6 +402,20 @@ export const getBooking = /* GraphQL */ `query GetBooking($bookingId: ID!) {
       updatedAt
       __typename
     }
+    propertySnapshot {
+      title
+      thumbnail
+      propertyType
+      address {
+        city
+        district
+        region
+        street
+      }
+      nightlyRate
+      currency
+      images
+    }
     propertyId
     specialRequests
     status
@@ -2765,6 +2779,20 @@ export const listMyBookings = /* GraphQL */ `query ListMyBookings($limit: Int, $
         title
         updatedAt
         __typename
+      }
+      propertySnapshot {
+        title
+        thumbnail
+        propertyType
+        address {
+          city
+          district
+          region
+          street
+        }
+        nightlyRate
+        currency
+        images
       }
       propertyId
       specialRequests
