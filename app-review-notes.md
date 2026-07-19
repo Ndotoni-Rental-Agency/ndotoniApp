@@ -1,0 +1,45 @@
+# App Store Review — Response to Guideline 2.1
+
+## 1. Screen Recording
+
+Screen recording attached separately demonstrating: app launch, browse listings, sign in, book a property (date selection, guest info, payment), host dashboard, messaging, profile management, and location permission prompt.
+
+## 2. Devices and Operating Systems Tested
+
+- iPhone 15 Pro — iOS 18.5
+- iPhone 13 — iOS 17.6
+- iPhone SE (3rd generation) — iOS 17.5
+
+## 3. App Purpose and Target Audience
+
+ndotoni Stays is a short-term rental marketplace for Tanzania. It connects property hosts with travelers looking for nightly accommodations.
+
+**Target audience:** Travelers visiting Tanzania and local property owners who want to list their spaces for short stays.
+
+**Problem it solves:** There is no dedicated, localized short-term rental platform for Tanzania. Existing global platforms do not support local payment methods like M-Pesa or have limited coverage in Tanzanian cities and regions. ndotoni Stays provides a native experience with local payment integration, Swahili language support, and coverage across all Tanzanian regions.
+
+## 4. Demo Account Credentials
+
+- **Email:** review@ndotoni.com
+- **Password:** Review2025!
+
+This account has access to all features including browsing listings, booking properties, hosting, messaging, and profile management. Sample listings are available in the Dar es Salaam region.
+
+## 5. External Services Used
+
+- **Authentication:** AWS Cognito (email/password, Google, Facebook sign-in)
+- **Backend API:** AWS AppSync (GraphQL)
+- **Storage:** AWS S3 (property images and media)
+- **Maps:** Google Maps SDK (property locations and map view)
+- **Payments:** M-Pesa mobile money and Stripe (card payments via secure web redirect)
+- **AI:** AWS Bedrock (optional property title and description suggestions for hosts)
+- **Notifications:** WhatsApp Business API (booking confirmations)
+- **CDN:** AWS CloudFront (property image delivery and homepage data)
+
+## 6. Regional Differences
+
+The app functions consistently across all regions. Property listings are focused on Tanzania, but the app is accessible and fully functional worldwide. No content or features are restricted by geographic region.
+
+## 7. Regulated Industry / Protected Material
+
+Not applicable. ndotoni Stays is a marketplace platform connecting property hosts and guests. It does not operate in a regulated industry and does not include protected third-party material.
