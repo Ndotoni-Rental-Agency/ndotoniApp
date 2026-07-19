@@ -134,7 +134,7 @@ export default function SwipeableConversationCard({
           <View style={styles.messageContent}>
             <View style={styles.messageHeader}>
               <Text style={[styles.senderName, { color: textColor }]} numberOfLines={1}>
-                {conversation.otherPartyName}
+                {conversation.otherPartyName?.split(' ')[0] || conversation.otherPartyName}
               </Text>
               <Text style={[styles.messageTime, { color: secondaryText }]}>
                 {formatTime(conversation.lastMessageTime)}

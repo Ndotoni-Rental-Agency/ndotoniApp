@@ -289,7 +289,7 @@ export default function ConversationScreen() {
             >
               {!isMyMessage && (
                 <Text style={[styles.senderName, { color: tintColor }]}>
-                  {item.senderName}
+                  {item.senderName?.split(' ')[0] || item.senderName}
                 </Text>
               )}
               <Text
@@ -358,7 +358,7 @@ export default function ConversationScreen() {
             </TouchableOpacity>
             <View style={styles.headerInfo}>
               <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
-                {conversation?.otherPartyName || 'Chat'}
+                {conversation?.otherPartyName?.split(' ')[0] || 'Chat'}
               </Text>
               {conversation?.propertyTitle && (
                 <Text style={[styles.headerSubtitle, { color: secondaryText }]} numberOfLines={1}>
