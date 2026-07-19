@@ -167,7 +167,7 @@ export default function MediaSelector({
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
         allowsMultipleSelection: true,
-        quality: 0.8,
+        quality: 0.6,
         selectionLimit: maxSelection - selectedMedia.length,
       });
 
@@ -199,7 +199,7 @@ export default function MediaSelector({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        quality: 0.8,
+        quality: 0.6,
       });
 
       if (!result.canceled && result.assets) {

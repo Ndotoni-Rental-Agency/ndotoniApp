@@ -164,6 +164,9 @@ export default function SearchScreen() {
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
+          cachePolicy="memory-disk"
+          recyclingKey={property.propertyId}
+          placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
         />
         <FavoriteButton propertyId={property.propertyId} size={20} style={styles.cardFav} />
         {property.instantBookEnabled && (

@@ -24,7 +24,15 @@ export default function GalleryCarousel({ images, height, onTap }: GalleryCarous
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item, index }) => (
           <TouchableOpacity activeOpacity={0.95} onPress={() => onTap(index)}>
-            <Image source={{ uri: item }} style={{ width: W, height }} contentFit="cover" transition={200} />
+            <Image
+              source={{ uri: item }}
+              style={{ width: W, height }}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
+              recyclingKey={item}
+              placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
+            />
           </TouchableOpacity>
         )}
       />

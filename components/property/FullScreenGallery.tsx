@@ -38,7 +38,14 @@ export default function FullScreenGallery({ images, startIndex, onClose }: FullS
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item }) => (
           <View style={{ width: W, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Image source={{ uri: item }} style={{ width: W, height: H * 0.65 }} contentFit="contain" transition={150} />
+            <Image
+              source={{ uri: item }}
+              style={{ width: W, height: H * 0.65 }}
+              contentFit="contain"
+              transition={150}
+              cachePolicy="memory-disk"
+              recyclingKey={item}
+            />
           </View>
         )}
       />
