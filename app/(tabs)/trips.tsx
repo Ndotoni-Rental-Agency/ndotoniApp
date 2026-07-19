@@ -153,7 +153,7 @@ export default function TripsScreen() {
           keyExtractor={(b) => b.bookingId}
           renderItem={({ item }) => {
             const needsPayment = item.status === 'CONFIRMED' && item.paymentStatus !== 'CAPTURED' && item.paymentStatus !== 'AUTHORIZED';
-            const canReview = activeTab === 'past' && !item.hasReview;
+            const canReview = activeTab === 'past' && !item.hasReview && (item.paymentStatus === 'CAPTURED' || item.paymentStatus === 'AUTHORIZED');
             return (
               <TripCard
                 booking={item}
@@ -207,8 +207,8 @@ export default function TripsScreen() {
         visible={!!reviewingBooking}
         onClose={() => setReviewingBooking(null)}
         bookingId={reviewingBooking?.bookingId || ''}
-        propertyId={reviewingBooking?.property?.propertyId || ''}
-        propertyTitle={reviewingBooking?.property?.title || 'Property'}
+        propertyId={reviewingBooking?.propertyId || reviewingBooking?.property?.propertyId || ''}
+        propertyTitle={reviewingBooking?.property?.title || reviewingBooking?.propertySnapshot?.title || 'Property'}
         onReviewSubmitted={fetchBookings}
       />
     </SafeAreaView>
