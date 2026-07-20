@@ -1,85 +1,204 @@
 /**
  * AI Service for ndotoni Stays mobile app.
- * Calls ndotonistays API routes (backed by Anthropic Claude).
+ *
+ * Uses the centralized backend `generateAISuggestion` GraphQL mutation
+ * which fetches real market data from DynamoDB and generates unique,
+ * non-duplicate suggestions via Anthropic Claude.
+ *
+ * Single entry point: AIService.suggest({ type, ...context })
+ * The `type` field determines what gets generated:
+ *   - TITLE: just a title
+ *   - DESCRIPTION: just a description
+ *   - PRICE: pricing with range and reasoning
+ *   - CHECKIN_INSTRUCTIONS: check-in directions/tips
+ *   - ALL: everything in one shot
  */
 
-const BASE_URL = 'https://www.ndotonistays.com';
+import { GraphQLClient } from '@/lib/graphql-client';
 
-interface GenerateTitleInput {
+// ─── Types ───
+
+export type AISuggestionType = 'TITLE' | 'DESCRIPTION' | 'PRICE' | 'CHECKIN_INSTRUCTIONS' | 'ALL';
+
+export interface AISuggestionInput {
+  type: AISuggestionType;
   propertyType: string;
-  district: string;
-  region: string;
-  maxGuests?: string;
-  bedrooms?: string;
-  bathrooms?: string;
   stayCategories?: string[];
-  currency?: string;
-  nightlyRate?: string;
-  images?: string[];
-  userContext?: string;
-}
-
-interface PricePredictionInput {
-  propertyType: string;
-  district: string;
   region: string;
+  district: string;
   maxGuests?: number;
   bedrooms?: number;
   bathrooms?: number;
   amenities?: string[];
-  userContext?: string;
-}
-
-interface PricePredictionResult {
-  suggestedPrice: number;
-  currency: string;
-  reasoning: string;
-  range: { min: number; max: number };
-}
-
-interface GenerateDescriptionInput {
-  title: string;
-  propertyType: string;
-  district: string;
-  region: string;
-  maxGuests?: number;
-  nightlyRate?: number;
+  images?: string[];
   currency?: string;
-  amenities?: string[];
+  nightlyRate?: number;
+  title?: string;
   userContext?: string;
+  language?: string;
 }
+
+export interface AIPriceRange {
+  min: number;
+  max: number;
+}
+
+export interface AIMarketStats {
+  totalListingsInArea: number;
+  averagePrice?: number;
+  medianPrice?: number;
+}
+
+export interface AICheckinInstructions {
+  directions?: string;
+  parkingInfo?: string;
+  additionalNotes?: string;
+  contactName?: string;
+}
+
+export interface AISuggestionResult {
+  type: AISuggestionType;
+  title?: string;
+  description?: string;
+  suggestedPrice?: number;
+  priceRange?: AIPriceRange;
+  priceReasoning?: string;
+  checkinInstructions?: AICheckinInstructions;
+  existingTitlesInArea?: string[];
+  marketStats?: AIMarketStats;
+}
+
+// ─── GraphQL Mutation ───
+
+const GENERATE_AI_SUGGESTION = /* GraphQL */ `
+  mutation GenerateAISuggestion($input: AISuggestionInput!) {
+    generateAISuggestion(input: $input) {
+      type
+      title
+      description
+      suggestedPrice
+      priceRange {
+        min
+        max
+      }
+      priceReasoning
+      checkinInstructions {
+        directions
+        parkingInfo
+        additionalNotes
+        contactName
+      }
+      existingTitlesInArea
+      marketStats {
+        totalListingsInArea
+        averagePrice
+        medianPrice
+      }
+    }
+  }
+`;
+
+// ─── Service ───
 
 class AIServiceClass {
-  async generateTitle(input: GenerateTitleInput): Promise<string> {
-    const res = await fetch(`${BASE_URL}/api/generate-title`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
-    });
-    if (!res.ok) throw new Error('Failed to generate title');
-    const data = await res.json();
-    return data.title || '';
+  /**
+   * Unified AI suggestion method.
+   * Call with a `type` to get the specific suggestion you need,
+   * or use `ALL` to get title + description + price + check-in in one call.
+   */
+  async suggest(input: AISuggestionInput): Promise<AISuggestionResult> {
+    const result = await GraphQLClient.execute<{ generateAISuggestion: AISuggestionResult }>(
+      GENERATE_AI_SUGGESTION,
+      { input }
+    );
+    return result.generateAISuggestion;
   }
 
-  async predictPrice(input: PricePredictionInput): Promise<PricePredictionResult> {
-    const res = await fetch(`${BASE_URL}/api/ai/predict-price`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+  // ─── Convenience methods (backwards-compatible wrappers) ───
+
+  async generateTitle(input: {
+    propertyType: string;
+    district: string;
+    region: string;
+    maxGuests?: string;
+    bedrooms?: string;
+    bathrooms?: string;
+    stayCategories?: string[];
+    currency?: string;
+    nightlyRate?: string;
+    images?: string[];
+    userContext?: string;
+  }): Promise<string> {
+    const result = await this.suggest({
+      type: 'TITLE',
+      propertyType: input.propertyType,
+      region: input.region,
+      district: input.district,
+      maxGuests: input.maxGuests ? parseInt(input.maxGuests) : undefined,
+      bedrooms: input.bedrooms ? parseInt(input.bedrooms) : undefined,
+      bathrooms: input.bathrooms ? parseInt(input.bathrooms) : undefined,
+      stayCategories: input.stayCategories,
+      currency: input.currency,
+      nightlyRate: input.nightlyRate ? parseFloat(input.nightlyRate) : undefined,
+      images: input.images,
+      userContext: input.userContext,
     });
-    if (!res.ok) throw new Error('Failed to predict price');
-    return res.json();
+    return result.title || '';
   }
 
-  async generateDescription(input: GenerateDescriptionInput): Promise<string> {
-    const res = await fetch(`${BASE_URL}/api/ai/generate-description`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+  async predictPrice(input: {
+    propertyType: string;
+    district: string;
+    region: string;
+    maxGuests?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    amenities?: string[];
+    userContext?: string;
+  }): Promise<{ suggestedPrice: number; currency: string; reasoning: string; range: { min: number; max: number } }> {
+    const result = await this.suggest({
+      type: 'PRICE',
+      propertyType: input.propertyType,
+      region: input.region,
+      district: input.district,
+      maxGuests: input.maxGuests,
+      bedrooms: input.bedrooms,
+      bathrooms: input.bathrooms,
+      amenities: input.amenities,
+      userContext: input.userContext,
     });
-    if (!res.ok) throw new Error('Failed to generate description');
-    const data = await res.json();
-    return data.description || '';
+    return {
+      suggestedPrice: result.suggestedPrice || 0,
+      currency: 'TZS',
+      reasoning: result.priceReasoning || '',
+      range: result.priceRange || { min: 0, max: 0 },
+    };
+  }
+
+  async generateDescription(input: {
+    title: string;
+    propertyType: string;
+    district: string;
+    region: string;
+    maxGuests?: number;
+    nightlyRate?: number;
+    currency?: string;
+    amenities?: string[];
+    userContext?: string;
+  }): Promise<string> {
+    const result = await this.suggest({
+      type: 'DESCRIPTION',
+      propertyType: input.propertyType,
+      region: input.region,
+      district: input.district,
+      maxGuests: input.maxGuests,
+      nightlyRate: input.nightlyRate,
+      currency: input.currency,
+      title: input.title,
+      amenities: input.amenities,
+      userContext: input.userContext,
+    });
+    return result.description || '';
   }
 }
 

@@ -3054,3 +3054,33 @@ export const verifyEmail = /* GraphQL */ `mutation VerifyEmail($code: String!, $
   APITypes.VerifyEmailMutationVariables,
   APITypes.VerifyEmailMutation
 >;
+export const generateAISuggestion = /* GraphQL */ `mutation GenerateAISuggestion($input: AISuggestionInput!) {
+  generateAISuggestion(input: $input) {
+    type
+    title
+    description
+    suggestedPrice
+    priceRange {
+      min
+      max
+    }
+    priceReasoning
+    checkinInstructions {
+      directions
+      parkingInfo
+      additionalNotes
+      contactName
+    }
+    existingTitlesInArea
+    marketStats {
+      totalListingsInArea
+      averagePrice
+      medianPrice
+    }
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.GenerateAISuggestionMutationVariables,
+  APITypes.GenerateAISuggestionMutation
+>;

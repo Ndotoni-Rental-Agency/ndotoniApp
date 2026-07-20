@@ -1,4 +1,4 @@
-import { AIService } from '@/lib/ai-service';
+import { AIService, AISuggestionResult } from '@/lib/ai-service';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -14,24 +14,27 @@ import { PROPERTY_TYPES, StepProps } from './types';
 export default function StepTitle({ form, updateField, colors }: StepProps) {
   const { text, tint, card, border, subtle } = colors;
   const [generating, setGenerating] = useState(false);
+  const [marketContext, setMarketContext] = useState<AISuggestionResult | null>(null);
 
   const generateTitle = async () => {
     setGenerating(true);
     try {
-      const title = await AIService.generateTitle({
+      const result = await AIService.suggest({
+        type: 'TITLE',
         propertyType: form.propertyType,
-        district: form.district,
         region: form.region,
-        maxGuests: form.maxGuests,
-        bedrooms: form.bedrooms,
-        bathrooms: form.bathrooms,
+        district: form.district,
+        maxGuests: form.maxGuests ? parseInt(form.maxGuests) : undefined,
+        bedrooms: form.bedrooms ? parseInt(form.bedrooms) : undefined,
+        bathrooms: form.bathrooms ? parseInt(form.bathrooms) : undefined,
         stayCategories: form.stayCategories,
         currency: form.currency,
-        nightlyRate: form.nightlyRate,
+        nightlyRate: form.nightlyRate ? parseFloat(form.nightlyRate) : undefined,
         images: form.images.slice(0, 3),
         userContext: form.title || undefined,
       });
-      if (title) updateField('title', title);
+      if (result.title) updateField('title', result.title);
+      setMarketContext(result);
     } catch (err) {
       console.error('AI title error:', err);
     } finally {
@@ -79,6 +82,13 @@ export default function StepTitle({ form, updateField, colors }: StepProps) {
           {generating ? 'Writing...' : 'Generate with AI'}
         </Text>
       </TouchableOpacity>
+
+      {/* Market context info */}
+      {marketContext?.marketStats && marketContext.marketStats.totalListingsInArea > 0 && (
+        <Text style={[styles.marketInfo, { color: subtle }]}>
+          {marketContext.marketStats.totalListingsInArea} listings in {form.district} · AI ensured yours is unique
+        </Text>
+      )}
 
       {/* Summary review */}
       <View style={[styles.reviewCard, { backgroundColor: card, borderColor: border }]}>
@@ -154,6 +164,11 @@ const styles = StyleSheet.create({
   aiBtnText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  marketInfo: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
   },
   reviewCard: {
     marginTop: 28,

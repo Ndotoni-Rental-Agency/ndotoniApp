@@ -1,4 +1,4 @@
-import { AIService } from '@/lib/ai-service';
+import { AIService, AISuggestionResult } from '@/lib/ai-service';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -16,16 +16,19 @@ import { StepProps } from './types';
 export default function StepPricing({ form, updateField, colors }: StepProps) {
   const { text, tint, card, border, subtle } = colors;
   const [predictingPrice, setPredictingPrice] = useState(false);
-  const [priceSuggestion, setPriceSuggestion] = useState<any>(null);
+  const [priceSuggestion, setPriceSuggestion] = useState<AISuggestionResult | null>(null);
 
   const suggestPrice = async () => {
     setPredictingPrice(true);
     try {
-      const result = await AIService.predictPrice({
+      const result = await AIService.suggest({
+        type: 'PRICE',
         propertyType: form.propertyType,
-        district: form.district,
         region: form.region,
+        district: form.district,
         maxGuests: parseInt(form.maxGuests) || 2,
+        bedrooms: form.bedrooms ? parseInt(form.bedrooms) : undefined,
+        bathrooms: form.bathrooms ? parseInt(form.bathrooms) : undefined,
       });
       setPriceSuggestion(result);
     } catch (err) {
@@ -95,6 +98,11 @@ export default function StepPricing({ form, updateField, colors }: StepProps) {
             <View style={styles.suggHeader}>
               <Ionicons name="sparkles" size={16} color={tint} />
               <Text style={[styles.suggTitle, { color: text }]}>AI Suggestion</Text>
+              {priceSuggestion.marketStats && priceSuggestion.marketStats.totalListingsInArea > 0 && (
+                <Text style={[styles.marketBadge, { color: subtle }]}>
+                  based on {priceSuggestion.marketStats.totalListingsInArea} listings
+                </Text>
+              )}
             </View>
 
             <Text style={[styles.suggPrice, { color: text }]}>
@@ -104,20 +112,26 @@ export default function StepPricing({ form, updateField, colors }: StepProps) {
 
             <View style={[styles.rangeBar, { backgroundColor: `${tint}12` }]}>
               <Text style={[styles.rangeText, { color: subtle }]}>
-                Range: TZS {priceSuggestion.range?.min?.toLocaleString()} – {priceSuggestion.range?.max?.toLocaleString()}
+                Range: TZS {priceSuggestion.priceRange?.min?.toLocaleString()} – {priceSuggestion.priceRange?.max?.toLocaleString()}
               </Text>
             </View>
 
-            {priceSuggestion.reasoning && (
+            {priceSuggestion.marketStats?.averagePrice && (
               <Text style={[styles.suggReason, { color: subtle }]}>
-                {priceSuggestion.reasoning}
+                Area average: TZS {priceSuggestion.marketStats.averagePrice.toLocaleString()}/night
+              </Text>
+            )}
+
+            {priceSuggestion.priceReasoning && (
+              <Text style={[styles.suggReason, { color: subtle }]}>
+                {priceSuggestion.priceReasoning}
               </Text>
             )}
 
             <TouchableOpacity
               style={[styles.useBtn, { backgroundColor: tint }]}
               onPress={() => {
-                updateField('nightlyRate', priceSuggestion.suggestedPrice.toString());
+                updateField('nightlyRate', priceSuggestion.suggestedPrice!.toString());
                 setPriceSuggestion(null);
               }}
             >
@@ -206,6 +220,11 @@ const styles = StyleSheet.create({
   suggTitle: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  marketBadge: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginLeft: 'auto',
   },
   suggPrice: {
     fontSize: 24,

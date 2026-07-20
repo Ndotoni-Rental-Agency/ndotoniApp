@@ -9116,3 +9116,75 @@ export type OnPropertyUpdatedSubscription = {
     timestamp: string,
   } | null,
 };
+
+// ============================================
+// AI Suggestion Types (manually added)
+// ============================================
+
+export enum AISuggestionType {
+  TITLE = "TITLE",
+  DESCRIPTION = "DESCRIPTION",
+  PRICE = "PRICE",
+  CHECKIN_INSTRUCTIONS = "CHECKIN_INSTRUCTIONS",
+  ALL = "ALL",
+}
+
+export type AIPriceRange = {
+  __typename: "AIPriceRange",
+  min: number,
+  max: number,
+};
+
+export type AIMarketStats = {
+  __typename: "AIMarketStats",
+  totalListingsInArea: number,
+  averagePrice?: number | null,
+  medianPrice?: number | null,
+};
+
+export type AICheckinInstructions = {
+  __typename: "AICheckinInstructions",
+  directions?: string | null,
+  parkingInfo?: string | null,
+  additionalNotes?: string | null,
+  contactName?: string | null,
+};
+
+export type AISuggestionResult = {
+  __typename: "AISuggestionResult",
+  type: AISuggestionType,
+  title?: string | null,
+  description?: string | null,
+  suggestedPrice?: number | null,
+  priceRange?: AIPriceRange | null,
+  priceReasoning?: string | null,
+  checkinInstructions?: AICheckinInstructions | null,
+  existingTitlesInArea?: Array< string > | null,
+  marketStats?: AIMarketStats | null,
+};
+
+export type AISuggestionInput = {
+  type: AISuggestionType,
+  propertyType: string,
+  stayCategories?: Array< string > | null,
+  region: string,
+  district: string,
+  maxGuests?: number | null,
+  bedrooms?: number | null,
+  bathrooms?: number | null,
+  amenities?: Array< string > | null,
+  images?: Array< string > | null,
+  currency?: string | null,
+  nightlyRate?: number | null,
+  title?: string | null,
+  userContext?: string | null,
+  language?: string | null,
+};
+
+export type GenerateAISuggestionMutationVariables = {
+  input: AISuggestionInput,
+};
+
+export type GenerateAISuggestionMutation = {
+  generateAISuggestion: AISuggestionResult,
+};
