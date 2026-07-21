@@ -210,7 +210,8 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
             </TouchableOpacity>
 
-            {/* Facebook Sign In */}
+            {/* Facebook Sign In - disabled until Consumer app is created */}
+            {process.env.EXPO_PUBLIC_ENABLE_FACEBOOK_SIGNIN === 'true' && (
             <TouchableOpacity
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
               onPress={handleFacebookSignIn}
@@ -218,6 +219,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
               <Ionicons name="logo-facebook" size={20} color="#1877F2" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Facebook</Text>
             </TouchableOpacity>
+            )}
 
             {/* Divider */}
             <View style={styles.divider}>
