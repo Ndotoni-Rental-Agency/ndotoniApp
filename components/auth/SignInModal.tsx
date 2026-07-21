@@ -144,6 +144,17 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
     }
   };
 
+  const handleFacebookSignIn = async () => {
+    setIsSocialLoading(true);
+    try {
+      await signInWithSocial('facebook');
+      onClose();
+    } catch (error: any) {
+      setIsSocialLoading(false);
+      Alert.alert('Error', error.message || 'Facebook sign in failed');
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -197,6 +208,15 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
             >
               <Ionicons name="logo-apple" size={20} color={textColor} />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
+            </TouchableOpacity>
+
+            {/* Facebook Sign In */}
+            <TouchableOpacity
+              style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              onPress={handleFacebookSignIn}
+            >
+              <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+              <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Facebook</Text>
             </TouchableOpacity>
 
             {/* Divider */}
