@@ -20,6 +20,7 @@ import {
   getCurrentUser as oidcGetCurrentUser,
   getIdToken as oidcGetIdToken,
   isAuthenticated as oidcIsAuthenticated,
+  signInWithApple as oidcSignInWithApple,
   signInWithFacebook as oidcSignInWithFacebook,
   signInWithGoogle as oidcSignInWithGoogle,
   signOutWithRedirect as oidcSignOut
@@ -105,6 +106,14 @@ export class HybridAuthService {
   static async signInWithFacebook() {
     this.currentAuthMethod = 'oidc';
     await oidcSignInWithFacebook();
+  }
+
+  /**
+   * Sign in with Apple (OIDC)
+   */
+  static async signInWithApple() {
+    this.currentAuthMethod = 'oidc';
+    await oidcSignInWithApple();
   }
 
   /**

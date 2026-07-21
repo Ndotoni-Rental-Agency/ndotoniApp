@@ -547,6 +547,46 @@ export async function signInWithFacebook(): Promise<void> {
   }
 }
 
+/**
+ * Sign in with Apple (via Cognito Hosted UI)
+ */
+export async function signInWithApple(): Promise<void> {
+  try {
+    // Generate state and store it
+    const state = generateState();
+    const stateStore = new AsyncStorageStore('oidc.state.');
+    await stateStore.set(state, {
+      created: Date.now(),
+      request_type: 'signin:SignInWithApple'
+    });
+
+    // Build authorization URL manually
+    const authUrl = buildAuthUrl('SignInWithApple', { state });
+
+    console.log('[OIDC] Opening Apple sign-in:', authUrl);
+
+    // Open browser with the authorization URL
+    const result = await WebBrowser.openAuthSessionAsync(
+      authUrl,
+      oidcConfig.redirect_uri
+    );
+
+    console.log('[OIDC] Browser result:', result);
+
+    if (result.type === 'success' && result.url) {
+      await handleAuthCallback(result.url);
+    } else if (result.type === 'cancel' || result.type === 'dismiss') {
+      if (Platform.OS === 'ios') {
+        throw new Error('Apple sign-in cancelled');
+      }
+      console.log('[OIDC] Browser dismissed on Android — callback route will handle auth');
+    }
+  } catch (error) {
+    console.error('Apple sign-in error:', error);
+    throw error;
+  }
+}
+
 // Set up deep linking listener for OAuth callbacks
 export function setupDeepLinking(onAuthCallback: (url: string) => void) {
   // Handle initial URL (app opened from deep link)

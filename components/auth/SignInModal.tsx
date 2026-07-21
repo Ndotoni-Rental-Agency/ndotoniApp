@@ -133,6 +133,17 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setIsSocialLoading(true);
+    try {
+      await signInWithSocial('apple');
+      onClose();
+    } catch (error: any) {
+      setIsSocialLoading(false);
+      Alert.alert('Error', error.message || 'Apple sign in failed');
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -177,6 +188,15 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            {/* Apple Sign In */}
+            <TouchableOpacity
+              style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              onPress={handleAppleSignIn}
+            >
+              <Ionicons name="logo-apple" size={20} color={textColor} />
+              <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
             </TouchableOpacity>
 
             {/* Divider */}
