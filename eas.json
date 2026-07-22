@@ -39,7 +39,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./secrets/google-service-account.json",
+        "serviceAccountKeyPath": "./chatbox-c9b6d-50a01241daff.json",
         "track": "internal"
       },
       "ios": {

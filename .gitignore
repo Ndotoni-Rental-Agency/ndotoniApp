@@ -49,3 +49,6 @@ app-example
 
 # Firebase service account key (private)
 ndotoni-6c29c-firebase-adminsdk-*.json
+
+# Google Play service account key (private)
+chatbox-c9b6d-*.json

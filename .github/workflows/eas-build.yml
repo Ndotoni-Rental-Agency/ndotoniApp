@@ -34,13 +34,19 @@ jobs:
       - name: Build iOS & Android
         run: eas build --platform all --profile production --non-interactive
 
+      - name: Write Google Play service account key
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY != '' }}
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
+        run: echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_KEY" > ./chatbox-c9b6d-50a01241daff.json
+
       - name: Submit to App Store (iOS)
         env:
           EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: eas submit --platform ios --profile production --latest --non-interactive
 
       - name: Submit to Google Play (Android)
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY != '' }}
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY != '' }}
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
         run: eas submit --platform android --profile production --latest --non-interactive

@@ -1,0 +1,6 @@
+# Service account keys (only needed for eas submit, not build)
+chatbox-c9b6d-*.json
+ndotoni-6c29c-firebase-adminsdk-*.json
+
+# Apple private key
+*.p8
