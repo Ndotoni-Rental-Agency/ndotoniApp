@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,8 +19,10 @@ export default function TabLayout() {
   const activeColor = Colors[colorScheme ?? 'light'].tint;
 
   return (
-    <Tabs
-      screenOptions={{
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Tabs
+        screenOptions={{
         tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: inactiveColor,
         headerShown: false,
@@ -91,6 +94,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }
 

@@ -23,6 +23,7 @@ import { Audio } from 'expo-av';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,7 +32,6 @@ import {
   Dimensions,
   Modal,
   Share,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -171,7 +171,7 @@ export default function ShortTermPropertyDetailsScreen() {
 
   return (
     <View style={[styles.fill, { backgroundColor: bg }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" />
 
       {/* ─── ANIMATED HEADER (shows on scroll) ─── */}
       <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, paddingTop: insets.top, backgroundColor: card, borderBottomColor: border }]}>
