@@ -3,6 +3,8 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChatDeletion } from '@/hooks/useChatDeletion';
 import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscription';
 import { ChatMessage } from '@/lib/API';
+import ReportModal from '@/components/moderation/ReportModal';
+import BlockUserModal from '@/components/moderation/BlockUserModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -50,6 +52,8 @@ export default function ConversationScreen() {
   const [messageText, setMessageText] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const draftApplied = useRef(false);
 
@@ -117,6 +121,18 @@ export default function ConversationScreen() {
       }, 100);
     }
   }, [messages]);
+
+  const handleShowModerationMenu = () => {
+    Alert.alert(
+      conversation?.otherPartyName || 'User',
+      'What would you like to do?',
+      [
+        { text: 'Report User', onPress: () => setShowReportModal(true) },
+        { text: 'Block User', style: 'destructive', onPress: () => setShowBlockModal(true) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   const handleSend = async () => {
     if (!messageText.trim() || !decodedId) return;
@@ -366,6 +382,12 @@ export default function ConversationScreen() {
                 </Text>
               )}
             </View>
+            <TouchableOpacity
+              onPress={handleShowModerationMenu}
+              style={styles.backButton}
+            >
+              <Ionicons name="ellipsis-vertical" size={22} color={textColor} />
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -434,6 +456,23 @@ export default function ConversationScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Report User Modal */}
+      <ReportModal
+        visible={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetType="user"
+        targetId={decodedId || ''}
+        targetName={conversation?.otherPartyName}
+      />
+
+      {/* Block User Modal */}
+      <BlockUserModal
+        visible={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        userName={conversation?.otherPartyName || 'this user'}
+        userId={decodedId || ''}
+      />
     </SafeAreaView>
   );
 }

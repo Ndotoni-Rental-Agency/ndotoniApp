@@ -32,6 +32,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -58,6 +59,11 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
 
     if (password.length < 8) {
       Alert.alert('Error', 'Password must be at least 8 characters');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      Alert.alert('Terms Required', 'Please agree to the Terms of Service and Privacy Policy to create an account.');
       return;
     }
 
@@ -125,6 +131,17 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
     }
   };
 
+  const handleAppleSignUp = async () => {
+    setIsSocialLoading(true);
+    try {
+      await signUpWithSocial('apple');
+      onClose();
+    } catch (error: any) {
+      setIsSocialLoading(false);
+      Alert.alert('Error', error.message || 'Apple sign up failed');
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -169,6 +186,15 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            {/* Apple Sign Up */}
+            <TouchableOpacity
+              style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              onPress={handleAppleSignUp}
+            >
+              <Ionicons name="logo-apple" size={20} color={textColor} />
+              <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
             </TouchableOpacity>
 
             {/* Divider */}
@@ -259,13 +285,28 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
               </View>
             </View>
 
-            {/* Terms */}
-            <Text style={[styles.termsText, { color: placeholderColor }]}>
-              By signing up, you agree to our{' '}
-              <Text style={[styles.termsLink, { color: tintColor }]}>Terms of Service</Text>
-              {' '}and{' '}
-              <Text style={[styles.termsLink, { color: tintColor }]}>Privacy Policy</Text>
-            </Text>
+            {/* Terms Agreement Checkbox */}
+            <TouchableOpacity
+              style={styles.termsRow}
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.checkbox,
+                { borderColor: agreedToTerms ? tintColor : borderColor },
+                agreedToTerms && { backgroundColor: tintColor },
+              ]}>
+                {agreedToTerms && (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+              <Text style={[styles.termsText, { color: placeholderColor }]}>
+                I agree to the{' '}
+                <Text style={[styles.termsLink, { color: tintColor }]}>Terms of Service</Text>
+                {' '}and{' '}
+                <Text style={[styles.termsLink, { color: tintColor }]}>Privacy Policy</Text>
+              </Text>
+            </TouchableOpacity>
 
             {/* Sign Up Button */}
             <TouchableOpacity
@@ -392,10 +433,25 @@ const styles = StyleSheet.create({
   eyeIcon: {
     paddingHorizontal: 16,
   },
-  termsText: {
-    fontSize: 12,
-    textAlign: 'center',
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 24,
+    paddingHorizontal: 2,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 1,
+  },
+  termsText: {
+    fontSize: 13,
+    flex: 1,
     lineHeight: 18,
   },
   termsLink: {

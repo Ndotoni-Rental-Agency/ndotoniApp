@@ -9,6 +9,7 @@ import PropertyLocation from '@/components/property/PropertyLocation';
 import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyRules from '@/components/property/PropertyRules';
 import ReservationModal from '@/components/property/ReservationModal';
+import ReportModal from '@/components/moderation/ReportModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
@@ -53,6 +54,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const { property, loading, error, retry } = useShortTermPropertyDetail(propertyId);
   const { coordinates } = usePropertyGeocode(property);
@@ -217,6 +219,9 @@ export default function ShortTermPropertyDetailsScreen() {
                 <Ionicons name="share-outline" size={20} color="#fff" />
               </TouchableOpacity>
               <FavoriteButton propertyId={propertyId} size={20} style={styles.navBtn} />
+              <TouchableOpacity style={styles.navBtn} onPress={() => setShowReport(true)}>
+                <Ionicons name="flag-outline" size={18} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -482,6 +487,15 @@ export default function ShortTermPropertyDetailsScreen() {
         onClose={() => setShowSignUp(false)}
         onSwitchToSignIn={() => { setShowSignUp(false); setShowSignIn(true); }}
         onNeedsVerification={() => {}}
+      />
+
+      {/* Report Property Modal */}
+      <ReportModal
+        visible={showReport}
+        onClose={() => setShowReport(false)}
+        targetType="property"
+        targetId={propertyId}
+        targetName={property?.title}
       />
     </View>
   );
