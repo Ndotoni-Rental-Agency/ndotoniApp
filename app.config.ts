@@ -25,6 +25,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           "This app needs access to your location to find stays near you and set property coordinates.",
         NSLocationAlwaysAndWhenInUseUsageDescription:
           "This app needs access to your location to find stays near you and set property coordinates.",
+        NSCameraUsageDescription:
+          "Ndotoni Stays uses your camera to take photos of your property when creating or editing a listing, for example to capture room photos or exterior views.",
+        NSPhotoLibraryUsageDescription:
+          "Ndotoni Stays accesses your photo library so you can select existing photos of your property to upload when creating or editing a listing.",
       },
     },
     android: {
