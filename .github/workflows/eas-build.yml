@@ -6,8 +6,29 @@ on:
       - 'v*'
 
 jobs:
-  build:
-    name: Build & Submit to Stores
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run type-check
+
+  ios:
+    name: Build & Submit iOS
+    needs: typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,25 +49,44 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Type check
-        run: pnpm run type-check
+      - name: Build iOS
+        run: eas build --platform ios --profile production --non-interactive
 
-      - name: Build iOS & Android
-        run: eas build --platform all --profile production --non-interactive
-
-      - name: Write Google Play service account key
-        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY != '' }}
-        env:
-          GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
-        run: echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_KEY" > ./chatbox-c9b6d-50a01241daff.json
-
-      - name: Submit to App Store (iOS)
+      - name: Submit to App Store
         env:
           EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: eas submit --platform ios --profile production --latest --non-interactive
 
-      - name: Submit to Google Play (Android)
-        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY != '' }}
+  android:
+    name: Build & Submit Android
+    needs: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Android
+        run: eas build --platform android --profile production --non-interactive
+
+      - name: Write Google Play service account key
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
+        run: echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_KEY" > ./chatbox-c9b6d-50a01241daff.json
+
+      - name: Submit to Google Play
         run: eas submit --platform android --profile production --latest --non-interactive
