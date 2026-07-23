@@ -2231,6 +2231,7 @@ export const getUserConversations = /* GraphQL */ `query GetUserConversations {
     id
     lastMessage
     lastMessageTime
+    otherPartyId
     otherPartyImage
     otherPartyName
     propertyTitle
@@ -4091,4 +4092,32 @@ export const searchShortTermProperties = /* GraphQL */ `query SearchShortTermPro
 ` as GeneratedQuery<
   APITypes.SearchShortTermPropertiesQueryVariables,
   APITypes.SearchShortTermPropertiesQuery
+>;
+
+// ─── Trust & Safety: reports & blocks ──────────────────────────────────────
+
+export const listBlockedUsers = /* GraphQL */ `query ListBlockedUsers {
+  listBlockedUsers {
+    userId
+    userName
+    blockedAt
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListBlockedUsersQueryVariables,
+  APITypes.ListBlockedUsersQuery
+>;
+
+export const checkUserBlockStatus = /* GraphQL */ `query CheckUserBlockStatus($userId: ID!) {
+  checkUserBlockStatus(userId: $userId) {
+    hasBlocked
+    isBlockedBy
+    canMessage
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.CheckUserBlockStatusQueryVariables,
+  APITypes.CheckUserBlockStatusQuery
 >;

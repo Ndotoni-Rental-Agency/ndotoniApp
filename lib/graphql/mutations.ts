@@ -1551,6 +1551,7 @@ export const markAsRead = /* GraphQL */ `mutation MarkAsRead($conversationId: St
     id
     lastMessage
     lastMessageTime
+    otherPartyId
     otherPartyImage
     otherPartyName
     propertyTitle
@@ -3083,4 +3084,54 @@ export const generateAISuggestion = /* GraphQL */ `mutation GenerateAISuggestion
 ` as GeneratedMutation<
   APITypes.GenerateAISuggestionMutationVariables,
   APITypes.GenerateAISuggestionMutation
+>;
+
+// ─── Trust & Safety: reports & blocks ──────────────────────────────────────
+
+export const reportProperty = /* GraphQL */ `mutation ReportProperty($input: ReportPropertyInput!) {
+  reportProperty(input: $input) {
+    success
+    message
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ReportPropertyMutationVariables,
+  APITypes.ReportPropertyMutation
+>;
+
+export const reportUser = /* GraphQL */ `mutation ReportUser($input: ReportUserInput!) {
+  reportUser(input: $input) {
+    success
+    message
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ReportUserMutationVariables,
+  APITypes.ReportUserMutation
+>;
+
+export const blockUser = /* GraphQL */ `mutation BlockUser($input: BlockUserInput!) {
+  blockUser(input: $input) {
+    success
+    message
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.BlockUserMutationVariables,
+  APITypes.BlockUserMutation
+>;
+
+export const unblockUser = /* GraphQL */ `mutation UnblockUser($userId: ID!) {
+  unblockUser(userId: $userId) {
+    success
+    message
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UnblockUserMutationVariables,
+  APITypes.UnblockUserMutation
 >;
