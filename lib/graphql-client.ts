@@ -67,7 +67,7 @@ async function executeGraphQLRequest<T>(
     // Get token from hybrid auth service (works for both Amplify and OIDC)
     const token = await getAccessToken();
     if (!token) {
-      throw new Error('No authentication token available');
+      throw new Error('Please sign in to continue.');
     }
     headers['Authorization'] = token;
     
@@ -97,7 +97,9 @@ async function executeGraphQLRequest<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // Don't expose HTTP status codes to users - log for debugging only
+    console.error('[GraphQLClient] HTTP error:', response.status);
+    throw new Error('Something went wrong. Please try again.');
   }
 
   const result = await response.json();
@@ -105,7 +107,9 @@ async function executeGraphQLRequest<T>(
   if (result.errors && result.errors.length > 0) {
     const error = result.errors[0];
     console.error('[GraphQLClient] GraphQL errors:', result.errors);
-    throw new Error(error.message || 'GraphQL request failed');
+    // The backend now sanitizes error messages via NdotoniError.
+    // Messages from the API are already user-safe, so we pass them through.
+    throw new Error(error.message || 'Something went wrong. Please try again.');
   }
 
   return result.data as T;
@@ -161,13 +165,13 @@ export class GraphQLClient {
       // Check if user is authenticated (checks both Amplify and OIDC)
       const isAuth = await HybridAuthService.isAuthenticated();
       if (!isAuth) {
-        throw new Error('User not authenticated');
+        throw new Error('Please sign in to continue.');
       }
 
       // Get access token from current auth method
       const accessToken = await HybridAuthService.getAccessToken();
       if (!accessToken) {
-        throw new Error('No valid authentication token');
+        throw new Error('Please sign in to continue.');
       }
 
       // Determine auth method for logging

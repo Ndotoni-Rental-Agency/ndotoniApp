@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ForgotPasswordModalProps {
   visible: boolean;
@@ -62,7 +63,7 @@ export default function ForgotPasswordModal({
         ]
       );
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send reset code');
+      Alert.alert('Error', getSafeErrorMessage(error, 'sending reset code'));
     } finally {
       setIsSubmitting(false);
     }

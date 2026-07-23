@@ -53,6 +53,7 @@ class ErrorBoundaryClass extends Component<Props & { onReset: () => void; colorS
           </Text>
           {__DEV__ && this.state.error && (
             <View style={[styles.errorBox, { backgroundColor: buttonBg, borderColor: border }]}>
+              <Text style={[styles.errorLabel, { color: subtext }]}>Debug info (dev only):</Text>
               <Text style={[styles.errorText, { color: subtext }]} numberOfLines={4}>
                 {this.state.error.message}
               </Text>
@@ -114,6 +115,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     width: '100%',
+  },
+  errorLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   errorText: {
     fontSize: 12,

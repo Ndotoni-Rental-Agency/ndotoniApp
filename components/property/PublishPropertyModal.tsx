@@ -3,6 +3,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { UpdatePropertyInput } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { publishProperty, updateProperty } from '@/lib/graphql/mutations';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -94,7 +95,7 @@ export default function PublishPropertyModal({
       }
     } catch (error) {
       console.error('Publish failed:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to publish property');
+      Alert.alert('Error', getSafeErrorMessage(error, 'publishing your property'));
     } finally {
       setIsPublishing(false);
     }

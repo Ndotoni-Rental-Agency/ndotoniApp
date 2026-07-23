@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -113,8 +114,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
         }
       } else {
         // Show user-friendly error message
-        const errorMessage = error?.message || error?.toString() || 'An error occurred during sign in';
-        Alert.alert('Sign In Error', errorMessage);
+        Alert.alert('Sign In Error', getSafeErrorMessage(error, 'signing in'));
       }
     } finally {
       setIsSubmitting(false);
@@ -129,7 +129,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', error.message || 'Google sign in failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Google'));
     }
   };
 
@@ -140,7 +140,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', error.message || 'Apple sign in failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Apple'));
     }
   };
 
@@ -151,7 +151,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', error.message || 'Facebook sign in failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Facebook'));
     }
   };
 

@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ResetPasswordModalProps {
   visible: boolean;
@@ -80,7 +81,7 @@ export default function ResetPasswordModal({
         ]
       );
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Password reset failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'resetting your password'));
     } finally {
       setIsSubmitting(false);
     }

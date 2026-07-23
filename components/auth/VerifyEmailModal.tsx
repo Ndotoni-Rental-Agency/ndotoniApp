@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface VerifyEmailModalProps {
   visible: boolean;
@@ -65,7 +66,7 @@ export default function VerifyEmailModal({
         ]
       );
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Verification failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'verifying your email'));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,7 +78,7 @@ export default function VerifyEmailModal({
       await resendVerificationCode(email);
       Alert.alert('Success', 'Verification code sent to your email');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to resend code');
+      Alert.alert('Error', getSafeErrorMessage(error, 'resending verification code'));
     } finally {
       setIsResending(false);
     }

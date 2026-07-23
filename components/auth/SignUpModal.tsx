@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -112,7 +113,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
         // Show user-friendly error message
         Alert.alert(
           'Sign Up Error', 
-          error?.message || 'An error occurred during sign up. Please try again.'
+          getSafeErrorMessage(error, 'creating your account')
         );
       }
     } finally {
@@ -127,7 +128,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', error.message || 'Google sign up failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'signing up with Google'));
     }
   };
 
@@ -138,7 +139,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', error.message || 'Apple sign up failed');
+      Alert.alert('Error', getSafeErrorMessage(error, 'signing up with Apple'));
     }
   };
 
