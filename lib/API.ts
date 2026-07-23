@@ -915,6 +915,7 @@ export type Conversation = {
   id: string,
   lastMessage: string,
   lastMessageTime: string,
+  otherPartyId: string,
   otherPartyImage?: string | null,
   otherPartyName: string,
   propertyTitle: string,
@@ -1135,8 +1136,92 @@ export enum InquiryType {
   GENERAL = "GENERAL",
   PARTNERSHIP = "PARTNERSHIP",
   PROPERTY = "PROPERTY",
+  PROPERTY_REPORT = "PROPERTY_REPORT",
   SUPPORT = "SUPPORT",
+  USER_BLOCK = "USER_BLOCK",
+  USER_REPORT = "USER_REPORT",
 }
+
+export type ReportPropertyInput = {
+  details?: string | null,
+  propertyId: string,
+  propertyTitle?: string | null,
+  reason: string,
+};
+
+export type ReportUserInput = {
+  details?: string | null,
+  reason: string,
+  userId: string,
+  userName?: string | null,
+};
+
+export type BlockUserInput = {
+  reason?: string | null,
+  userId: string,
+  userName?: string | null,
+};
+
+export type BlockedUser = {
+  __typename: "BlockedUser",
+  blockedAt: string,
+  userId: string,
+  userName?: string | null,
+};
+
+export type BlockStatus = {
+  __typename: "BlockStatus",
+  canMessage: boolean,
+  hasBlocked: boolean,
+  isBlockedBy: boolean,
+};
+
+export type ReportPropertyMutationVariables = {
+  input: ReportPropertyInput,
+};
+
+export type ReportPropertyMutation = {
+  reportProperty: SuccessResponse,
+};
+
+export type ReportUserMutationVariables = {
+  input: ReportUserInput,
+};
+
+export type ReportUserMutation = {
+  reportUser: SuccessResponse,
+};
+
+export type BlockUserMutationVariables = {
+  input: BlockUserInput,
+};
+
+export type BlockUserMutation = {
+  blockUser: SuccessResponse,
+};
+
+export type UnblockUserMutationVariables = {
+  userId: string,
+};
+
+export type UnblockUserMutation = {
+  unblockUser: SuccessResponse,
+};
+
+export type ListBlockedUsersQueryVariables = {
+};
+
+export type ListBlockedUsersQuery = {
+  listBlockedUsers: Array< BlockedUser >,
+};
+
+export type CheckUserBlockStatusQueryVariables = {
+  userId: string,
+};
+
+export type CheckUserBlockStatusQuery = {
+  checkUserBlockStatus: BlockStatus,
+};
 
 
 export type ContactInquiryResponse = {

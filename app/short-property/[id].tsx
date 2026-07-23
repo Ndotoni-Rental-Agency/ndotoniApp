@@ -15,6 +15,8 @@ import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { reportProperty as reportPropertyMutation } from '@/lib/graphql/mutations';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
@@ -120,6 +122,25 @@ export default function ShortTermPropertyDetailsScreen() {
     setGalleryVisible(true);
   };
 
+  const handleOpenReport = () => {
+    if (!isAuthenticated) {
+      setShowSignIn(true);
+      return;
+    }
+    setShowReport(true);
+  };
+
+  const handleReportProperty = async (reason: string, details: string) => {
+    await GraphQLClient.executeAuthenticated(reportPropertyMutation, {
+      input: {
+        propertyId,
+        propertyTitle: property?.title,
+        reason,
+        details: details || undefined,
+      },
+    });
+  };
+
   // ─── LOADING STATE ─────────────────────────────────────
   if (loading) {
     return (
@@ -219,7 +240,7 @@ export default function ShortTermPropertyDetailsScreen() {
                 <Ionicons name="share-outline" size={20} color="#fff" />
               </TouchableOpacity>
               <FavoriteButton propertyId={propertyId} size={20} style={styles.navBtn} />
-              <TouchableOpacity style={styles.navBtn} onPress={() => setShowReport(true)}>
+              <TouchableOpacity style={styles.navBtn} onPress={handleOpenReport}>
                 <Ionicons name="flag-outline" size={18} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -496,6 +517,7 @@ export default function ShortTermPropertyDetailsScreen() {
         targetType="property"
         targetId={propertyId}
         targetName={property?.title}
+        onSubmit={handleReportProperty}
       />
     </View>
   );
