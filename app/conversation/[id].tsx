@@ -3,6 +3,8 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChatDeletion } from '@/hooks/useChatDeletion';
 import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscription';
 import { ChatMessage } from '@/lib/API';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { reportUser as reportUserMutation, blockUser as blockUserMutation } from '@/lib/graphql/mutations';
 import ReportModal from '@/components/moderation/ReportModal';
 import BlockUserModal from '@/components/moderation/BlockUserModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -121,6 +123,34 @@ export default function ConversationScreen() {
       }, 100);
     }
   }, [messages]);
+
+  const handleReportUser = async (reason: string, details: string) => {
+    if (!conversation?.otherPartyId) {
+      throw new Error('Unable to identify this user.');
+    }
+    await GraphQLClient.executeAuthenticated(reportUserMutation, {
+      input: {
+        userId: conversation.otherPartyId,
+        userName: conversation.otherPartyName,
+        reason,
+        details: details || undefined,
+      },
+    });
+  };
+
+  const handleBlockUser = async () => {
+    if (!conversation?.otherPartyId) {
+      throw new Error('Unable to identify this user.');
+    }
+    await GraphQLClient.executeAuthenticated(blockUserMutation, {
+      input: {
+        userId: conversation.otherPartyId,
+        userName: conversation.otherPartyName,
+      },
+    });
+    // Refresh conversations — the blocked conversation should disappear from the list
+    await loadConversations();
+  };
 
   const handleShowModerationMenu = () => {
     Alert.alert(
@@ -462,8 +492,9 @@ export default function ConversationScreen() {
         visible={showReportModal}
         onClose={() => setShowReportModal(false)}
         targetType="user"
-        targetId={decodedId || ''}
+        targetId={conversation?.otherPartyId || ''}
         targetName={conversation?.otherPartyName}
+        onSubmit={handleReportUser}
       />
 
       {/* Block User Modal */}
@@ -471,7 +502,8 @@ export default function ConversationScreen() {
         visible={showBlockModal}
         onClose={() => setShowBlockModal(false)}
         userName={conversation?.otherPartyName || 'this user'}
-        userId={decodedId || ''}
+        userId={conversation?.otherPartyId || ''}
+        onBlock={handleBlockUser}
       />
     </SafeAreaView>
   );

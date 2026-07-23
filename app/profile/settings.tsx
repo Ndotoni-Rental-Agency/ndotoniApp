@@ -206,6 +206,19 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={[styles.settingItem, { backgroundColor: cardBg, borderColor }]}
+              onPress={() => router.push('/profile/blocked-users' as any)}
+            >
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: `${tint}20` }]}>
+                  <Ionicons name="ban-outline" size={22} color={tint} />
+                </View>
+                <Text style={[styles.settingLabel, { color: text }]}>Blocked Users</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={secondaryText} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.settingItem, { backgroundColor: cardBg, borderColor }]}
               onPress={handleSignOut}
             >
               <View style={styles.settingLeft}>
