@@ -915,7 +915,6 @@ export type Conversation = {
   id: string,
   lastMessage: string,
   lastMessageTime: string,
-  otherPartyId: string,
   otherPartyImage?: string | null,
   otherPartyName: string,
   propertyTitle: string,
@@ -1150,22 +1149,20 @@ export type ReportPropertyInput = {
 };
 
 export type ReportUserInput = {
+  conversationId: string,
   details?: string | null,
   reason: string,
-  userId: string,
-  userName?: string | null,
 };
 
 export type BlockUserInput = {
+  conversationId: string,
   reason?: string | null,
-  userId: string,
-  userName?: string | null,
 };
 
 export type BlockedUser = {
   __typename: "BlockedUser",
+  blockId: string,
   blockedAt: string,
-  userId: string,
   userName?: string | null,
 };
 
@@ -1201,7 +1198,7 @@ export type BlockUserMutation = {
 };
 
 export type UnblockUserMutationVariables = {
-  userId: string,
+  blockId: string,
 };
 
 export type UnblockUserMutation = {
@@ -1215,12 +1212,12 @@ export type ListBlockedUsersQuery = {
   listBlockedUsers: Array< BlockedUser >,
 };
 
-export type CheckUserBlockStatusQueryVariables = {
-  userId: string,
+export type CheckConversationBlockStatusQueryVariables = {
+  conversationId: string,
 };
 
-export type CheckUserBlockStatusQuery = {
-  checkUserBlockStatus: BlockStatus,
+export type CheckConversationBlockStatusQuery = {
+  checkConversationBlockStatus: BlockStatus,
 };
 
 

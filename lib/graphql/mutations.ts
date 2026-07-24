@@ -1551,7 +1551,6 @@ export const markAsRead = /* GraphQL */ `mutation MarkAsRead($conversationId: St
     id
     lastMessage
     lastMessageTime
-    otherPartyId
     otherPartyImage
     otherPartyName
     propertyTitle
@@ -3124,8 +3123,8 @@ export const blockUser = /* GraphQL */ `mutation BlockUser($input: BlockUserInpu
   APITypes.BlockUserMutation
 >;
 
-export const unblockUser = /* GraphQL */ `mutation UnblockUser($userId: ID!) {
-  unblockUser(userId: $userId) {
+export const unblockUser = /* GraphQL */ `mutation UnblockUser($blockId: ID!) {
+  unblockUser(blockId: $blockId) {
     success
     message
     __typename

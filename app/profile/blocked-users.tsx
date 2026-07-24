@@ -57,10 +57,10 @@ export default function BlockedUsersScreen() {
         {
           text: 'Unblock',
           onPress: async () => {
-            setUnblockingId(user.userId);
+            setUnblockingId(user.blockId);
             try {
-              await GraphQLClient.executeAuthenticated(unblockUserMutation, { userId: user.userId });
-              setBlockedUsers(prev => prev.filter(u => u.userId !== user.userId));
+              await GraphQLClient.executeAuthenticated(unblockUserMutation, { blockId: user.blockId });
+              setBlockedUsers(prev => prev.filter(u => u.blockId !== user.blockId));
             } catch (error) {
               Alert.alert('Error', 'Failed to unblock user. Please try again.');
             } finally {
@@ -83,9 +83,9 @@ export default function BlockedUsersScreen() {
       <TouchableOpacity
         style={styles.unblockButton}
         onPress={() => handleUnblock(item)}
-        disabled={unblockingId === item.userId}
+        disabled={unblockingId === item.blockId}
       >
-        {unblockingId === item.userId ? (
+        {unblockingId === item.blockId ? (
           <ActivityIndicator size="small" color={tint} />
         ) : (
           <Text style={[styles.unblockText, { color: tint }]}>Unblock</Text>
@@ -111,7 +111,7 @@ export default function BlockedUsersScreen() {
       ) : (
         <FlatList
           data={blockedUsers}
-          keyExtractor={(item) => item.userId}
+          keyExtractor={(item) => item.blockId}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           ListEmptyComponent={

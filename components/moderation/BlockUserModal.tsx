@@ -15,15 +15,13 @@ interface BlockUserModalProps {
   visible: boolean;
   onClose: () => void;
   userName: string;
-  userId: string;
-  onBlock?: (userId: string) => Promise<void>;
+  onBlock?: () => Promise<void>;
 }
 
 export default function BlockUserModal({
   visible,
   onClose,
   userName,
-  userId,
   onBlock,
 }: BlockUserModalProps) {
   const [isBlocking, setIsBlocking] = useState(false);
@@ -36,7 +34,7 @@ export default function BlockUserModal({
     setIsBlocking(true);
     try {
       if (onBlock) {
-        await onBlock(userId);
+        await onBlock();
       }
       Alert.alert(
         'User Blocked',

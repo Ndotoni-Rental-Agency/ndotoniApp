@@ -125,13 +125,12 @@ export default function ConversationScreen() {
   }, [messages]);
 
   const handleReportUser = async (reason: string, details: string) => {
-    if (!conversation?.otherPartyId) {
-      throw new Error('Unable to identify this user.');
+    if (!decodedId) {
+      throw new Error('Unable to identify this conversation.');
     }
     await GraphQLClient.executeAuthenticated(reportUserMutation, {
       input: {
-        userId: conversation.otherPartyId,
-        userName: conversation.otherPartyName,
+        conversationId: decodedId,
         reason,
         details: details || undefined,
       },
@@ -139,16 +138,14 @@ export default function ConversationScreen() {
   };
 
   const handleBlockUser = async () => {
-    if (!conversation?.otherPartyId) {
-      throw new Error('Unable to identify this user.');
+    if (!decodedId) {
+      throw new Error('Unable to identify this conversation.');
     }
     await GraphQLClient.executeAuthenticated(blockUserMutation, {
       input: {
-        userId: conversation.otherPartyId,
-        userName: conversation.otherPartyName,
+        conversationId: decodedId,
       },
     });
-    // Refresh conversations — the blocked conversation should disappear from the list
     await loadConversations();
   };
 
@@ -492,7 +489,7 @@ export default function ConversationScreen() {
         visible={showReportModal}
         onClose={() => setShowReportModal(false)}
         targetType="user"
-        targetId={conversation?.otherPartyId || ''}
+        targetId={decodedId}
         targetName={conversation?.otherPartyName}
         onSubmit={handleReportUser}
       />
@@ -502,7 +499,6 @@ export default function ConversationScreen() {
         visible={showBlockModal}
         onClose={() => setShowBlockModal(false)}
         userName={conversation?.otherPartyName || 'this user'}
-        userId={conversation?.otherPartyId || ''}
         onBlock={handleBlockUser}
       />
     </SafeAreaView>

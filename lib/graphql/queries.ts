@@ -2231,7 +2231,6 @@ export const getUserConversations = /* GraphQL */ `query GetUserConversations {
     id
     lastMessage
     lastMessageTime
-    otherPartyId
     otherPartyImage
     otherPartyName
     propertyTitle
@@ -4098,7 +4097,7 @@ export const searchShortTermProperties = /* GraphQL */ `query SearchShortTermPro
 
 export const listBlockedUsers = /* GraphQL */ `query ListBlockedUsers {
   listBlockedUsers {
-    userId
+    blockId
     userName
     blockedAt
     __typename
@@ -4109,8 +4108,8 @@ export const listBlockedUsers = /* GraphQL */ `query ListBlockedUsers {
   APITypes.ListBlockedUsersQuery
 >;
 
-export const checkUserBlockStatus = /* GraphQL */ `query CheckUserBlockStatus($userId: ID!) {
-  checkUserBlockStatus(userId: $userId) {
+export const checkConversationBlockStatus = /* GraphQL */ `query CheckConversationBlockStatus($conversationId: ID!) {
+  checkConversationBlockStatus(conversationId: $conversationId) {
     hasBlocked
     isBlockedBy
     canMessage
@@ -4118,6 +4117,6 @@ export const checkUserBlockStatus = /* GraphQL */ `query CheckUserBlockStatus($u
   }
 }
 ` as GeneratedQuery<
-  APITypes.CheckUserBlockStatusQueryVariables,
-  APITypes.CheckUserBlockStatusQuery
+  APITypes.CheckConversationBlockStatusQueryVariables,
+  APITypes.CheckConversationBlockStatusQuery
 >;
