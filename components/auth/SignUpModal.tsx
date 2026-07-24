@@ -7,6 +7,7 @@ import {
     ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
+    Linking,
     Modal,
     Platform,
     ScrollView,
@@ -29,7 +30,6 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -53,7 +53,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   }, [isAuthenticated, visible, isSocialLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignUp = async () => {
-    if (!email || !password || !firstName || !lastName || !phoneNumber) {
+    if (!email || !password || !firstName || !lastName) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -71,7 +71,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
     setIsSubmitting(true);
     try {
       console.log('[SignUpModal] Starting sign up for:', email);
-      const result = await signUp({ email, password, firstName, lastName, phoneNumber });
+      const result = await signUp({ email, password, firstName, lastName, phoneNumber: '+255700000000' });
       console.log('[SignUpModal] Sign up result:', result);
       
       if (result.requiresVerification) {
@@ -80,7 +80,6 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
         setPassword('');
         setFirstName('');
         setLastName('');
-        setPhoneNumber('');
         
         // Immediately redirect to verification
         onNeedsVerification(email);
@@ -231,19 +230,6 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
               </View>
             </View>
 
-            {/* Phone Input */}
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Phone Number</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                placeholder="+255 XXX XXX XXX"
-                placeholderTextColor={placeholderColor}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-              />
-            </View>
-
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Email</Text>
@@ -303,9 +289,9 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
               </View>
               <Text style={[styles.termsText, { color: placeholderColor }]}>
                 I agree to the{' '}
-                <Text style={[styles.termsLink, { color: tintColor }]}>Terms of Service</Text>
+                <Text style={[styles.termsLink, { color: tintColor }]} onPress={() => Linking.openURL('https://www.ndotoni.com/terms')}>Terms of Service</Text>
                 {' '}and{' '}
-                <Text style={[styles.termsLink, { color: tintColor }]}>Privacy Policy</Text>
+                <Text style={[styles.termsLink, { color: tintColor }]} onPress={() => Linking.openURL('https://www.ndotoni.com/privacy')}>Privacy Policy</Text>
               </Text>
             </TouchableOpacity>
 
