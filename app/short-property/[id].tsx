@@ -329,14 +329,14 @@ export default function ShortTermPropertyDetailsScreen() {
                     </Text>
                   </View>
                   <TouchableOpacity
-                    style={[styles.contactBtn, { borderColor: border }]}
+                    style={[styles.contactBtn, { backgroundColor: `${tint}15`, borderColor: tint }]}
                     onPress={handleContactHost}
                     disabled={chatLoading}
                   >
                     {chatLoading ? (
                       <ActivityIndicator size="small" color={tint} />
                     ) : (
-                      <Ionicons name="chatbubble-outline" size={16} color={tint} />
+                      <Ionicons name="chatbubble-ellipses" size={20} color={tint} />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   hostInitial: { fontSize: 22, fontWeight: '700' },
   hostedBy: { fontSize: 16, fontWeight: '600' },
   hostSub: { fontSize: 13, marginTop: 2 },
-  contactBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  contactBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   // Highlights
   highlightsSection: { paddingHorizontal: 20, paddingVertical: 20, gap: 14 },
