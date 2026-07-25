@@ -89,17 +89,28 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
     } finally { setActionLoading(null); }
   };
 
+  const handleDismissExpired = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await GraphQLClient.executeAuthenticated<any>(declineBooking, { bookingId: id, reason: 'Booking expired — check-in date passed' });
+      setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.DECLINED } : b));
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to dismiss');
+    } finally { setActionLoading(null); }
+  };
+
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const fmtPrice = (amt: number, cur: string) => `${cur === 'TZS' ? 'Tshs' : cur} ${amt.toLocaleString()}`;
 
-  const statusColor = (s: string) => {
+  const statusColor = (s: string, expired?: boolean) => {
+    if (s === 'PENDING' && expired) return '#6b7280';
     if (s === 'PENDING') return '#f59e0b';
     if (s === 'CONFIRMED') return tint;
     if (s === 'CANCELLED' || s === 'DECLINED') return '#ef4444';
     return subtle;
   };
 
-  const pendingCount = bookings.filter(b => b.status === 'PENDING').length;
+  const pendingCount = bookings.filter(b => b.status === 'PENDING' && b.checkInDate >= today).length;
   const today = new Date().toISOString().split('T')[0];
   const filteredBookings = bookings.filter(b => {
     if (timeFilter === 'upcoming') return b.checkOutDate >= today;
@@ -142,6 +153,8 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
           const guestName = b.guest?.firstName || b.guestName?.split(' ')[0] || 'Guest';
           const isProcessing = actionLoading === b.bookingId;
           const isPast = b.checkInDate < today;
+          const isExpired = b.status === 'PENDING' && isPast;
+          const displayStatus = isExpired ? 'EXPIRED' : b.status;
 
           return (
             <View key={b.bookingId} style={[styles.bookingCard, { backgroundColor: card, borderColor: border }]}>
@@ -150,8 +163,8 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
                 <View style={{ flex: 1 }}>
                   <View style={styles.bNameRow}>
                     <Text style={[styles.bName, { color: text }]}>{guestName}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: `${statusColor(b.status)}15` }]}>
-                      <Text style={[styles.statusText, { color: statusColor(b.status) }]}>{b.status}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${statusColor(b.status, isExpired)}15` }]}>
+                      <Text style={[styles.statusText, { color: statusColor(b.status, isExpired) }]}>{displayStatus}</Text>
                     </View>
                   </View>
                   {b.property?.title && <Text style={[styles.bProperty, { color: subtle }]}>{b.property.title}</Text>}
@@ -166,6 +179,18 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
               </View>
 
               {b.specialRequests && <Text style={[styles.bRequest, { color: subtle, borderColor: border }]}>"{b.specialRequests}"</Text>}
+
+              {/* Expired notice + dismiss */}
+              {isExpired && (
+                <View style={[styles.bActions, { borderTopColor: border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.expiredNote, { color: subtle }]}>Check-in date has passed. This booking can no longer be approved.</Text>
+                  </View>
+                  <TouchableOpacity style={[styles.dismissBtn, { borderColor: '#d1d5db' }]} onPress={() => handleDismissExpired(b.bookingId)} disabled={isProcessing}>
+                    <Text style={{ color: '#6b7280', fontSize: 13, fontWeight: '600' }}>{isProcessing ? '...' : 'Dismiss'}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {/* Actions for pending (only upcoming) */}
               {b.status === 'PENDING' && !isPast && (
@@ -241,4 +266,6 @@ const styles = StyleSheet.create({
   declineConfirmBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: '#ef4444' },
 
   messageBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  expiredNote: { fontSize: 12, lineHeight: 16 },
+  dismissBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, marginLeft: 8 },
 });
