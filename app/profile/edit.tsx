@@ -150,8 +150,8 @@ export default function EditProfileScreen() {
       } else {
         Alert.alert('Error', result.message);
       }
-    } catch {
-      Alert.alert('Error', 'Failed to update profile');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
     } finally {
       setSavingSection(null);
     }

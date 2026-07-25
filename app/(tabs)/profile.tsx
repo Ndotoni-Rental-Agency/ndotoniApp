@@ -127,9 +127,9 @@ export default function ProfileScreen() {
       } else {
         throw new Error(updateResult.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Profile] Error uploading profile picture:', error);
-      Alert.alert('Error', 'Failed to upload profile picture');
+      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
     } finally {
       setUploadingPhoto(false);
     }

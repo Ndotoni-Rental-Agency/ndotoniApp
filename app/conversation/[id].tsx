@@ -201,8 +201,8 @@ export default function ConversationScreen() {
               });
               setIsBlocked(false);
               setHasBlockedOther(false);
-            } catch (err) {
-              Alert.alert('Error', 'Failed to unblock user. Please try again.');
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
             }
           },
         },
@@ -230,9 +230,9 @@ export default function ConversationScreen() {
 
     try {
       await sendMessage(decodedId, text);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
       setMessageText(text); // Restore message on error
     }
   };

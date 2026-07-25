@@ -72,7 +72,7 @@ export default function ContactSupportModal({ visible, onClose }: ContactSupport
       onClose();
     } catch (err: any) {
       console.error('[ContactSupport] Error:', err);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

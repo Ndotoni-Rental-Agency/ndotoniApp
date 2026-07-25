@@ -145,7 +145,7 @@ export default function PropertyCalendarScreen() {
         clearSelection();
         await fetchBlockedDates(currentMonth);
       } else { Alert.alert('Error', res.blockDates?.message || 'Failed'); }
-    } catch { Alert.alert('Error', 'Failed to block dates'); }
+    } catch (err: any) { Alert.alert('Error', err?.message || 'Something went wrong. Please try again.'); }
     finally { setIsSaving(false); }
   };
 
@@ -161,7 +161,7 @@ export default function PropertyCalendarScreen() {
         clearSelection();
         await fetchBlockedDates(currentMonth);
       } else { Alert.alert('Error', res.unblockDates?.message || 'Failed'); }
-    } catch { Alert.alert('Error', 'Failed to unblock dates'); }
+    } catch (err: any) { Alert.alert('Error', err?.message || 'Something went wrong. Please try again.'); }
     finally { setIsSaving(false); }
   };
 

@@ -63,8 +63,8 @@ export default function BlockedUsersScreen() {
                 input: { conversationId: user.conversationId, action: 'UNBLOCK' },
               });
               setBlockedUsers(prev => prev.filter(u => u.blockId !== user.blockId));
-            } catch (error) {
-              Alert.alert('Error', 'Failed to unblock user. Please try again.');
+            } catch (error: any) {
+              Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
             } finally {
               setUnblockingId(null);
             }

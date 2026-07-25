@@ -95,8 +95,8 @@ export default function ReportModal({
       );
       setSelectedReason(null);
       setDetails('');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit report. Please try again.');
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

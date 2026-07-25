@@ -79,7 +79,7 @@ export default function PropertyContactSection({
           ].filter(Boolean) as any
         );
       } else {
-        Alert.alert('Error', 'Failed to start chat. Please try again or use WhatsApp.');
+        Alert.alert('Error', error?.message || 'Failed to start chat. Please try again.');
       }
     } finally {
       setIsInitializingChat(false);

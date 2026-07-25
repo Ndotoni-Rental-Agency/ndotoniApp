@@ -97,8 +97,19 @@ async function executeGraphQLRequest<T>(
   });
 
   if (!response.ok) {
-    // Don't expose HTTP status codes to users - log for debugging only
     console.error('[GraphQLClient] HTTP error:', response.status);
+    if (response.status === 401) {
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+    // Try to extract an error message from the response body
+    try {
+      const body = await response.json();
+      if (body?.errors?.[0]?.message) {
+        throw new Error(body.errors[0].message);
+      }
+    } catch (parseErr) {
+      // Ignore parse errors — fall through to generic
+    }
     throw new Error('Something went wrong. Please try again.');
   }
 
