@@ -9,12 +9,14 @@ interface TripCardProps {
   colors: TripColors;
   showPayButton?: boolean;
   showReviewButton?: boolean;
+  showCancelButton?: boolean;
   onPress: () => void;
   onPayPress?: () => void;
   onReviewPress?: () => void;
+  onCancelPress?: () => void;
 }
 
-export default function TripCard({ booking: b, colors, showPayButton, showReviewButton, onPress, onPayPress, onReviewPress }: TripCardProps) {
+export default function TripCard({ booking: b, colors, showPayButton, showReviewButton, showCancelButton, onPress, onPayPress, onReviewPress, onCancelPress }: TripCardProps) {
   const { text, tint, card, border, subtle } = colors;
   const img = b.property?.thumbnail || b.property?.images?.[0] || b.propertySnapshot?.thumbnail || b.propertySnapshot?.images?.[0];
   const title = b.property?.title || b.propertySnapshot?.title || 'Property';
@@ -70,6 +72,17 @@ export default function TripCard({ booking: b, colors, showPayButton, showReview
             <Text style={[s.reviewBtnText, { color: tint }]}>Leave a review</Text>
           </TouchableOpacity>
         )}
+
+        {showCancelButton && (
+          <TouchableOpacity
+            style={[s.cancelBtn, { borderColor: '#ef4444' }]}
+            onPress={(e) => { e.stopPropagation?.(); onCancelPress?.(); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+            <Text style={s.cancelBtnText}>Cancel booking</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -92,4 +105,6 @@ const s = StyleSheet.create({
   payBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   reviewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5 },
   reviewBtnText: { fontSize: 14, fontWeight: '700' },
+  cancelBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5 },
+  cancelBtnText: { fontSize: 14, fontWeight: '700', color: '#ef4444' },
 });

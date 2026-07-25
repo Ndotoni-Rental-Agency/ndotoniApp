@@ -7,11 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { listMyBookings } from '@/lib/graphql/queries';
+import { cancelBooking } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -109,6 +111,31 @@ export default function TripsScreen() {
 
   const handleRefresh = async () => { setRefreshing(true); await fetchBookings(); setRefreshing(false); };
 
+  const handleCancelBooking = (booking: Booking) => {
+    Alert.alert(
+      'Cancel Booking',
+      `Are you sure you want to cancel your booking at ${booking.property?.title || booking.propertySnapshot?.title || 'this property'}?`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Cancel Booking',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await GraphQLClient.executeAuthenticated<any>(cancelBooking, {
+                bookingId: booking.bookingId,
+                reason: 'Cancelled by guest',
+              });
+              await fetchBookings();
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Failed to cancel booking. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // ─── Not authenticated ───
   if (authLoading) return <View style={[s.fill, { backgroundColor: bg }]}><ActivityIndicator style={{ flex: 1 }} color={tint} /></View>;
 
@@ -154,12 +181,14 @@ export default function TripsScreen() {
           renderItem={({ item }) => {
             const needsPayment = item.status === 'CONFIRMED' && item.paymentStatus !== 'CAPTURED' && item.paymentStatus !== 'AUTHORIZED';
             const canReview = activeTab === 'past' && !item.hasReview && (item.paymentStatus === 'CAPTURED' || item.paymentStatus === 'AUTHORIZED');
+            const canCancel = activeTab === 'upcoming' && (item.status === 'PENDING' || item.status === 'CONFIRMED') && item.paymentStatus !== 'CAPTURED' && item.paymentStatus !== 'AUTHORIZED';
             return (
               <TripCard
                 booking={item}
                 colors={colors}
                 showPayButton={needsPayment}
                 showReviewButton={canReview}
+                showCancelButton={canCancel}
                 onPress={() => {
                   if (needsPayment) {
                     setPayingBooking(item);
@@ -169,6 +198,7 @@ export default function TripsScreen() {
                 }}
                 onPayPress={() => setPayingBooking(item)}
                 onReviewPress={() => setReviewingBooking(item)}
+                onCancelPress={() => handleCancelBooking(item)}
               />
             );
           }}
