@@ -4104,6 +4104,7 @@ export const listBlockedUsers = /* GraphQL */ `query ListBlockedUsers {
     blockId
     userName
     blockedAt
+    conversationId
     __typename
   }
 }

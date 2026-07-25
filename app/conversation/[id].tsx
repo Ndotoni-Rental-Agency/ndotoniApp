@@ -5,7 +5,8 @@ import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscri
 import { ChatMessage } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { checkConversationBlockStatus } from '@/lib/graphql/queries';
-import { reportUser as reportUserMutation, blockUser as blockUserMutation } from '@/lib/graphql/mutations';
+import { reportUser as reportUserMutation } from '@/lib/graphql/mutations';
+import { toggleBlockUser as toggleBlockMutation } from '@/lib/graphql/mutations';
 import ReportModal from '@/components/moderation/ReportModal';
 import BlockUserModal from '@/components/moderation/BlockUserModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -169,9 +170,10 @@ export default function ConversationScreen() {
     if (!decodedId) {
       throw new Error('Unable to identify this conversation.');
     }
-    await GraphQLClient.executeAuthenticated(blockUserMutation, {
+    await GraphQLClient.executeAuthenticated(toggleBlockMutation, {
       input: {
         conversationId: decodedId,
+        action: 'BLOCK',
       },
     });
     // Update local block state immediately
@@ -179,6 +181,33 @@ export default function ConversationScreen() {
     setHasBlockedOther(true);
     // Refresh conversations — the blocked conversation should disappear from the list
     await loadConversations();
+  };
+
+  const handleUnblockUser = () => {
+    Alert.alert(
+      'Unblock User',
+      `Unblock ${conversation?.otherPartyName || 'this user'}? You'll be able to message each other again.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unblock',
+          onPress: async () => {
+            try {
+              await GraphQLClient.executeAuthenticated(toggleBlockMutation, {
+                input: {
+                  conversationId: decodedId,
+                  action: 'UNBLOCK',
+                },
+              });
+              setIsBlocked(false);
+              setHasBlockedOther(false);
+            } catch (err) {
+              Alert.alert('Error', 'Failed to unblock user. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleShowModerationMenu = () => {
@@ -486,9 +515,17 @@ export default function ConversationScreen() {
             <Ionicons name="ban-outline" size={20} color="#ef4444" />
             <Text style={[styles.blockedText, { color: secondaryText }]}>
               {hasBlockedOther
-                ? 'You blocked this user. Unblock them to send messages.'
+                ? 'You blocked this user.'
                 : 'You cannot message this user.'}
             </Text>
+            {hasBlockedOther && (
+              <TouchableOpacity
+                onPress={handleUnblockUser}
+                style={[styles.unblockButton, { borderColor: tintColor }]}
+              >
+                <Text style={[styles.unblockButtonText, { color: tintColor }]}>Unblock</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
         <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
@@ -738,5 +775,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     flex: 1,
+  },
+  unblockButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  unblockButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

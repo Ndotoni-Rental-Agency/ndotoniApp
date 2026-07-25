@@ -3111,26 +3111,14 @@ export const reportUser = /* GraphQL */ `mutation ReportUser($input: ReportUserI
   APITypes.ReportUserMutation
 >;
 
-export const blockUser = /* GraphQL */ `mutation BlockUser($input: BlockUserInput!) {
-  blockUser(input: $input) {
+export const toggleBlockUser = /* GraphQL */ `mutation ToggleBlockUser($input: ToggleBlockInput!) {
+  toggleBlockUser(input: $input) {
     success
     message
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.BlockUserMutationVariables,
-  APITypes.BlockUserMutation
->;
-
-export const unblockUser = /* GraphQL */ `mutation UnblockUser($blockId: ID!) {
-  unblockUser(blockId: $blockId) {
-    success
-    message
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.UnblockUserMutationVariables,
-  APITypes.UnblockUserMutation
+  APITypes.ToggleBlockUserMutationVariables,
+  APITypes.ToggleBlockUserMutation
 >;

@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { BlockedUser } from '@/lib/API';
 import { listBlockedUsers } from '@/lib/graphql/queries';
-import { unblockUser as unblockUserMutation } from '@/lib/graphql/mutations';
+import { toggleBlockUser as toggleBlockMutation } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -59,7 +59,9 @@ export default function BlockedUsersScreen() {
           onPress: async () => {
             setUnblockingId(user.blockId);
             try {
-              await GraphQLClient.executeAuthenticated(unblockUserMutation, { blockId: user.blockId });
+              await GraphQLClient.executeAuthenticated(toggleBlockMutation, {
+                input: { conversationId: user.conversationId, action: 'UNBLOCK' },
+              });
               setBlockedUsers(prev => prev.filter(u => u.blockId !== user.blockId));
             } catch (error) {
               Alert.alert('Error', 'Failed to unblock user. Please try again.');

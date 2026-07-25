@@ -1154,16 +1154,12 @@ export type ReportUserInput = {
   reason: string,
 };
 
-export type BlockUserInput = {
-  conversationId: string,
-  reason?: string | null,
-};
-
 export type BlockedUser = {
   __typename: "BlockedUser",
   blockId: string,
   blockedAt: string,
   userName?: string | null,
+  conversationId?: string | null,
 };
 
 export type BlockStatus = {
@@ -1189,20 +1185,12 @@ export type ReportUserMutation = {
   reportUser: SuccessResponse,
 };
 
-export type BlockUserMutationVariables = {
-  input: BlockUserInput,
+export type ToggleBlockUserMutationVariables = {
+  input: { conversationId: string; action: 'BLOCK' | 'UNBLOCK'; reason?: string },
 };
 
-export type BlockUserMutation = {
-  blockUser: SuccessResponse,
-};
-
-export type UnblockUserMutationVariables = {
-  blockId: string,
-};
-
-export type UnblockUserMutation = {
-  unblockUser: SuccessResponse,
+export type ToggleBlockUserMutation = {
+  toggleBlockUser: SuccessResponse,
 };
 
 export type ListBlockedUsersQueryVariables = {
