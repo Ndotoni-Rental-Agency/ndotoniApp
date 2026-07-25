@@ -35,7 +35,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [declineTarget, setDeclineTarget] = useState<string | null>(null);
-  const [declineReason, setDeclineReason] = useState('');
+  const [declineReason, setDeclineReason] = useState('Not available');
 
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
@@ -83,7 +83,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
     try {
       await GraphQLClient.executeAuthenticated<any>(declineBooking, { bookingId: id, reason: declineReason.trim() });
       setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.DECLINED } : b));
-      setDeclineTarget(null); setDeclineReason('');
+      setDeclineTarget(null); setDeclineReason('Not available');
       Alert.alert('Declined', 'Booking request declined.');
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to decline');
