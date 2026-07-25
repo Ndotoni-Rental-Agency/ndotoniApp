@@ -95,13 +95,20 @@ export function usePushNotifications() {
       setExpoPushToken(token);
       setError(null);
 
-      // Android-specific notification channel
+      // Android-specific notification channels
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('messages', {
           name: 'Messages',
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#16a34a',
+          sound: 'default',
+        });
+        await Notifications.setNotificationChannelAsync('bookings', {
+          name: 'Bookings & Payments',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#3b82f6',
           sound: 'default',
         });
       }
@@ -132,10 +139,55 @@ export function usePushNotifications() {
         const data = response.notification.request.content.data;
         console.log('[PushNotifications] Notification tapped, data:', data);
 
-        // Navigate to the conversation when a message notification is tapped
-        if (data?.conversationId) {
-          const encodedId = encodeURIComponent(data.conversationId);
-          router.push(`/conversation/${encodedId}` as any);
+        // Route based on notification type
+        switch (data?.type) {
+          case 'new_message':
+            if (data.conversationId) {
+              const encodedId = encodeURIComponent(data.conversationId);
+              router.push(`/conversation/${encodedId}`);
+            }
+            break;
+
+          case 'new_booking':
+          case 'booking_approved':
+          case 'payment_received':
+          case 'booking_cancelled':
+            // Host-facing booking events → bookings tab
+            if (data.bookingId) {
+              router.push(`/bookings/${data.bookingId}`);
+            } else {
+              router.push('/(tabs)/host');
+            }
+            break;
+
+          case 'booking_confirmed':
+          case 'booking_declined':
+          case 'payment_receipt':
+            // Guest-facing booking events → trips tab or booking detail
+            if (data.bookingId) {
+              router.push(`/bookings/${data.bookingId}`);
+            } else {
+              router.push('/(tabs)/trips');
+            }
+            break;
+
+          case 'new_review':
+            // Review notification → property page
+            if (data.propertyId) {
+              router.push(`/short-property/${data.propertyId}`);
+            } else {
+              router.push('/(tabs)/host');
+            }
+            break;
+
+          default:
+            // Fallback: if there's a conversationId, go to chat; otherwise home
+            console.warn('[PushNotifications] Unhandled notification type:', data?.type, data);
+            if (data?.conversationId) {
+              const encodedId = encodeURIComponent(data.conversationId);
+              router.push(`/conversation/${encodedId}`);
+            }
+            break;
         }
       }
     );
