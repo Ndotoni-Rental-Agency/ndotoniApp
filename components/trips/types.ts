@@ -63,7 +63,7 @@ export const getStatusColor = (b: Booking, subtle: string): string => {
 
 export const getStatusLabel = (b: Booking): string => {
   if (b.status === 'CONFIRMED' && b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED') return 'Awaiting payment';
-  if (b.status === 'CONFIRMED') return 'Confirmed';
+  if (b.status === 'CONFIRMED') return 'Confirmed & Paid';
   if (b.status === 'PENDING') return 'Pending approval';
   if (b.status === 'CANCELLED') return 'Cancelled';
   if (b.status === 'COMPLETED') return 'Completed';

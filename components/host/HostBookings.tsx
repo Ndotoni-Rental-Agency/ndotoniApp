@@ -102,12 +102,23 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const fmtPrice = (amt: number, cur: string) => `${cur === 'TZS' ? 'Tshs' : cur} ${amt.toLocaleString()}`;
 
-  const statusColor = (s: string, expired?: boolean) => {
+  const statusColor = (s: string, expired?: boolean, paymentStatus?: string) => {
     if (s === 'PENDING' && expired) return '#6b7280';
     if (s === 'PENDING') return '#f59e0b';
-    if (s === 'CONFIRMED') return tint;
+    if (s === 'CONFIRMED' && (paymentStatus === 'CAPTURED' || paymentStatus === 'AUTHORIZED')) return '#16a34a';
+    if (s === 'CONFIRMED') return '#3b82f6';
     if (s === 'CANCELLED' || s === 'DECLINED') return '#ef4444';
     return subtle;
+  };
+
+  const getDisplayStatus = (s: string, expired: boolean, paymentStatus?: string) => {
+    if (s === 'PENDING' && expired) return 'EXPIRED';
+    if (s === 'PENDING') return 'PENDING';
+    if (s === 'CONFIRMED' && (paymentStatus === 'CAPTURED' || paymentStatus === 'AUTHORIZED')) return 'PAID';
+    if (s === 'CONFIRMED') return 'Confirmed, waiting guest to pay';
+    if (s === 'CANCELLED') return 'CANCELLED';
+    if (s === 'DECLINED') return 'DECLINED';
+    return s;
   };
 
   const pendingCount = bookings.filter(b => b.status === 'PENDING' && b.checkInDate >= today).length;
@@ -154,7 +165,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
           const isProcessing = actionLoading === b.bookingId;
           const isPast = b.checkInDate < today;
           const isExpired = b.status === 'PENDING' && isPast;
-          const displayStatus = isExpired ? 'EXPIRED' : b.status;
+          const displayStatus = getDisplayStatus(b.status, isExpired, b.paymentStatus);
 
           return (
             <View key={b.bookingId} style={[styles.bookingCard, { backgroundColor: card, borderColor: border }]}>
@@ -163,8 +174,8 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
                 <View style={{ flex: 1 }}>
                   <View style={styles.bNameRow}>
                     <Text style={[styles.bName, { color: text }]}>{guestName}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: `${statusColor(b.status, isExpired)}15` }]}>
-                      <Text style={[styles.statusText, { color: statusColor(b.status, isExpired) }]}>{displayStatus}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${statusColor(b.status, isExpired, b.paymentStatus)}15` }]}>
+                      <Text style={[styles.statusText, { color: statusColor(b.status, isExpired, b.paymentStatus) }]}>{displayStatus}</Text>
                     </View>
                   </View>
                   {b.property?.title && <Text style={[styles.bProperty, { color: subtle }]}>{b.property.title}</Text>}
