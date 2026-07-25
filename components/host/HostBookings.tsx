@@ -4,6 +4,7 @@ import { approveBooking, declineBooking } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
 import { ListPropertyBookingsQuery, BookingStatus } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -169,6 +170,15 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
 
           return (
             <View key={b.bookingId} style={[styles.bookingCard, { backgroundColor: card, borderColor: border }]}>
+              {/* Thumbnail */}
+              {(b.property?.thumbnail || b.property?.images?.[0]) && (
+                <Image
+                  source={{ uri: b.property.thumbnail || b.property.images![0] }}
+                  style={styles.bThumbnail}
+                  contentFit="cover"
+                  transition={200}
+                />
+              )}
               {/* Header */}
               <View style={styles.bHeader}>
                 <View style={{ flex: 1 }}>
@@ -255,8 +265,9 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 13, fontWeight: '600' },
   empty: { textAlign: 'center', paddingVertical: 40, fontSize: 14 },
 
-  bookingCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 12 },
-  bHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  bookingCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
+  bThumbnail: { width: '100%', height: 120 },
+  bHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 14, paddingBottom: 0 },
   bNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bName: { fontSize: 15, fontWeight: '600' },
   bProperty: { fontSize: 12, marginTop: 2 },
@@ -264,11 +275,11 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
   statusText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
 
-  bDetails: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  bDetails: { flexDirection: 'row', gap: 12, marginTop: 10, paddingHorizontal: 14 },
   bDetail: { fontSize: 12 },
-  bRequest: { fontSize: 12, fontStyle: 'italic', marginTop: 8, padding: 8, borderWidth: 1, borderRadius: 8 },
+  bRequest: { fontSize: 12, fontStyle: 'italic', marginTop: 8, marginHorizontal: 14, padding: 8, borderWidth: 1, borderRadius: 8 },
 
-  bActions: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  bActions: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1 },
   approveBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   approveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   declineBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
@@ -276,7 +287,7 @@ const styles = StyleSheet.create({
   cancelBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', borderWidth: 1 },
   declineConfirmBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: '#ef4444' },
 
-  messageBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  messageBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1 },
   expiredNote: { fontSize: 12, lineHeight: 16 },
   dismissBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, marginLeft: 8 },
 });
