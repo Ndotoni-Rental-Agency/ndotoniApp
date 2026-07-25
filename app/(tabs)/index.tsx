@@ -3,6 +3,7 @@ import SearchBar from '@/components/search/SearchBar';
 import SearchModal, { SearchParams } from '@/components/search/SearchModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
+import { useHiddenProperties } from '@/hooks/useHiddenProperties';
 import { RentalType } from '@/hooks/useRentalType';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
+  const { hiddenIds } = useHiddenProperties();
 
   const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const text = useThemeColor({}, 'text');
@@ -55,7 +57,7 @@ export default function HomeScreen() {
   const border = useThemeColor({ light: '#f0f0f0', dark: '#222' }, 'background');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
-  // Merge all properties into one feed, deduped
+  // Merge all properties into one feed, deduped and filtered
   const feed = React.useMemo(() => {
     if (!appData) return [];
     const all = [
@@ -65,8 +67,13 @@ export default function HomeScreen() {
       ...(appData.categorizedProperties.more?.properties || []),
     ];
     const seen = new Set<string>();
-    return all.filter((p: any) => { if (seen.has(p.propertyId)) return false; seen.add(p.propertyId); return true; });
-  }, [appData]);
+    return all.filter((p: any) => {
+      if (seen.has(p.propertyId)) return false;
+      if (hiddenIds.has(p.propertyId)) return false;
+      seen.add(p.propertyId);
+      return true;
+    });
+  }, [appData, hiddenIds]);
 
   const handleRefresh = async () => { setIsRefreshing(true); await refetch(); setIsRefreshing(false); };
 

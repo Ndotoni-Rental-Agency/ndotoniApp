@@ -1,6 +1,7 @@
 import FavoriteButton from '@/components/FavoriteButton';
 import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useHiddenProperties } from '@/hooks/useHiddenProperties';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
@@ -26,6 +27,7 @@ export default function SearchScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { width: SCREEN_W } = useWindowDimensions();
+  const { hiddenIds } = useHiddenProperties();
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -143,7 +145,7 @@ export default function SearchScreen() {
 
   // Filter logic
   const filteredProperties = useMemo(() => {
-    let result = [...properties];
+    let result = properties.filter(p => !hiddenIds.has(p.propertyId));
     if (filters.priceMin || filters.priceMax) {
       result = result.filter(p => {
         if (filters.priceMin && p.nightlyRate < filters.priceMin) return false;
@@ -168,7 +170,7 @@ export default function SearchScreen() {
       });
     }
     return result;
-  }, [properties, filters]);
+  }, [properties, filters, hiddenIds]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;

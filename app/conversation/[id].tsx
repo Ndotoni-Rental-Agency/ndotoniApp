@@ -4,6 +4,7 @@ import { useChatDeletion } from '@/hooks/useChatDeletion';
 import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscription';
 import { ChatMessage } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
+import { checkConversationBlockStatus } from '@/lib/graphql/queries';
 import { reportUser as reportUserMutation, blockUser as blockUserMutation } from '@/lib/graphql/mutations';
 import ReportModal from '@/components/moderation/ReportModal';
 import BlockUserModal from '@/components/moderation/BlockUserModal';
@@ -56,6 +57,8 @@ export default function ConversationScreen() {
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [hasBlockedOther, setHasBlockedOther] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const draftApplied = useRef(false);
 
@@ -70,6 +73,31 @@ export default function ConversationScreen() {
   // Decode the conversation ID from the URL parameter
   const decodedId = id ? decodeURIComponent(id as string) : '';
   const conversation = conversations.find(c => c.id === decodedId);
+
+  // Check block status when conversation loads
+  useEffect(() => {
+    if (!decodedId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await GraphQLClient.executeAuthenticated(checkConversationBlockStatus, {
+          conversationId: decodedId,
+        });
+        if (cancelled) return;
+        const status = result?.checkConversationBlockStatus;
+        if (status) {
+          setIsBlocked(!status.canMessage);
+          setHasBlockedOther(status.hasBlocked);
+        }
+      } catch (err) {
+        // Fail open — don't prevent messaging on query failure
+        console.warn('[Conversation] Block status check failed:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [decodedId]);
 
   // Real-time subscription for new messages
   const handleNewMessage = useCallback((message: SubscriptionMessage) => {
@@ -146,6 +174,10 @@ export default function ConversationScreen() {
         conversationId: decodedId,
       },
     });
+    // Update local block state immediately
+    setIsBlocked(true);
+    setHasBlockedOther(true);
+    // Refresh conversations — the blocked conversation should disappear from the list
     await loadConversations();
   };
 
@@ -449,6 +481,16 @@ export default function ConversationScreen() {
       )}
 
       {/* Input Area - Elevated and Prominent */}
+        {isBlocked ? (
+          <View style={[styles.blockedBanner, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
+            <Ionicons name="ban-outline" size={20} color="#ef4444" />
+            <Text style={[styles.blockedText, { color: secondaryText }]}>
+              {hasBlockedOther
+                ? 'You blocked this user. Unblock them to send messages.'
+                : 'You cannot message this user.'}
+            </Text>
+          </View>
+        ) : (
         <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
           <View style={[styles.inputWrapper, { backgroundColor, borderColor }]}>
             <TextInput
@@ -482,6 +524,7 @@ export default function ConversationScreen() {
             )}
           </TouchableOpacity>
         </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* Report User Modal */}
@@ -681,5 +724,19 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  blockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  blockedText: {
+    fontSize: 14,
+    textAlign: 'center',
+    flex: 1,
   },
 });

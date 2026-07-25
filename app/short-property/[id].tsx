@@ -19,6 +19,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { reportProperty as reportPropertyMutation } from '@/lib/graphql/mutations';
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useHiddenProperties } from '@/hooks/useHiddenProperties';
 import { usePropertyGeocode } from '@/hooks/useGeocode';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -62,6 +63,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const { coordinates } = usePropertyGeocode(property);
   const { isAuthenticated } = useAuth();
   const { initializeChat } = useChat();
+  const { hideProperty } = useHiddenProperties();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -139,6 +141,8 @@ export default function ShortTermPropertyDetailsScreen() {
         details: details || undefined,
       },
     });
+    // Hide the property from local feeds immediately
+    hideProperty(propertyId);
   };
 
   // ─── LOADING STATE ─────────────────────────────────────

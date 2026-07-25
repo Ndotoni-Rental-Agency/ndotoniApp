@@ -16,6 +16,7 @@ import {
   updateUser as updateUserMutation
 } from '@/lib/graphql/mutations';
 import { getMe } from '@/lib/graphql/queries';
+import { syncHiddenPropertiesFromServer } from '@/hooks/useHiddenProperties';
 import {
   extractErrorMessage,
   isUserAlreadyExistsError,
@@ -187,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           userType: data.getMe.userType
         });
         await storeAuthData(data.getMe);
+        // Sync hidden property IDs from server into local state
+        syncHiddenPropertiesFromServer(data.getMe.hiddenPropertyIds);
       } else {
         console.warn('[AuthContext] getMe returned no user data');
       }

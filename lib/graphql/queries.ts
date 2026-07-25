@@ -1159,6 +1159,7 @@ export const getMe = /* GraphQL */ `query GetMe {
       firstName
       gender
       hasProperties
+      hiddenPropertyIds
       isEmailVerified
       language
       lastName
@@ -1199,6 +1200,7 @@ export const getMe = /* GraphQL */ `query GetMe {
       firstName
       gender
       hasProperties
+      hiddenPropertyIds
       isEmailVerified
       language
       lastName
@@ -1234,6 +1236,7 @@ export const getMe = /* GraphQL */ `query GetMe {
       firstName
       gender
       hasProperties
+      hiddenPropertyIds
       isEmailVerified
       language
       lastName
@@ -1274,6 +1277,7 @@ export const getMe = /* GraphQL */ `query GetMe {
       firstName
       gender
       hasProperties
+      hiddenPropertyIds
       isEmailVerified
       language
       lastName
