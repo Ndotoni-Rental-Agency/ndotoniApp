@@ -11,9 +11,9 @@
 
 const AUTH_ERROR_MAP: Record<string, string> = {
   UserNotConfirmedException: 'Your account needs to be verified. Please check your email for the verification code.',
-  UsernameExistsException: 'An account with this email already exists.',
+  UsernameExistsException: 'Incorrect email or password.',
   NotAuthorizedException: 'Incorrect email or password.',
-  UserNotFoundException: 'No account found with this email.',
+  UserNotFoundException: 'Incorrect email or password.',
   InvalidPasswordException: 'Password does not meet requirements.',
   CodeMismatchException: 'Invalid verification code.',
   ExpiredCodeException: 'Verification code has expired. Please request a new one.',
@@ -39,6 +39,9 @@ const SAFE_MESSAGE_PATTERNS = [
   'Email is required',
   'This booking has already been paid',
   'These dates are no longer available',
+  'Incorrect email or password',
+  'Password does not meet requirements',
+  'Your account needs to be verified',
 ];
 
 /**
