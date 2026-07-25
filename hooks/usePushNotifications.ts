@@ -152,27 +152,19 @@ export function usePushNotifications() {
           case 'booking_approved':
           case 'payment_received':
           case 'booking_cancelled':
-            // Host-facing booking events → bookings tab
-            if (data.bookingId) {
-              router.push(`/bookings/${data.bookingId}`);
-            } else {
-              router.push('/(tabs)/host');
-            }
+            // Host-facing booking events → host tab (where HostBookings lives)
+            router.push('/(tabs)/host');
             break;
 
           case 'booking_confirmed':
           case 'booking_declined':
           case 'payment_receipt':
-            // Guest-facing booking events → trips tab or booking detail
-            if (data.bookingId) {
-              router.push(`/bookings/${data.bookingId}`);
-            } else {
-              router.push('/(tabs)/trips');
-            }
+            // Guest-facing booking events → trips tab
+            router.push('/(tabs)/trips');
             break;
 
           case 'new_review':
-            // Review notification → property page
+            // Review notification → property page or host tab
             if (data.propertyId) {
               router.push(`/short-property/${data.propertyId}`);
             } else {
