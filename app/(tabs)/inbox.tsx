@@ -4,6 +4,7 @@ import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { SwipeableConversationCard } from '@/components/inbox';
+import { NewConversationModal } from '@/components/inbox/NewConversationModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -38,6 +39,7 @@ export default function MessagesScreen() {
   const [pendingEmail, setPendingEmail] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [showNewConversation, setShowNewConversation] = useState(false);
 
   // Use conversation search hook
   const { filteredConversations } = useConversationSearch({
@@ -253,6 +255,12 @@ export default function MessagesScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={[styles.title, { color: textColor }]}>Messages</Text>
+              <TouchableOpacity
+                onPress={() => setShowNewConversation(true)}
+                style={[styles.composeButton, { backgroundColor: tintColor }]}
+              >
+                <Ionicons name="create-outline" size={20} color="#fff" />
+              </TouchableOpacity>
             </View>
 
             {/* Search Bar */}
@@ -316,6 +324,12 @@ export default function MessagesScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: borderColor }]} />}
+      />
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        visible={showNewConversation}
+        onClose={() => setShowNewConversation(false)}
       />
     </SafeAreaView>
   );
@@ -403,11 +417,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 34,
     fontWeight: '700',
     letterSpacing: 0.4,
+  },
+  composeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     paddingHorizontal: 20,
