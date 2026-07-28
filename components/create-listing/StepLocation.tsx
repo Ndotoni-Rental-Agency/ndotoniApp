@@ -106,11 +106,17 @@ export default function StepLocation({ form, updateField, colors }: StepProps) {
 
       <View style={styles.selectorWrap}>
         <LocationSelector
-          value={{ region: form.region, district: form.district, ward: form.ward }}
-          onChange={(loc: any) => {
+          value={{
+            region: form.region,
+            district: form.district,
+            ward: form.ward,
+            street: form.street,
+          }}
+          onChange={(loc) => {
             updateField('region', loc.region);
             updateField('district', loc.district);
             updateField('ward', loc.ward || '');
+            updateField('street', loc.street || '');
           }}
         />
       </View>

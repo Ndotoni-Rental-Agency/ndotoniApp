@@ -49,6 +49,7 @@ export default function CreatePropertyScreen() {
     region: '',
     district: '',
     ward: '',
+    street: '',
     googleMapsLink: '',
     title: '',
     nightlyRate: '',
