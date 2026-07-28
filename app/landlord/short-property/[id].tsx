@@ -6,7 +6,7 @@ import { UpdateShortTermPropertyInput } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Tab = 'details' | 'photos' | 'checkin' | 'settings';
@@ -30,7 +30,7 @@ export default function EditShortTermPropertyScreen() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<EditFormData>({
     title: '', description: '', propertyType: '', stayCategories: [],
-    region: '', district: '', nightlyRate: '', cleaningFee: '', serviceFeePercentage: '', currency: 'TZS',
+    region: '', district: '', ward: '', street: '', nightlyRate: '', cleaningFee: '', serviceFeePercentage: '', currency: 'TZS',
     maxGuests: '', maxAdults: '', maxChildren: '', maxInfants: '', bedrooms: '', bathrooms: '',
     minimumStay: '1', maximumStay: '', advanceBookingDays: '', instantBookEnabled: false,
     checkInTime: '', checkOutTime: '', ciWifi: '', ciWifiPassword: '', ciAccessCode: '',
@@ -48,6 +48,8 @@ export default function EditShortTermPropertyScreen() {
       title: property.title || '', description: property.description || '',
       propertyType: property.propertyType || '', stayCategories: (property as any).stayCategories || ['NIGHTLY_STAY'],
       region: property.region || '', district: property.district || '',
+      ward: (property as any).ward || (property as any).address?.ward || '',
+      street: (property as any).street || (property as any).address?.street || '',
       nightlyRate: property.nightlyRate?.toString() || '', cleaningFee: property.cleaningFee?.toString() || '',
       serviceFeePercentage: property.serviceFeePercentage?.toString() || '', currency: property.currency || 'TZS',
       maxGuests: property.maxGuests?.toString() || '', maxAdults: property.maxAdults?.toString() || '',
@@ -130,13 +132,15 @@ export default function EditShortTermPropertyScreen() {
       </View>
 
       {/* Content */}
-      <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {tab === 'details' && <EditDetailsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
-        {tab === 'photos' && <EditPhotosTab images={images} setImages={setImages} saving={saving} saveSec={saveSec} text={text} tint={tint} subtle={subtle} />}
-        {tab === 'checkin' && <EditCheckInTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
-        {tab === 'settings' && <EditSettingsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
-        <View style={{ height: 60 }} />
-      </ScrollView>
+      <KeyboardAvoidingView style={s.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
+        <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {tab === 'details' && <EditDetailsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
+          {tab === 'photos' && <EditPhotosTab images={images} setImages={setImages} saving={saving} saveSec={saveSec} text={text} tint={tint} subtle={subtle} />}
+          {tab === 'checkin' && <EditCheckInTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
+          {tab === 'settings' && <EditSettingsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
+          <View style={{ height: 60 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

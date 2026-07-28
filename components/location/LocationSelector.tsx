@@ -6,7 +6,9 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -72,7 +74,7 @@ export default function LocationSelector({ value, onChange, required }: Location
   // Fetch districts when region changes
   useEffect(() => {
     if (value.region) {
-      const region = regions.find(r => r.name === value.region);
+      const region = regions.find(r => r.name.toLowerCase() === value.region.toLowerCase());
       if (region) {
         fetchDistricts(region.id);
       }
@@ -82,7 +84,7 @@ export default function LocationSelector({ value, onChange, required }: Location
   // Fetch wards when district changes
   useEffect(() => {
     if (value.district) {
-      const district = districts.find(d => d.name === value.district);
+      const district = districts.find(d => d.name.toLowerCase() === value.district.toLowerCase());
       if (district) {
         fetchWards(district.id);
       }
@@ -217,7 +219,7 @@ export default function LocationSelector({ value, onChange, required }: Location
 
       {/* Region Picker Modal */}
       <Modal visible={showRegionPicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select Region</Text>
@@ -240,12 +242,13 @@ export default function LocationSelector({ value, onChange, required }: Location
               <FlatList
                 data={filteredRegions}
                 keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[
                       styles.listItem,
                       { borderBottomColor: borderColor },
-                      value.region === item.name && { backgroundColor: tintColor + '20' },
+                      value.region.toLowerCase() === item.name.toLowerCase() && { backgroundColor: tintColor + '20' },
                     ]}
                     onPress={() => {
                       onChange({ region: item.name, district: '', ward: '', street: '' });
@@ -256,7 +259,7 @@ export default function LocationSelector({ value, onChange, required }: Location
                     <Text style={[styles.listItemText, { color: textColor }]}>
                       {toTitleCase(item.name)}
                     </Text>
-                    {value.region === item.name && (
+                    {value.region.toLowerCase() === item.name.toLowerCase() && (
                       <Ionicons name="checkmark" size={20} color={tintColor} />
                     )}
                   </TouchableOpacity>
@@ -264,12 +267,12 @@ export default function LocationSelector({ value, onChange, required }: Location
               />
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* District Picker Modal */}
       <Modal visible={showDistrictPicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select District</Text>
@@ -292,12 +295,13 @@ export default function LocationSelector({ value, onChange, required }: Location
               <FlatList
                 data={filteredDistricts}
                 keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[
                       styles.listItem,
                       { borderBottomColor: borderColor },
-                      value.district === item.name && { backgroundColor: tintColor + '20' },
+                      value.district.toLowerCase() === item.name.toLowerCase() && { backgroundColor: tintColor + '20' },
                     ]}
                     onPress={() => {
                       onChange({ ...value, district: item.name, ward: '', street: '' });
@@ -308,7 +312,7 @@ export default function LocationSelector({ value, onChange, required }: Location
                     <Text style={[styles.listItemText, { color: textColor }]}>
                       {toTitleCase(item.name)}
                     </Text>
-                    {value.district === item.name && (
+                    {value.district.toLowerCase() === item.name.toLowerCase() && (
                       <Ionicons name="checkmark" size={20} color={tintColor} />
                     )}
                   </TouchableOpacity>
@@ -316,12 +320,12 @@ export default function LocationSelector({ value, onChange, required }: Location
               />
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Ward Picker Modal */}
       <Modal visible={showWardPicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select Ward</Text>
@@ -344,12 +348,13 @@ export default function LocationSelector({ value, onChange, required }: Location
               <FlatList
                 data={filteredWards}
                 keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[
                       styles.listItem,
                       { borderBottomColor: borderColor },
-                      value.ward === item.name && { backgroundColor: tintColor + '20' },
+                      value.ward?.toLowerCase() === item.name.toLowerCase() && { backgroundColor: tintColor + '20' },
                     ]}
                     onPress={() => {
                       onChange({ ...value, ward: item.name, street: '' });
@@ -360,7 +365,7 @@ export default function LocationSelector({ value, onChange, required }: Location
                     <Text style={[styles.listItemText, { color: textColor }]}>
                       {toTitleCase(item.name)}
                     </Text>
-                    {value.ward === item.name && (
+                    {value.ward?.toLowerCase() === item.name.toLowerCase() && (
                       <Ionicons name="checkmark" size={20} color={tintColor} />
                     )}
                   </TouchableOpacity>
@@ -368,7 +373,7 @@ export default function LocationSelector({ value, onChange, required }: Location
               />
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

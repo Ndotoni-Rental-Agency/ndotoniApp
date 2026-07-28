@@ -76,8 +76,8 @@ export default function LocationSection({ form, upd, saving, saveSec, text, tint
       <Text style={[s.divider, { color: subtle || '#999' }]}>or select manually</Text>
 
       <LocationSelector
-        value={{ region: form.region, district: form.district }}
-        onChange={(loc: any) => { upd('region', loc.region); upd('district', loc.district); }}
+        value={{ region: form.region, district: form.district, ward: form.ward || undefined, street: form.street || undefined }}
+        onChange={(loc: any) => { upd('region', loc.region); upd('district', loc.district); upd('ward', loc.ward || ''); upd('street', loc.street || ''); }}
       />
 
       <TouchableOpacity
@@ -85,6 +85,14 @@ export default function LocationSection({ form, upd, saving, saveSec, text, tint
         onPress={() => saveSec('Location', {
           region: form.region,
           district: form.district,
+          address: {
+            region: form.region,
+            district: form.district,
+            street: form.street || '',
+            ward: form.ward || null,
+            city: form.district,
+            country: 'Tanzania',
+          },
           ...(form.googleMapsUrl ? { googleMapsUrl: form.googleMapsUrl } : {}),
         })}
         disabled={saving}

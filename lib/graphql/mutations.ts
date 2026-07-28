@@ -1041,6 +1041,7 @@ export const createShortTermProperty = /* GraphQL */ `mutation CreateShortTermPr
       postalCode
       region
       street
+      ward
       __typename
     }
     advanceBookingDays
@@ -2917,6 +2918,7 @@ export const updateShortTermProperty = /* GraphQL */ `mutation UpdateShortTermPr
       postalCode
       region
       street
+      ward
       __typename
     }
     advanceBookingDays

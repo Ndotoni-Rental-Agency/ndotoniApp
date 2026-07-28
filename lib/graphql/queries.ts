@@ -359,6 +359,7 @@ export const getBooking = /* GraphQL */ `query GetBooking($bookingId: ID!) {
         postalCode
         region
         street
+        ward
         __typename
       }
       advanceBookingDays

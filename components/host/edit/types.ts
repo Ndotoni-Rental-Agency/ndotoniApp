@@ -2,7 +2,7 @@ import { UpdateShortTermPropertyInput } from '@/lib/API';
 
 export interface EditFormData {
   title: string; description: string; propertyType: string; stayCategories: string[];
-  region: string; district: string;
+  region: string; district: string; ward: string; street: string;
   nightlyRate: string; cleaningFee: string; serviceFeePercentage: string; currency: string;
   maxGuests: string; maxAdults: string; maxChildren: string; maxInfants: string;
   bedrooms: string; bathrooms: string;

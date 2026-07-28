@@ -731,6 +731,7 @@ export type ShortTermAddressInput = {
   postalCode?: string | null,
   region: string,
   street: string,
+  ward?: string | null,
 };
 
 export type CheckInInstructionsInput = {
