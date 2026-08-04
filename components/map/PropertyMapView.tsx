@@ -2,6 +2,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
+  Linking,
   Modal,
   Platform,
   StyleSheet,
@@ -49,6 +50,18 @@ export default function PropertyMapView({
   const circleColor = isDark ? '#065f46' : '#1c1c1e';
   const provider = Platform.OS === 'ios' ? undefined : PROVIDER_GOOGLE;
 
+  // Uses the same privacy-offset pin shown on the map, not the exact property coordinates.
+  const openDirections = () => {
+    const { latitude: lat, longitude: lng } = pinPosition;
+    const label = encodeURIComponent(title);
+    const url = Platform.OS === 'ios'
+      ? `maps:0,0?q=${label}@${lat},${lng}`
+      : `geo:0,0?q=${lat},${lng}(${label})`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+    });
+  };
+
   const renderMap = (delta: number, style: any) => (
     <MapView
       style={style}
@@ -86,6 +99,8 @@ export default function PropertyMapView({
         activeOpacity={0.9}
         onPress={() => setExpanded(true)}
         style={styles.container}
+        accessibilityRole="button"
+        accessibilityLabel="Expand map"
       >
         {renderMap(INLINE_DELTA, styles.map)}
         {/* Expand hint */}
@@ -108,6 +123,8 @@ export default function PropertyMapView({
           <TouchableOpacity
             style={[styles.closeButton, { top: insets.top + 12 }]}
             onPress={() => setExpanded(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close map"
           >
             <Ionicons name="close" size={24} color="#000" />
           </TouchableOpacity>
@@ -121,6 +138,15 @@ export default function PropertyMapView({
             <Text style={[styles.bottomBarText, { color: textColor }]} numberOfLines={1}>
               {title} — approximate location
             </Text>
+            <TouchableOpacity
+              style={[styles.directionsBtn, { backgroundColor: circleColor }]}
+              onPress={openDirections}
+              accessibilityRole="button"
+              accessibilityLabel="Get directions"
+            >
+              <Ionicons name="navigate" size={14} color="#fff" />
+              <Text style={styles.directionsBtnText}>Directions</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -191,5 +217,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     flex: 1,
+  },
+  directionsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  directionsBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

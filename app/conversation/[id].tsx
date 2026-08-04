@@ -457,7 +457,7 @@ export default function ConversationScreen() {
           </>
         ) : (
           <>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Back">
               <Ionicons name="arrow-back" size={24} color={textColor} />
             </TouchableOpacity>
             <View style={styles.headerInfo}>
@@ -473,6 +473,8 @@ export default function ConversationScreen() {
             <TouchableOpacity
               onPress={handleShowModerationMenu}
               style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="More options"
             >
               <Ionicons name="ellipsis-vertical" size={22} color={textColor} />
             </TouchableOpacity>

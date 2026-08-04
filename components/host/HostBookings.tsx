@@ -36,6 +36,8 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [declineTarget, setDeclineTarget] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState('Not available');
+  const [fetchError, setFetchError] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<string | null>(null);
 
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
@@ -44,9 +46,10 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
   const fetchBookings = useCallback(async () => {
-    if (propertyIds.length === 0) { setBookings([]); setLoading(false); return; }
+    if (propertyIds.length === 0) { setBookings([]); setLoading(false); setFetchError(false); return; }
     try {
       setLoading(true);
+      setFetchError(false);
       const all: Booking[] = [];
       const results = await Promise.allSettled(
         propertyIds.slice(0, 10).map(pid =>
@@ -55,12 +58,20 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
           })
         )
       );
+      let anyFulfilled = false;
+      let anyRejected = false;
       for (const r of results) {
-        if (r.status === 'fulfilled') all.push(...(r.value.listPropertyBookings?.bookings || []));
+        if (r.status === 'fulfilled') { anyFulfilled = true; all.push(...(r.value.listPropertyBookings?.bookings || [])); }
+        else anyRejected = true;
       }
       all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setBookings(all);
-    } catch {} finally { setLoading(false); }
+      // Only treat this as a real failure when nothing at all came back — a partial
+      // failure alongside real results still shows the data the host can act on.
+      setFetchError(anyRejected && !anyFulfilled);
+    } catch {
+      setFetchError(true);
+    } finally { setLoading(false); }
   }, [propertyIds, filter]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
@@ -70,6 +81,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
     try {
       await GraphQLClient.executeAuthenticated<any>(approveBooking, { bookingId: id });
       setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.CONFIRMED } : b));
+      setApproveTarget(null);
       Alert.alert('✅ Approved', 'Booking confirmed. Guest will be notified.');
       onRefresh?.();
     } catch (err: any) {
@@ -156,7 +168,14 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
       </View>
 
       {/* Bookings */}
-      {filteredBookings.length === 0 ? (
+      {fetchError ? (
+        <View style={styles.errorWrap}>
+          <Text style={[styles.empty, { color: subtle }]}>Couldn't load bookings</Text>
+          <TouchableOpacity onPress={fetchBookings} style={[styles.retryBtn, { borderColor: border }]}>
+            <Text style={[styles.retryText, { color: tint }]}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : filteredBookings.length === 0 ? (
         <Text style={[styles.empty, { color: subtle }]}>
           {timeFilter === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
         </Text>
@@ -228,10 +247,22 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
                         </TouchableOpacity>
                       </View>
                     </View>
+                  ) : approveTarget === b.bookingId ? (
+                    <View style={{ gap: 8, flex: 1 }}>
+                      <Text style={{ color: subtle, fontSize: 13 }}>Confirm this booking for {guestName}?</Text>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity style={[styles.cancelBtn, { borderColor: border }]} onPress={() => setApproveTarget(null)} disabled={isProcessing}>
+                          <Text style={[{ color: text, fontSize: 13, fontWeight: '600' }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.approveBtn, { backgroundColor: tint, flex: 1 }]} onPress={() => handleApprove(b.bookingId)} disabled={isProcessing}>
+                          <Text style={styles.approveBtnText}>{isProcessing ? 'Approving...' : 'Confirm approve'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ) : (
                     <>
-                      <TouchableOpacity style={[styles.approveBtn, { backgroundColor: tint }]} onPress={() => handleApprove(b.bookingId)} disabled={isProcessing}>
-                        <Text style={styles.approveBtnText}>{isProcessing ? 'Approving...' : 'Approve'}</Text>
+                      <TouchableOpacity style={[styles.approveBtn, { backgroundColor: tint }]} onPress={() => setApproveTarget(b.bookingId)} disabled={isProcessing}>
+                        <Text style={styles.approveBtnText}>Approve</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.declineBtn, { borderColor: '#fca5a5' }]} onPress={() => setDeclineTarget(b.bookingId)}>
                         <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: '600' }}>Decline</Text>
@@ -264,6 +295,9 @@ const styles = StyleSheet.create({
   filterPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
   filterText: { fontSize: 13, fontWeight: '600' },
   empty: { textAlign: 'center', paddingVertical: 40, fontSize: 14 },
+  errorWrap: { alignItems: 'center', paddingVertical: 24 },
+  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, borderWidth: 1 },
+  retryText: { fontSize: 14, fontWeight: '600' },
 
   bookingCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 12 },
   bThumbnail: { width: '100%', height: 120 },

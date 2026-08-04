@@ -86,7 +86,7 @@ export default function ContactSupportModal({ visible, onClose }: ContactSupport
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: border, paddingTop: insets.top || 16 }]}>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={24} color={text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: text }]}>Contact Support</Text>

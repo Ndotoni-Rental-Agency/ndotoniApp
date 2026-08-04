@@ -200,12 +200,12 @@ export default function ShortTermPropertyDetailsScreen() {
 
       {/* ─── ANIMATED HEADER (shows on scroll) ─── */}
       <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, paddingTop: insets.top, backgroundColor: card, borderBottomColor: border }]}>
-        <TouchableOpacity style={styles.stickyBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.stickyBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={20} color={text} />
         </TouchableOpacity>
         <Text style={[styles.stickyTitle, { color: text }]} numberOfLines={1}>{property.title}</Text>
         <View style={styles.stickyRight}>
-          <TouchableOpacity style={styles.stickyBtn} onPress={handleShare}>
+          <TouchableOpacity style={styles.stickyBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
             <Ionicons name="share-outline" size={18} color={text} />
           </TouchableOpacity>
           <FavoriteButton propertyId={propertyId} size={18} variant="light-bg" style={styles.stickyBtn} />
@@ -236,15 +236,15 @@ export default function ShortTermPropertyDetailsScreen() {
 
           {/* Nav buttons on image */}
           <View style={[styles.navOverlay, { paddingTop: insets.top + 8 }]}>
-            <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.navBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={styles.navRight}>
-              <TouchableOpacity style={styles.navBtn} onPress={handleShare}>
+              <TouchableOpacity style={styles.navBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
                 <Ionicons name="share-outline" size={20} color="#fff" />
               </TouchableOpacity>
               <FavoriteButton propertyId={propertyId} size={20} style={styles.navBtn} />
-              <TouchableOpacity style={styles.navBtn} onPress={handleOpenReport}>
+              <TouchableOpacity style={styles.navBtn} onPress={handleOpenReport} accessibilityRole="button" accessibilityLabel="Report listing">
                 <Ionicons name="flag-outline" size={18} color="#fff" />
               </TouchableOpacity>
             </View>

@@ -124,7 +124,7 @@ export default function ReportModal({
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: textColor }]}>{getTitle()}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={textColor} />
             </TouchableOpacity>
           </View>

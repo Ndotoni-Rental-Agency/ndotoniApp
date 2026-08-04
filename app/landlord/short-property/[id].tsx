@@ -7,7 +7,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { UpdateShortTermPropertyInput } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ type Tab = 'details' | 'photos' | 'checkin' | 'settings';
 export default function EditShortTermPropertyScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const propertyId = params.id as string;
 
   const { property, loading, error } = useShortTermPropertyDetail(propertyId);
@@ -45,6 +46,9 @@ export default function EditShortTermPropertyScreen() {
     houseRules: '', amenities: [],
   });
   const [images, setImages] = useState<string[]>([]);
+  // Tracks which tabs have edits not yet confirmed saved — by tab, not by field, so
+  // saving one tab doesn't silently clear edits sitting unsaved in another.
+  const [dirtyTabs, setDirtyTabs] = useState<Set<Tab>>(new Set());
 
   useEffect(() => {
     if (!property) return;
@@ -75,21 +79,61 @@ export default function EditShortTermPropertyScreen() {
       houseRules: property.houseRules?.join('\n') || '', amenities: property.amenities?.filter((a): a is string => a !== null) || [],
     });
     setImages(property.images || []);
+    setDirtyTabs(new Set());
   }, [property]);
 
-  const upd = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
-  const toggleCat = (c: string) => setForm(f => ({ ...f, stayCategories: f.stayCategories.includes(c) ? f.stayCategories.filter(x => x !== c) : [...f.stayCategories, c] }));
+  const upd = (k: string, v: any) => {
+    setForm(f => ({ ...f, [k]: v }));
+    setDirtyTabs(prev => new Set(prev).add(tab));
+  };
+  const toggleCat = (c: string) => {
+    setForm(f => ({ ...f, stayCategories: f.stayCategories.includes(c) ? f.stayCategories.filter(x => x !== c) : [...f.stayCategories, c] }));
+    setDirtyTabs(prev => new Set(prev).add(tab));
+  };
+  const handleSetImages = (imgs: string[]) => {
+    setImages(imgs);
+    setDirtyTabs(prev => new Set(prev).add('photos'));
+  };
 
   const saveSec = async (label: string, input: Partial<UpdateShortTermPropertyInput>) => {
     setSaving(true);
     try {
       const result = await updateShortProperty(propertyId, input as UpdateShortTermPropertyInput);
-      if (result.success) Alert.alert('✅ Saved', `${label} updated`);
-      else Alert.alert('Error', result.message);
+      if (result.success) {
+        Alert.alert('✅ Saved', `${label} updated`);
+        setDirtyTabs(prev => { const next = new Set(prev); next.delete(tab); return next; });
+      } else {
+        Alert.alert('Error', result.message);
+      }
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to save');
     } finally { setSaving(false); }
   };
+
+  const leaveWithUnsavedCheck = (proceed: () => void) => {
+    if (dirtyTabs.size === 0) { proceed(); return; }
+    const tabLabels: Record<Tab, string> = { details: 'Details', photos: 'Photos', checkin: 'Check-In', settings: 'Settings' };
+    const names = Array.from(dirtyTabs).map(t => tabLabels[t]).join(', ');
+    showAlert({
+      title: 'Unsaved changes',
+      message: `You have unsaved changes in ${names}. Leave without saving?`,
+      icon: 'warning',
+      buttons: [
+        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Discard & leave', style: 'destructive', onPress: proceed },
+      ],
+    });
+  };
+
+  // Catch swipe-back / hardware back, not just the header arrow.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove' as any, (e: any) => {
+      if (dirtyTabs.size === 0) return;
+      e.preventDefault();
+      leaveWithUnsavedCheck(() => navigation.dispatch(e.data.action));
+    });
+    return unsubscribe;
+  }, [navigation, dirtyTabs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDeactivate = () => {
     showAlert({
@@ -136,7 +180,7 @@ export default function EditShortTermPropertyScreen() {
     <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => leaveWithUnsavedCheck(() => router.back())} style={{ padding: 4 }} accessibilityRole="button" accessibilityLabel="Back"><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity>
         <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>{form.title || 'Edit Property'}</Text>
         <View style={{ width: 30 }} />
       </View>
@@ -155,6 +199,7 @@ export default function EditShortTermPropertyScreen() {
               >
                 <Ionicons name={t.icon as any} size={16} color={active ? tint : subtle} />
                 <Text style={[s.tabLabel, { color: active ? tint : subtle }]}>{t.label}</Text>
+                {dirtyTabs.has(t.key) && <View style={[s.dirtyDot, { backgroundColor: tint }]} />}
               </TouchableOpacity>
             );
           })}
@@ -165,7 +210,7 @@ export default function EditShortTermPropertyScreen() {
       <KeyboardAvoidingView style={s.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
         <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {tab === 'details' && <EditDetailsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
-          {tab === 'photos' && <EditPhotosTab images={images} setImages={setImages} saving={saving} saveSec={saveSec} text={text} tint={tint} subtle={subtle} />}
+          {tab === 'photos' && <EditPhotosTab images={images} setImages={handleSetImages} saving={saving} saveSec={saveSec} text={text} tint={tint} subtle={subtle} />}
           {tab === 'checkin' && <EditCheckInTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
           {tab === 'settings' && <EditSettingsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} onDeactivate={handleDeactivate} deactivating={deactivating} {...colors} />}
           <View style={{ height: 60 }} />
@@ -197,5 +242,6 @@ const s = StyleSheet.create({
     marginRight: 4,
   },
   tabLabel: { fontSize: 14, fontWeight: '600' },
+  dirtyDot: { width: 6, height: 6, borderRadius: 3 },
   body: { padding: 20, paddingBottom: 60 },
 });

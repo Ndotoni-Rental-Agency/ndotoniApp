@@ -1,4 +1,5 @@
 import AppSwitch from '@/components/ui/AppSwitch';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -22,6 +23,7 @@ export default function SettingsScreen() {
   const { isAuthenticated, signOut, user } = useAuth();
   const { setThemeMode, isDark } = useTheme();
   const { language, setLanguage } = useLanguage();
+  const { showAlert } = useAlert();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -35,9 +37,17 @@ export default function SettingsScreen() {
     await setThemeMode(newMode);
   };
 
-  const toggleLanguage = async () => {
-    const newLanguage = language === 'en' ? 'sw' : 'en';
-    await setLanguage(newLanguage);
+  const pickLanguage = () => {
+    showAlert({
+      title: 'Language',
+      message: 'Choose your preferred language',
+      icon: 'info',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: language === 'en' ? 'English ✓' : 'English', onPress: () => setLanguage('en') },
+        { text: language === 'sw' ? 'Kiswahili ✓' : 'Kiswahili', onPress: () => setLanguage('sw') },
+      ],
+    });
   };
 
   const handleSignOut = () => {
@@ -113,7 +123,10 @@ export default function SettingsScreen() {
             <AppSwitch value={isDark} onValueChange={toggleTheme} />
           </View>
 
-          <View style={[styles.settingItem, { backgroundColor: cardBg, borderColor }]}>
+          <TouchableOpacity
+            style={[styles.settingItem, { backgroundColor: cardBg, borderColor }]}
+            onPress={pickLanguage}
+          >
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: `${tint}20` }]}>
                 <Ionicons name="language" size={22} color={tint} />
@@ -125,8 +138,8 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-            <AppSwitch value={language === 'sw'} onValueChange={toggleLanguage} />
-          </View>
+            <Ionicons name="chevron-forward" size={20} color={secondaryText} />
+          </TouchableOpacity>
         </View>
 
         {/* Notifications Section */}

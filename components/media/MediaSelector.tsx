@@ -364,10 +364,26 @@ export default function MediaSelector({
 
   const removeMedia = (url: string) => {
     const newSelectedMedia = selectedMedia.filter(u => u !== url);
-    const images = newSelectedMedia.filter(url => 
+    const images = newSelectedMedia.filter(url =>
       url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)
     );
-    const videos = newSelectedMedia.filter(url => 
+    const videos = newSelectedMedia.filter(url =>
+      url.match(/\.(mp4|mov|avi|webm)(\?|$)/i)
+    );
+    onMediaChange(newSelectedMedia, images, videos);
+  };
+
+  // The first item becomes the listing's thumbnail, so reordering is the only way
+  // to change the cover photo without deleting and re-uploading everything.
+  const moveMedia = (index: number, direction: -1 | 1) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= selectedMedia.length) return;
+    const newSelectedMedia = [...selectedMedia];
+    [newSelectedMedia[index], newSelectedMedia[newIndex]] = [newSelectedMedia[newIndex], newSelectedMedia[index]];
+    const images = newSelectedMedia.filter(url =>
+      url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)
+    );
+    const videos = newSelectedMedia.filter(url =>
       url.match(/\.(mp4|mov|avi|webm)(\?|$)/i)
     );
     onMediaChange(newSelectedMedia, images, videos);
@@ -555,12 +571,36 @@ export default function MediaSelector({
                   <TouchableOpacity
                     style={[styles.removeButton, { backgroundColor: '#ef4444' }]}
                     onPress={() => removeMedia(url)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove"
                   >
                     <Ionicons name="close" size={16} color="#fff" />
                   </TouchableOpacity>
                   {index === 0 && (
                     <View style={[styles.primaryBadge, { backgroundColor: tintColor }]}>
                       <Text style={styles.primaryBadgeText}>Primary</Text>
+                    </View>
+                  )}
+                  {selectedMedia.length > 1 && (
+                    <View style={styles.reorderRow} pointerEvents="box-none">
+                      <TouchableOpacity
+                        style={[styles.reorderBtn, index === 0 && styles.reorderBtnDisabled]}
+                        onPress={() => moveMedia(index, -1)}
+                        disabled={index === 0}
+                        accessibilityRole="button"
+                        accessibilityLabel="Move earlier"
+                      >
+                        <Ionicons name="chevron-back" size={14} color="#fff" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.reorderBtn, index === selectedMedia.length - 1 && styles.reorderBtnDisabled]}
+                        onPress={() => moveMedia(index, 1)}
+                        disabled={index === selectedMedia.length - 1}
+                        accessibilityRole="button"
+                        accessibilityLabel="Move later"
+                      >
+                        <Ionicons name="chevron-forward" size={14} color="#fff" />
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -752,7 +792,7 @@ const styles = StyleSheet.create({
   },
   primaryBadge: {
     position: 'absolute',
-    bottom: 8,
+    top: 8,
     left: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -762,6 +802,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     fontWeight: '600',
+  },
+  reorderRow: {
+    position: 'absolute',
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  reorderBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reorderBtnDisabled: {
+    opacity: 0.3,
   },
   infoBox: {
     flexDirection: 'row',

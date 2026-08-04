@@ -221,9 +221,9 @@ export default function LocationSelector({ value, onChange, required }: Location
       <Modal visible={showRegionPicker} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select Region</Text>
-              <TouchableOpacity onPress={() => setShowRegionPicker(false)}>
+              <TouchableOpacity onPress={() => setShowRegionPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={textColor} />
               </TouchableOpacity>
             </View>
@@ -274,9 +274,9 @@ export default function LocationSelector({ value, onChange, required }: Location
       <Modal visible={showDistrictPicker} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select District</Text>
-              <TouchableOpacity onPress={() => setShowDistrictPicker(false)}>
+              <TouchableOpacity onPress={() => setShowDistrictPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={textColor} />
               </TouchableOpacity>
             </View>
@@ -327,9 +327,9 @@ export default function LocationSelector({ value, onChange, required }: Location
       <Modal visible={showWardPicker} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.modalContent, { backgroundColor: inputBg }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalTitle, { color: textColor }]}>Select Ward</Text>
-              <TouchableOpacity onPress={() => setShowWardPicker(false)}>
+              <TouchableOpacity onPress={() => setShowWardPicker(false)} accessibilityRole="button" accessibilityLabel="Close">
                 <Ionicons name="close" size={24} color={textColor} />
               </TouchableOpacity>
             </View>
@@ -434,7 +434,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
   },
   modalTitle: {
     fontSize: 18,

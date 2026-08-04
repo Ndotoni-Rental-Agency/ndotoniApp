@@ -340,10 +340,13 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.avatarContainer]}
             onPress={handleProfilePictureUpload}
             disabled={uploadingPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile picture"
+            accessibilityHint={uploadingPhoto ? 'Uploading photo' : undefined}
           >
             {user?.profileImage ? (
               <Image 

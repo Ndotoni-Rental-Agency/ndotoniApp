@@ -167,7 +167,7 @@ export function NewConversationModal({ visible, onClose }: Props) {
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: `${secondaryText}30` }]}>
           <Text style={[styles.headerTitle, { color: textColor }]}>New Message</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={24} color={textColor} />
           </TouchableOpacity>
         </View>

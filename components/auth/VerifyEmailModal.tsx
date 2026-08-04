@@ -106,7 +106,7 @@ export default function VerifyEmailModal({
             <Text style={[styles.modalTitle, { color: textColor }]}>
               Verify Email
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
             </TouchableOpacity>
           </View>

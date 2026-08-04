@@ -16,6 +16,7 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { listPropertyBookings } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
 import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -39,6 +40,10 @@ export default function HostDashboardScreen() {
   const [pendingCount, setPendingCount] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
   const [upcomingCount, setUpcomingCount] = useState(0);
+  const [statsPartialError, setStatsPartialError] = useState(false);
+  const [subRefreshing, setSubRefreshing] = useState(false);
+  const [subRefreshKey, setSubRefreshKey] = useState(0);
+  const isFocused = useIsFocused();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -66,31 +71,43 @@ export default function HostDashboardScreen() {
     if (properties.length > 0 && isAuthenticated) fetchStats();
   }, [properties, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll for new pending bookings every 15 seconds
+  // Poll for new pending bookings every 15 seconds, but only while this tab is focused —
+  // no point hammering the API for a screen the host isn't even looking at.
   useEffect(() => {
-    if (!isAuthenticated || properties.length === 0) return;
+    if (!isAuthenticated || properties.length === 0 || !isFocused) return;
     const interval = setInterval(() => { fetchStats(); }, 15000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, properties.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, properties.length, isFocused]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStats = async () => {
-    let earned = 0, pending = 0, upcoming = 0;
-    try {
-      for (const p of properties.slice(0, 10)) {
-        try {
-          const res = await GraphQLClient.executeAuthenticated<any>(listPropertyBookings, { propertyId: p.propertyId, limit: 20 });
-          for (const b of (res.listPropertyBookings?.bookings || [])) {
-            if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0);
-            if (b.status === 'PENDING') pending++;
-            if (b.status === 'CONFIRMED' && (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') && new Date(b.checkInDate) > new Date()) upcoming++;
-          }
-        } catch {}
+    let earned = 0, pending = 0, upcoming = 0, hadError = false;
+    for (const p of properties.slice(0, 10)) {
+      try {
+        const res = await GraphQLClient.executeAuthenticated<any>(listPropertyBookings, { propertyId: p.propertyId, limit: 20 });
+        for (const b of (res.listPropertyBookings?.bookings || [])) {
+          if (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') earned += (b.pricing?.subtotal || 0) + (b.pricing?.cleaningFee || 0);
+          if (b.status === 'PENDING') pending++;
+          if (b.status === 'CONFIRMED' && (b.paymentStatus === 'CAPTURED' || b.paymentStatus === 'AUTHORIZED') && new Date(b.checkInDate) > new Date()) upcoming++;
+        }
+      } catch {
+        hadError = true;
       }
-    } catch {}
+    }
     setTotalEarned(earned); setPendingCount(pending); setUpcomingCount(upcoming);
+    setStatsPartialError(hadError);
   };
 
   const handleRefresh = async () => { setRefreshing(true); await refetch(); await fetchStats(); setRefreshing(false); };
+
+  const handleSubRefresh = async () => {
+    setSubRefreshing(true);
+    await refetch();
+    // Subpages (HostBookings/HostReviews/HostPayouts/HostStats) fetch their own data
+    // on mount — bump the key to force a clean remount + refetch instead of duplicating
+    // their fetch logic here.
+    setSubRefreshKey(k => k + 1);
+    setSubRefreshing(false);
+  };
 
   const handleDelete = (id: string, title: string) => {
     showAlert({
@@ -145,12 +162,16 @@ export default function HostDashboardScreen() {
           </Text>
           <View style={{ width: 22 }} />
         </View>
-        <ScrollView contentContainerStyle={s.subContent} showsVerticalScrollIndicator={false}>
-          {page === 'bookings' && <HostBookings propertyIds={properties.map(p => p.propertyId)} onRefresh={handleRefresh} />}
-          {page === 'reviews' && <HostReviews propertyIds={properties.map(p => p.propertyId)} propertyNames={Object.fromEntries(properties.map(p => [p.propertyId, p.title]))} />}
-          {page === 'payouts' && <HostPayouts />}
-          {page === 'whatsapp' && <HostWhatsApp />}
-          {page === 'stats' && <HostStats propertyIds={properties.map(p => p.propertyId)} />}
+        <ScrollView
+          contentContainerStyle={s.subContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={subRefreshing} onRefresh={handleSubRefresh} tintColor={tint} />}
+        >
+          {page === 'bookings' && <HostBookings key={subRefreshKey} propertyIds={properties.map(p => p.propertyId)} onRefresh={handleRefresh} />}
+          {page === 'reviews' && <HostReviews key={subRefreshKey} propertyIds={properties.map(p => p.propertyId)} propertyNames={Object.fromEntries(properties.map(p => [p.propertyId, p.title]))} />}
+          {page === 'payouts' && <HostPayouts key={subRefreshKey} />}
+          {page === 'whatsapp' && <HostWhatsApp key={subRefreshKey} />}
+          {page === 'stats' && <HostStats key={subRefreshKey} propertyIds={properties.map(p => p.propertyId)} />}
         </ScrollView>
       </SafeAreaView>
     );
@@ -181,6 +202,9 @@ export default function HostDashboardScreen() {
 
         {/* Stats */}
         <StatsRow colors={colors} totalEarned={totalEarned} upcomingCount={upcomingCount} onStatPress={setPage} />
+        {statsPartialError && (
+          <Text style={[s.statsWarning, { color: subtle }]}>Some listings' stats couldn't load — pull to refresh to retry</Text>
+        )}
 
         {/* Listings */}
         <View style={s.listingsSection}>
@@ -241,6 +265,7 @@ const s = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 16 },
   headerTitle: { fontSize: 28, fontWeight: '800' },
   headerGreet: { paddingHorizontal: 20, fontSize: 15, marginTop: 4, marginBottom: 16 },
+  statsWarning: { paddingHorizontal: 20, fontSize: 12, marginTop: -8, marginBottom: 16 },
 
   // Alert
   alertCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, padding: 16, borderRadius: 14, backgroundColor: '#fef3c7', gap: 12, marginBottom: 16 },

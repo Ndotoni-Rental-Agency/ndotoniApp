@@ -41,10 +41,11 @@ export default function PropertyDescription({
         </Text>
       )}
 
-      {/* Visible description */}
+      {/* Visible description — default to collapsed until we've measured the full
+          height, so short text doesn't flash at full length before snapping shut. */}
       <Text
         style={[styles.description, { color: textColor }]}
-        numberOfLines={!expanded && needsTruncation ? COLLAPSED_LINES : undefined}
+        numberOfLines={!expanded && (fullHeight === 0 || needsTruncation) ? COLLAPSED_LINES : undefined}
       >
         {description}
       </Text>

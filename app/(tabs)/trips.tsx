@@ -40,6 +40,7 @@ export default function TripsScreen() {
   const [showSignUp, setShowSignUp] = useState(false);
   const [payingBooking, setPayingBooking] = useState<Booking | null>(null);
   const [reviewingBooking, setReviewingBooking] = useState<Booking | null>(null);
+  const [fetchError, setFetchError] = useState(false);
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -57,6 +58,7 @@ export default function TripsScreen() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      setFetchError(false);
       if (activeTab === 'upcoming') {
         // Fetch both CONFIRMED and PENDING — show all future bookings together
         const [confirmedRes, pendingRes] = await Promise.all([
@@ -106,6 +108,7 @@ export default function TripsScreen() {
       }
     } catch {
       setBookings([]);
+      setFetchError(true);
     } finally { setLoading(false); }
   };
 
@@ -206,20 +209,31 @@ export default function TripsScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={tint} />}
           ListEmptyComponent={
-            <View style={s.centerWrap}>
-              <Ionicons name={activeTab === 'upcoming' ? 'airplane-outline' : activeTab === 'past' ? 'checkmark-circle-outline' : 'close-circle-outline'} size={40} color={subtle} />
-              <Text style={[s.emptyTitle, { color: text }]}>
-                {activeTab === 'upcoming' ? 'No upcoming trips' : activeTab === 'past' ? 'No past trips' : 'No cancellations'}
-              </Text>
-              <Text style={[s.emptySub, { color: subtle }]}>
-                {activeTab === 'upcoming' ? 'When you book a stay, it will show up here' : 'Your travel history will appear here'}
-              </Text>
-              {activeTab === 'upcoming' && (
-                <TouchableOpacity style={[s.btn, { backgroundColor: tint }]} onPress={() => router.push('/')}>
-                  <Text style={s.btnText}>Explore stays</Text>
+            fetchError ? (
+              <View style={s.centerWrap}>
+                <Ionicons name="cloud-offline-outline" size={40} color={subtle} />
+                <Text style={[s.emptyTitle, { color: text }]}>Couldn't load your trips</Text>
+                <Text style={[s.emptySub, { color: subtle }]}>Check your connection and try again</Text>
+                <TouchableOpacity style={[s.btn, { backgroundColor: tint }]} onPress={fetchBookings}>
+                  <Text style={s.btnText}>Retry</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : (
+              <View style={s.centerWrap}>
+                <Ionicons name={activeTab === 'upcoming' ? 'airplane-outline' : activeTab === 'past' ? 'checkmark-circle-outline' : 'close-circle-outline'} size={40} color={subtle} />
+                <Text style={[s.emptyTitle, { color: text }]}>
+                  {activeTab === 'upcoming' ? 'No upcoming trips' : activeTab === 'past' ? 'No past trips' : 'No cancellations'}
+                </Text>
+                <Text style={[s.emptySub, { color: subtle }]}>
+                  {activeTab === 'upcoming' ? 'When you book a stay, it will show up here' : 'Your travel history will appear here'}
+                </Text>
+                {activeTab === 'upcoming' && (
+                  <TouchableOpacity style={[s.btn, { backgroundColor: tint }]} onPress={() => router.push('/')}>
+                    <Text style={s.btnText}>Explore stays</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )
           }
         />
       )}

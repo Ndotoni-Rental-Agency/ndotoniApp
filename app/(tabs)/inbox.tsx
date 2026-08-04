@@ -258,6 +258,8 @@ export default function MessagesScreen() {
               <TouchableOpacity
                 onPress={() => setShowNewConversation(true)}
                 style={[styles.composeButton, { backgroundColor: tintColor }]}
+                accessibilityRole="button"
+                accessibilityLabel="New conversation"
               >
                 <Ionicons name="create-outline" size={20} color="#fff" />
               </TouchableOpacity>

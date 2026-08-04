@@ -330,6 +330,14 @@ export default function SearchScreen() {
               Price ↓
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.chip, { borderColor }, filters.sortBy === 'newest' && { borderColor: tintColor, backgroundColor: `${tintColor}10` }]}
+            onPress={() => setFilters(f => ({ ...f, sortBy: f.sortBy === 'newest' ? undefined : 'newest' }))}
+          >
+            <Text style={[styles.chipText, { color: filters.sortBy === 'newest' ? tintColor : textColor }]}>
+              Newest
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 

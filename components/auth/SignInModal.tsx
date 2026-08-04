@@ -100,17 +100,18 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       } else if (error.name === 'Unknown' || !error.name) {
         // Check if it's the react-native linking issue
         const underlyingMessage = error?.underlyingError?.message || '';
+        const combinedMessage = `${error?.message || ''} ${underlyingMessage}`.toLowerCase();
         if (underlyingMessage.includes('@aws-amplify/react-native') || underlyingMessage.includes('Expo Go')) {
           Alert.alert(
             'Development Build Required',
             'Email/password sign-in requires a development build and cannot work with Expo Go.\n\nPlease use "Continue with Google" to sign in, or create a development build with:\n\nnpx expo run:ios\nor\nnpx expo run:android'
           );
+        } else if (/network|fetch|timeout|offline|internet/.test(combinedMessage)) {
+          // Genuinely unreachable — don't guess at a config problem when it's just connectivity
+          Alert.alert('No Connection', "We couldn't reach the server. Check your internet connection and try again.");
         } else {
-          // Unknown error - likely a configuration issue
-          Alert.alert(
-            'Sign In Error',
-            'Unable to sign in. This might be a configuration issue. Please try signing in with Google or contact support.\n\nFor now, please use "Continue with Google" to sign in.'
-          );
+          // Unrecognized error — show what actually happened instead of guessing
+          Alert.alert('Sign In Error', getSafeErrorMessage(error, 'signing in'));
         }
       } else {
         // Show user-friendly error message
@@ -186,7 +187,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Sign In</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
             </TouchableOpacity>
           </View>

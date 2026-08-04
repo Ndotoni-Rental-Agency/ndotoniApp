@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +13,7 @@ interface GalleryCarouselProps {
 
 export default function GalleryCarousel({ images, height, onTap }: GalleryCarouselProps) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
 
   return (
     <View style={{ height }}>
@@ -24,15 +26,22 @@ export default function GalleryCarousel({ images, height, onTap }: GalleryCarous
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item, index }) => (
           <TouchableOpacity activeOpacity={0.95} onPress={() => onTap(index)}>
-            <Image
-              source={{ uri: item }}
-              style={{ width: W, height }}
-              contentFit="cover"
-              transition={200}
-              cachePolicy="memory-disk"
-              recyclingKey={item}
-              placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
-            />
+            {failedIndices.has(index) ? (
+              <View style={[s.fallback, { width: W, height }]}>
+                <Ionicons name="image-outline" size={40} color="rgba(255,255,255,0.5)" />
+              </View>
+            ) : (
+              <Image
+                source={{ uri: item }}
+                style={{ width: W, height }}
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
+                recyclingKey={item}
+                placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
+                onError={() => setFailedIndices(prev => new Set(prev).add(index))}
+              />
+            )}
           </TouchableOpacity>
         )}
       />
@@ -46,6 +55,11 @@ export default function GalleryCarousel({ images, height, onTap }: GalleryCarous
 }
 
 const s = StyleSheet.create({
+  fallback: {
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pill: {
     position: 'absolute', bottom: 16, alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12,

@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -81,29 +81,7 @@ export default function HomeScreen() {
   const featured: any = feed[0];
   const rest = feed.slice(1);
 
-  // Build a varied layout: pairs of small cards + full-width cards
-  const renderFeedItem = ({ item, index }: { item: any; index: number }) => {
-    // Pattern: every 3rd item (0-indexed: 2, 5, 8...) is full-width tall
-    // Others come in pairs (rendered together from even index)
-    const patternPos = index % 3;
-
-    if (patternPos === 2) {
-      // Full-width tall card
-      return renderWideCard(item);
-    }
-    // Pair cards — only render from even positions in the pair
-    if (patternPos === 1) return null; // handled by patternPos === 0
-    // patternPos === 0: render a row of 2 compact cards
-    const nextItem = rest[index + 1];
-    return (
-      <View style={styles.pairRow}>
-        {renderCompactCard(item)}
-        {nextItem ? renderCompactCard(nextItem) : <View style={styles.pairHalf} />}
-      </View>
-    );
-  };
-
-  const renderWideCard = (p: any) => (
+  const renderWideCard = useCallback((p: any) => (
     <TouchableOpacity style={styles.wideCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
       <View style={[styles.wideImgWrap, { height: W * 0.55 }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
@@ -130,9 +108,9 @@ export default function HomeScreen() {
         </Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [W, text, subtle, router]);
 
-  const renderCompactCard = (p: any) => (
+  const renderCompactCard = useCallback((p: any) => (
     <TouchableOpacity style={styles.compactCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
       <View style={[styles.compactImgWrap, { height: (W - 44) / 2 * 1.1 }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
@@ -153,7 +131,29 @@ export default function HomeScreen() {
         </Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [W, text, subtle, router]);
+
+  // Build a varied layout: pairs of small cards + full-width cards
+  const renderFeedItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    // Pattern: every 3rd item (0-indexed: 2, 5, 8...) is full-width tall
+    // Others come in pairs (rendered together from even index)
+    const patternPos = index % 3;
+
+    if (patternPos === 2) {
+      // Full-width tall card
+      return renderWideCard(item);
+    }
+    // Pair cards — only render from even positions in the pair
+    if (patternPos === 1) return null; // handled by patternPos === 0
+    // patternPos === 0: render a row of 2 compact cards
+    const nextItem = rest[index + 1];
+    return (
+      <View style={styles.pairRow}>
+        {renderCompactCard(item)}
+        {nextItem ? renderCompactCard(nextItem) : <View style={styles.pairHalf} />}
+      </View>
+    );
+  }, [rest, renderWideCard, renderCompactCard]);
 
   // Header component with categories
   const ListHeader = () => (

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface CalendarDatePickerProps {
   visible: boolean;
@@ -230,13 +230,14 @@ export default function CalendarDatePicker({
       <View style={[styles.container, { backgroundColor }]}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: borderColor }]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={28} color={textColor} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: textColor }]}>Select dates</Text>
           <View style={styles.placeholder} />
         </View>
 
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Selected Dates Display */}
         {mode === 'range' ? (
           <View style={styles.selectedDatesContainer}>
@@ -269,10 +270,12 @@ export default function CalendarDatePicker({
 
         {/* Month Navigation */}
         <View style={styles.monthNavigation}>
-          <TouchableOpacity 
-            onPress={handlePreviousMonth} 
+          <TouchableOpacity
+            onPress={handlePreviousMonth}
             style={styles.navButton}
             disabled={!canGoPrevious()}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
           >
             <Ionicons 
               name="chevron-back" 
@@ -285,7 +288,7 @@ export default function CalendarDatePicker({
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
           
-          <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
+          <TouchableOpacity onPress={handleNextMonth} style={styles.navButton} accessibilityRole="button" accessibilityLabel="Next month">
             <Ionicons name="chevron-forward" size={28} color={textColor} />
           </TouchableOpacity>
         </View>
@@ -313,6 +316,7 @@ export default function CalendarDatePicker({
             <Text style={[styles.legendText, { color: secondaryText }]}>Blocked</Text>
           </View>
         </View>
+        </ScrollView>
 
         {/* Done Button */}
         <View style={[styles.footer, { borderTopColor: borderColor }]}>
@@ -413,9 +417,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   calendarContainer: {
     paddingHorizontal: 20,
-    flex: 1,
   },
   daysGrid: {
     flexDirection: 'row',

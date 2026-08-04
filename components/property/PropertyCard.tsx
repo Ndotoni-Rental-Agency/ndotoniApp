@@ -46,6 +46,7 @@ export default function PropertyCard({
   
   const textColor = useThemeColor({}, 'text');
   const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
+  const subtleColor = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
   const formatPrice = (amount: number) => {
     return amount.toLocaleString('en-US');
@@ -151,15 +152,15 @@ export default function PropertyCard({
         </View>
         <View style={styles.detailsRow}>
           {propertyType && (
-            <Text style={styles.propertyType}>
+            <Text style={[styles.propertyType, { color: subtleColor }]}>
               {formatPropertyType(propertyType)}
             </Text>
           )}
           {propertyType && safeBedrooms > 0 && (
-            <Text style={styles.separator}>•</Text>
+            <Text style={[styles.separator, { color: subtleColor }]}>•</Text>
           )}
           {safeBedrooms > 0 && (
-            <Text style={styles.bedrooms}>
+            <Text style={[styles.bedrooms, { color: subtleColor }]}>
               {safeBedrooms} bed{safeBedrooms > 1 ? 's' : ''}
             </Text>
           )}
@@ -168,7 +169,7 @@ export default function PropertyCard({
           <Text style={[styles.price, { color: textColor }]}>
             {formatCurrency(safeCurrency)} {formatPrice(safePrice)}
           </Text>
-          <Text style={styles.priceUnit}>
+          <Text style={[styles.priceUnit, { color: subtleColor }]}>
             {' '}/ {priceUnit}
           </Text>
         </View>
@@ -255,17 +256,14 @@ const styles = StyleSheet.create({
   },
   propertyType: {
     fontSize: 14,
-    color: '#717171',
     fontWeight: '500',
   },
   separator: {
     fontSize: 14,
-    color: '#717171',
     marginHorizontal: 6,
   },
   bedrooms: {
     fontSize: 14,
-    color: '#717171',
     fontWeight: '400',
   },
   priceContainer: {
@@ -280,7 +278,6 @@ const styles = StyleSheet.create({
   },
   priceUnit: {
     fontSize: 14,
-    color: '#717171',
     fontWeight: '400',
   },
 });

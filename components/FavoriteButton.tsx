@@ -30,6 +30,8 @@ export default function FavoriteButton({ propertyId, size = 18, variant = 'dark-
       onPress={() => toggleFavorite(propertyId)}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={favorited ? 'Remove from favorites' : 'Add to favorites'}
     >
       <Ionicons
         name={favorited ? 'heart' : 'heart-outline'}
