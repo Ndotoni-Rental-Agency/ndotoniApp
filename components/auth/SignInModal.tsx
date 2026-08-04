@@ -1,13 +1,14 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
+    Animated,
     KeyboardAvoidingView,
-    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -40,6 +41,8 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const { signIn, signInWithSocial, isAuthenticated } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   // Auto-close modal when auth state changes to authenticated (covers both platforms)
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      showAlert({ title: 'Missing info', message: 'Please enter email and password', icon: 'warning' });
       return;
     }
 
@@ -79,10 +82,12 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           ? 'Your account needs to be verified. A new verification code has been sent to your email.'
           : 'Your account needs to be verified. Please check your email for the verification code.';
         
-        Alert.alert(
-          'Email Not Verified',
+        showAlert({
+          title: 'Email Not Verified',
           message,
-          [
+          icon: 'warning',
+          buttons: [
+            { text: 'Cancel', style: 'cancel' },
             {
               text: 'Verify Now',
               onPress: () => {
@@ -90,32 +95,32 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
                 onClose();
               },
             },
-            { text: 'Cancel', style: 'cancel' },
-          ]
-        );
+          ],
+        });
       } else if (error.name === 'NotAuthorizedException') {
-        Alert.alert('Sign In Failed', 'Incorrect email or password. Please try again.');
+        showAlert({ title: 'Sign In Failed', message: 'Incorrect email or password. Please try again.', icon: 'error' });
       } else if (error.name === 'UserNotFoundException') {
-        Alert.alert('Sign In Failed', 'No account found with this email. Please sign up first.');
+        showAlert({ title: 'Sign In Failed', message: 'No account found with this email. Please sign up first.', icon: 'error' });
       } else if (error.name === 'Unknown' || !error.name) {
         // Check if it's the react-native linking issue
         const underlyingMessage = error?.underlyingError?.message || '';
         const combinedMessage = `${error?.message || ''} ${underlyingMessage}`.toLowerCase();
         if (underlyingMessage.includes('@aws-amplify/react-native') || underlyingMessage.includes('Expo Go')) {
-          Alert.alert(
-            'Development Build Required',
-            'Email/password sign-in requires a development build and cannot work with Expo Go.\n\nPlease use "Continue with Google" to sign in, or create a development build with:\n\nnpx expo run:ios\nor\nnpx expo run:android'
-          );
+          showAlert({
+            title: 'Development Build Required',
+            message: 'Email/password sign-in requires a development build and cannot work with Expo Go.\n\nPlease use "Continue with Google" to sign in, or create a development build with:\n\nnpx expo run:ios\nor\nnpx expo run:android',
+            icon: 'info',
+          });
         } else if (/network|fetch|timeout|offline|internet/.test(combinedMessage)) {
           // Genuinely unreachable — don't guess at a config problem when it's just connectivity
-          Alert.alert('No Connection', "We couldn't reach the server. Check your internet connection and try again.");
+          showAlert({ title: 'No Connection', message: "We couldn't reach the server. Check your internet connection and try again.", icon: 'error' });
         } else {
           // Unrecognized error — show what actually happened instead of guessing
-          Alert.alert('Sign In Error', getSafeErrorMessage(error, 'signing in'));
+          showAlert({ title: 'Sign In Error', message: getSafeErrorMessage(error, 'signing in'), icon: 'error' });
         }
       } else {
         // Show user-friendly error message
-        Alert.alert('Sign In Error', getSafeErrorMessage(error, 'signing in'));
+        showAlert({ title: 'Sign In Error', message: getSafeErrorMessage(error, 'signing in'), icon: 'error' });
       }
     } finally {
       setIsSubmitting(false);
@@ -130,7 +135,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Google'));
+      showAlert({ title: 'Sign In Error', message: getSafeErrorMessage(error, 'signing in with Google'), icon: 'error' });
     }
   };
 
@@ -141,7 +146,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Apple'));
+      showAlert({ title: 'Sign In Error', message: getSafeErrorMessage(error, 'signing in with Apple'), icon: 'error' });
     }
   };
 
@@ -152,20 +157,17 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', getSafeErrorMessage(error, 'signing in with Facebook'));
+      showAlert({ title: 'Sign In Error', message: getSafeErrorMessage(error, 'signing in with Facebook'), icon: 'error' });
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={styles.fill}
       >
         <TouchableOpacity
           style={styles.modalBackdrop}
@@ -303,12 +305,18 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
+  },
+  fill: {
     flex: 1,
     justifyContent: 'flex-end',
   },

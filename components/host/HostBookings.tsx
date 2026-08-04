@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { approveBooking, declineBooking } from '@/lib/graphql/mutations';
@@ -9,7 +10,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -29,6 +29,7 @@ type TimeFilter = 'upcoming' | 'past';
 
 export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const router = useRouter();
+  const { showAlert } = useAlert();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('ALL');
@@ -82,23 +83,23 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
       await GraphQLClient.executeAuthenticated<any>(approveBooking, { bookingId: id });
       setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.CONFIRMED } : b));
       setApproveTarget(null);
-      Alert.alert('✅ Approved', 'Booking confirmed. Guest will be notified.');
+      showAlert({ title: 'Approved', message: 'Booking confirmed. Guest will be notified.', icon: 'success' });
       onRefresh?.();
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to approve');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to approve', icon: 'error' });
     } finally { setActionLoading(null); }
   };
 
   const handleDecline = async (id: string) => {
-    if (!declineReason.trim()) { Alert.alert('Reason required'); return; }
+    if (!declineReason.trim()) { showAlert({ title: 'Reason required', icon: 'warning' }); return; }
     setActionLoading(id);
     try {
       await GraphQLClient.executeAuthenticated<any>(declineBooking, { bookingId: id, reason: declineReason.trim() });
       setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.DECLINED } : b));
       setDeclineTarget(null); setDeclineReason('Not available');
-      Alert.alert('Declined', 'Booking request declined.');
+      showAlert({ title: 'Declined', message: 'Booking request declined.', icon: 'info' });
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to decline');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to decline', icon: 'error' });
     } finally { setActionLoading(null); }
   };
 
@@ -108,7 +109,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
       await GraphQLClient.executeAuthenticated<any>(declineBooking, { bookingId: id, reason: 'Booking expired — check-in date passed' });
       setBookings(prev => prev.map(b => b.bookingId === id ? { ...b, status: BookingStatus.DECLINED } : b));
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to dismiss');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to dismiss', icon: 'error' });
     } finally { setActionLoading(null); }
   };
 

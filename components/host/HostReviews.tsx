@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { respondToReview } from '@/lib/graphql/mutations';
@@ -6,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -56,6 +56,7 @@ export default function HostReviews({ propertyIds, propertyNames }: Props) {
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { showAlert } = useAlert();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'responded'>('all');
@@ -167,9 +168,9 @@ export default function HostReviews({ propertyIds, propertyNames }: Props) {
       setReviews(prev => prev.map(r => r.reviewId === reviewId ? { ...r, hostResponse: responseText.trim() } : r));
       setRespondingTo(null);
       setResponseText('');
-      Alert.alert('Done', 'Your response has been posted.');
+      showAlert({ title: 'Done', message: 'Your response has been posted.', icon: 'success' });
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to post response.');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to post response.', icon: 'error' });
     } finally {
       setSubmitting(false);
     }

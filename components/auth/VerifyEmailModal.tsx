@@ -3,18 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
+  Animated,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface VerifyEmailModalProps {
@@ -42,20 +43,23 @@ export default function VerifyEmailModal({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const { verifyEmail, resendVerificationCode } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const handleVerify = async () => {
     if (!code) {
-      Alert.alert('Error', 'Please enter the verification code');
+      showAlert({ title: 'Code required', message: 'Please enter the verification code', icon: 'warning' });
       return;
     }
 
     setIsSubmitting(true);
     try {
       await verifyEmail(email, code);
-      Alert.alert(
-        'Success',
-        'Email verified successfully! You can now sign in.',
-        [
+      showAlert({
+        title: 'Success',
+        message: 'Email verified successfully! You can now sign in.',
+        icon: 'success',
+        buttons: [
           {
             text: 'OK',
             onPress: () => {
@@ -63,10 +67,10 @@ export default function VerifyEmailModal({
               setCode('');
             },
           },
-        ]
-      );
+        ],
+      });
     } catch (error: any) {
-      Alert.alert('Error', getSafeErrorMessage(error, 'verifying your email'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'verifying your email'), icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -76,24 +80,21 @@ export default function VerifyEmailModal({
     setIsResending(true);
     try {
       await resendVerificationCode(email);
-      Alert.alert('Success', 'Verification code sent to your email');
+      showAlert({ title: 'Success', message: 'Verification code sent to your email', icon: 'success' });
     } catch (error: any) {
-      Alert.alert('Error', getSafeErrorMessage(error, 'resending verification code'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'resending verification code'), icon: 'error' });
     } finally {
       setIsResending(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={styles.fill}
       >
         <TouchableOpacity
           style={styles.modalBackdrop}
@@ -167,12 +168,18 @@ export default function VerifyEmailModal({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
+  },
+  fill: {
     flex: 1,
     justifyContent: 'flex-end',
   },

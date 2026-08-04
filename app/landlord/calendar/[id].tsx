@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { BlockDatesMutationVariables, UnblockDatesMutationVariables } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -8,7 +9,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +21,7 @@ import { Image } from 'expo-image';
 export default function PropertyCalendarScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { showAlert } = useAlert();
   const propertyId = params.id as string;
   const propertyType = params.type as 'long-term' | 'short-term' | undefined;
 
@@ -144,8 +145,8 @@ export default function PropertyCalendarScreen() {
       if (res.blockDates?.success) {
         clearSelection();
         await fetchBlockedDates(currentMonth);
-      } else { Alert.alert('Error', res.blockDates?.message || 'Failed'); }
-    } catch (err: any) { Alert.alert('Error', err?.message || 'Something went wrong. Please try again.'); }
+      } else { showAlert({ title: 'Error', message: res.blockDates?.message || 'Failed', icon: 'error' }); }
+    } catch (err: any) { showAlert({ title: 'Error', message: err?.message || 'Something went wrong. Please try again.', icon: 'error' }); }
     finally { setIsSaving(false); }
   };
 
@@ -160,8 +161,8 @@ export default function PropertyCalendarScreen() {
       if (res.unblockDates?.success) {
         clearSelection();
         await fetchBlockedDates(currentMonth);
-      } else { Alert.alert('Error', res.unblockDates?.message || 'Failed'); }
-    } catch (err: any) { Alert.alert('Error', err?.message || 'Something went wrong. Please try again.'); }
+      } else { showAlert({ title: 'Error', message: res.unblockDates?.message || 'Failed', icon: 'error' }); }
+    } catch (err: any) { showAlert({ title: 'Error', message: err?.message || 'Something went wrong. Please try again.', icon: 'error' }); }
     finally { setIsSaving(false); }
   };
 

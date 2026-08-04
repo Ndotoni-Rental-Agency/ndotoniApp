@@ -1,8 +1,9 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Coordinates {
   latitude: number;
@@ -18,6 +19,7 @@ export default function CoordinatesInput({ value, onChange }: CoordinatesInputPr
   const [latitude, setLatitude] = useState(value?.latitude?.toString() || '');
   const [longitude, setLongitude] = useState(value?.longitude?.toString() || '');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const { showAlert } = useAlert();
 
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -56,10 +58,7 @@ export default function CoordinatesInput({ value, onChange }: CoordinatesInputPr
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
-          'Permission Denied',
-          'Location permission is required to use your current location.'
-        );
+        showAlert({ title: 'Permission Denied', message: 'Location permission is required to use your current location.', icon: 'warning' });
         setIsGettingLocation(false);
         return;
       }
@@ -82,10 +81,7 @@ export default function CoordinatesInput({ value, onChange }: CoordinatesInputPr
     } catch (error) {
       console.error('Error getting current location:', error);
       setIsGettingLocation(false);
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please try again or enter coordinates manually.'
-      );
+      showAlert({ title: 'Location Error', message: 'Unable to get your current location. Please try again or enter coordinates manually.', icon: 'error' });
     }
   };
 

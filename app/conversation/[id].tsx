@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChatDeletion } from '@/hooks/useChatDeletion';
@@ -14,7 +15,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     KeyboardAvoidingView,
     Linking,
@@ -52,6 +52,7 @@ export default function ConversationScreen() {
   } = useChat();
 
   const { deleteMessage: deleteChatMessage } = useChatDeletion();
+  const { showAlert } = useAlert();
 
   const [messageText, setMessageText] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
@@ -184,10 +185,11 @@ export default function ConversationScreen() {
   };
 
   const handleUnblockUser = () => {
-    Alert.alert(
-      'Unblock User',
-      `Unblock ${conversation?.otherPartyName || 'this user'}? You'll be able to message each other again.`,
-      [
+    showAlert({
+      title: 'Unblock User',
+      message: `Unblock ${conversation?.otherPartyName || 'this user'}? You'll be able to message each other again.`,
+      icon: 'info',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Unblock',
@@ -202,24 +204,25 @@ export default function ConversationScreen() {
               setIsBlocked(false);
               setHasBlockedOther(false);
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
+              showAlert({ title: 'Error', message: err?.message || 'Something went wrong. Please try again.', icon: 'error' });
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleShowModerationMenu = () => {
-    Alert.alert(
-      conversation?.otherPartyName || 'User',
-      'What would you like to do?',
-      [
-        { text: 'Report User', onPress: () => setShowReportModal(true) },
-        { text: 'Block User', style: 'destructive', onPress: () => setShowBlockModal(true) },
+    showAlert({
+      title: conversation?.otherPartyName || 'User',
+      message: 'What would you like to do?',
+      icon: 'info',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+        { text: 'Block User', style: 'destructive', onPress: () => setShowBlockModal(true) },
+        { text: 'Report User', onPress: () => setShowReportModal(true) },
+      ],
+    });
   };
 
   const handleSend = async () => {
@@ -232,17 +235,18 @@ export default function ConversationScreen() {
       await sendMessage(decodedId, text);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
+      showAlert({ title: 'Error', message: error?.message || 'Something went wrong. Please try again.', icon: 'error' });
       setMessageText(text); // Restore message on error
     }
   };
 
   const handleDeleteSelectedMessages = () => {
     const count = selectedMessages.size;
-    Alert.alert(
-      'Delete Messages',
-      `Are you sure you want to delete ${count} message${count > 1 ? 's' : ''}?`,
-      [
+    showAlert({
+      title: 'Delete Messages',
+      message: `Are you sure you want to delete ${count} message${count > 1 ? 's' : ''}?`,
+      icon: 'delete',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
@@ -265,8 +269,8 @@ export default function ConversationScreen() {
             setSelectedMessages(new Set());
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const toggleMessageSelection = (messageId: string) => {

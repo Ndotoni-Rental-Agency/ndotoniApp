@@ -4,6 +4,7 @@ import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import ContactSupportModal from '@/components/profile/ContactSupportModal';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -15,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Href, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppSwitch from '@/components/ui/AppSwitch';
 
@@ -32,6 +33,7 @@ export default function ProfileScreen() {
   const { setThemeMode, isDark } = useTheme();
   const { language, setLanguage } = useLanguage();
   const { updateUserProfile } = useUpdateUser();
+  const { showAlert } = useAlert();
   
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
@@ -53,18 +55,19 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
+    showAlert({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      icon: 'warning',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
+        {
+          text: 'Sign Out',
           style: 'destructive',
           onPress: () => signOut()
         }
       ]
-    );
+    });
   };
 
   const handleProfilePictureUpload = async () => {
@@ -72,7 +75,7 @@ export default function ProfileScreen() {
       // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant photo library permissions to upload a profile picture.');
+        showAlert({ title: 'Permission Required', message: 'Please grant photo library permissions to upload a profile picture.', icon: 'warning' });
         return;
       }
 
@@ -119,7 +122,7 @@ export default function ProfileScreen() {
       const updateResult = await updateUserProfile({ profileImage: fileUrl });
 
       if (updateResult.success) {
-        Alert.alert('Success', 'Profile picture updated successfully');
+        showAlert({ title: 'Success', message: 'Profile picture updated successfully', icon: 'success' });
         // Refresh user data
         if (refreshUser) {
           await refreshUser();
@@ -129,7 +132,7 @@ export default function ProfileScreen() {
       }
     } catch (error: any) {
       console.error('[Profile] Error uploading profile picture:', error);
-      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
+      showAlert({ title: 'Error', message: error?.message || 'Something went wrong. Please try again.', icon: 'error' });
     } finally {
       setUploadingPhoto(false);
     }

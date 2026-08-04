@@ -11,6 +11,7 @@ import {
   BookingStep, 
   ReservationColors 
 } from '@/components/reservation/types';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -20,12 +21,11 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
   AppState,
   AppStateStatus,
   Keyboard,
   Linking,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -35,6 +35,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isValidBookingPhone } from '@/lib/utils/phoneValidation';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import CalendarDatePicker from './CalendarDatePicker';
 
 interface ReservationModalProps {
@@ -58,6 +59,7 @@ export default function ReservationModal({
   instantBookEnabled = false, cleaningFee = 0, serviceFeePercentage = 0, maxGuests = 10,
 }: ReservationModalProps) {
   const { user, isAuthenticated } = useAuth();
+  const { showAlert } = useAlert();
   const [step, setStep] = useState<BookingStep>('dates');
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
@@ -197,8 +199,8 @@ export default function ReservationModal({
   const fmt = (n: number) => (n ?? 0).toLocaleString();
 
   const handleDatesNext = () => {
-    if (!checkInDate || !checkOutDate) { Alert.alert('Select dates'); return; }
-    if (nights < minimumStay) { Alert.alert('Minimum stay', `At least ${minimumStay} night${minimumStay > 1 ? 's' : ''} required`); return; }
+    if (!checkInDate || !checkOutDate) { showAlert({ title: 'Select dates', icon: 'info' }); return; }
+    if (nights < minimumStay) { showAlert({ title: 'Minimum stay', message: `At least ${minimumStay} night${minimumStay > 1 ? 's' : ''} required`, icon: 'warning' }); return; }
     // If already authenticated, skip the auth choice screen
     if (isAuthenticated) {
       setStep('guest-info');
@@ -208,9 +210,9 @@ export default function ReservationModal({
   };
 
   const handleGuestInfoNext = async () => {
-    if (!firstName.trim()) { Alert.alert('Name required', 'Please enter your first name'); return; }
-    if (!lastName.trim()) { Alert.alert('Name required', 'Please enter your last name'); return; }
-    if (!guestEmail.trim() || !guestEmail.includes('@')) { Alert.alert('Email required', 'Please enter a valid email'); return; }
+    if (!firstName.trim()) { showAlert({ title: 'Name required', message: 'Please enter your first name', icon: 'warning' }); return; }
+    if (!lastName.trim()) { showAlert({ title: 'Name required', message: 'Please enter your last name', icon: 'warning' }); return; }
+    if (!guestEmail.trim() || !guestEmail.includes('@')) { showAlert({ title: 'Email required', message: 'Please enter a valid email', icon: 'warning' }); return; }
 
     // Already created this booking earlier in the session (e.g. user went back from
     // the payment step) — don't submit a second createBooking for the same stay.
@@ -261,7 +263,7 @@ export default function ReservationModal({
 
   const handleMobilePay = async () => {
     const phone = phoneNumber.replace(/\D/g, '');
-    if (!isValidBookingPhone(phone)) { Alert.alert('Invalid number', 'Enter a valid Tanzanian phone number'); return; }
+    if (!isValidBookingPhone(phone)) { showAlert({ title: 'Invalid number', message: 'Enter a valid Tanzanian phone number', icon: 'warning' }); return; }
     setIsLoading(true); setError(''); setStep('processing');
     try {
       const exec = isAuthenticated
@@ -312,10 +314,17 @@ export default function ReservationModal({
     onClose();
   };
 
+  // A native <Modal> here would compete with the app's own themed alert (also
+  // rendered without a native Modal) for presentation — two native Modals open at
+  // once is unreliable on both platforms, so this renders as a plain overlay instead.
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, step === 'processing' ? () => {} : resetAndClose);
+
   // ─── Render ───
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={step === 'processing' ? () => {} : resetAndClose}>
+    <Animated.View style={[s.overlay, { opacity: fadeAnim }]}>
       <SafeAreaView style={[s.container, { backgroundColor: bg }]} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={s.header}>
@@ -484,11 +493,12 @@ export default function ReservationModal({
           onNeedsVerification={() => {}}
         />
       </SafeAreaView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const s = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 20 },
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   closeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

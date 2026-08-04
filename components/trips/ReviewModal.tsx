@@ -1,3 +1,5 @@
+import { useAlert } from '@/contexts/AlertContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { createReview } from '@/lib/graphql/mutations';
@@ -5,9 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -60,6 +61,8 @@ export default function ReviewModal({
   });
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const overallRating = Math.round(
     Object.values(ratings).reduce((sum, r) => sum + r, 0) / 5
@@ -69,7 +72,7 @@ export default function ReviewModal({
 
   const handleSubmit = async () => {
     if (!allRated || !comment.trim()) {
-      Alert.alert('Incomplete', 'Please rate all categories and add a comment.');
+      showAlert({ title: 'Incomplete', message: 'Please rate all categories and add a comment.', icon: 'warning' });
       return;
     }
 
@@ -88,12 +91,12 @@ export default function ReviewModal({
           comment: comment.trim(),
         },
       });
-      Alert.alert('Thank you!', 'Your review has been submitted.');
+      showAlert({ title: 'Thank you!', message: 'Your review has been submitted.', icon: 'success' });
       onReviewSubmitted?.();
       onClose();
     } catch (err: any) {
       console.error('[ReviewModal] Error:', err);
-      Alert.alert('Error', err?.message || 'Failed to submit review. Please try again.');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to submit review. Please try again.', icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -117,15 +120,17 @@ export default function ReviewModal({
     </View>
   );
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: bg }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: border, paddingTop: insets.top || 16 }]}>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={24} color={text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: text }]}>Leave a Review</Text>
@@ -196,11 +201,12 @@ export default function ReviewModal({
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 20 },
   container: { flex: 1 },
   header: {
     flexDirection: 'row',

@@ -1,14 +1,15 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
+    Animated,
     KeyboardAvoidingView,
     Linking,
-    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -43,6 +44,8 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const { signUp, signUpWithSocial, isAuthenticated } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   // Auto-close modal when auth state changes to authenticated
   useEffect(() => {
@@ -54,17 +57,17 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
 
   const handleSignUp = async () => {
     if (!email || !password || !firstName || !lastName) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert({ title: 'Missing info', message: 'Please fill in all fields', icon: 'warning' });
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      showAlert({ title: 'Weak password', message: 'Password must be at least 8 characters', icon: 'warning' });
       return;
     }
 
     if (!agreedToTerms) {
-      Alert.alert('Terms Required', 'Please agree to the Terms of Service and Privacy Policy to create an account.');
+      showAlert({ title: 'Terms Required', message: 'Please agree to the Terms of Service and Privacy Policy to create an account.', icon: 'warning' });
       return;
     }
 
@@ -94,10 +97,12 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
           ? 'An account with this email already exists but is not verified. A new verification code has been sent to your email.'
           : 'An account with this email already exists but is not verified. Please check your email for the verification code.';
         
-        Alert.alert(
-          'Account Exists',
+        showAlert({
+          title: 'Account Exists',
           message,
-          [
+          icon: 'warning',
+          buttons: [
+            { text: 'Cancel', style: 'cancel' },
             {
               text: 'Verify Now',
               onPress: () => {
@@ -105,15 +110,11 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
                 onClose();
               },
             },
-            { text: 'Cancel', style: 'cancel' },
-          ]
-        );
+          ],
+        });
       } else {
         // Show user-friendly error message
-        Alert.alert(
-          'Sign Up Error', 
-          getSafeErrorMessage(error, 'creating your account')
-        );
+        showAlert({ title: 'Sign Up Error', message: getSafeErrorMessage(error, 'creating your account'), icon: 'error' });
       }
     } finally {
       setIsSubmitting(false);
@@ -127,7 +128,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', getSafeErrorMessage(error, 'signing up with Google'));
+      showAlert({ title: 'Sign Up Error', message: getSafeErrorMessage(error, 'signing up with Google'), icon: 'error' });
     }
   };
 
@@ -138,20 +139,17 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       onClose();
     } catch (error: any) {
       setIsSocialLoading(false);
-      Alert.alert('Error', getSafeErrorMessage(error, 'signing up with Apple'));
+      showAlert({ title: 'Sign Up Error', message: getSafeErrorMessage(error, 'signing up with Apple'), icon: 'error' });
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={styles.fill}
       >
         <TouchableOpacity
           style={styles.modalBackdrop}
@@ -320,12 +318,18 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
+  },
+  fill: {
     flex: 1,
     justifyContent: 'flex-end',
   },

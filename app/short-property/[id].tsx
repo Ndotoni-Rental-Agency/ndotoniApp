@@ -13,6 +13,7 @@ import ReportModal from '@/components/moderation/ReportModal';
 import ShortTermPropertyDetails from '@/components/property/ShortTermPropertyDetails';
 import SignInModal from '@/components/auth/SignInModal';
 import SignUpModal from '@/components/auth/SignUpModal';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -30,7 +31,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -50,6 +50,7 @@ export default function ShortTermPropertyDetailsScreen() {
   const insets = useSafeAreaInsets();
   const propertyId = params.id as string;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const { showAlert } = useAlert();
 
   const [showReservation, setShowReservation] = useState(false);
   const [galleryVisible, setGalleryVisible] = useState(false);
@@ -113,7 +114,7 @@ export default function ShortTermPropertyDetailsScreen() {
       const templateMessage = `Hi, I'm interested in your property: ${property?.title}\n${propertyUrl}`;
       router.push(`/conversation/${encodeURIComponent(conversationId)}?draft=${encodeURIComponent(templateMessage)}` as any);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Could not start conversation');
+      showAlert({ title: 'Error', message: err?.message || 'Could not start conversation', icon: 'error' });
     } finally {
       setChatLoading(false);
     }

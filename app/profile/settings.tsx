@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -53,28 +52,30 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
+    showAlert({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      icon: 'warning',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign Out', style: 'destructive', onPress: () => signOut() },
-      ]
-    );
+      ],
+    });
   };
 
   const handleDeleteAccount = () => {
     // Account deletion isn't self-service yet — it goes through support for
     // verification. Route straight into a prefilled request instead of a second
     // dead-end alert that told the user to "contact support" with no way to do so.
-    Alert.alert(
-      'Request Account Deletion',
-      "This will permanently remove your data, bookings, and saved properties once processed. We'll send your request to our support team to verify and complete it.",
-      [
+    showAlert({
+      title: 'Request Account Deletion',
+      message: "This will permanently remove your data, bookings, and saved properties once processed. We'll send your request to our support team to verify and complete it.",
+      icon: 'delete',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Continue', style: 'destructive', onPress: () => setShowDeleteRequest(true) },
-      ]
-    );
+      ],
+    });
   };
 
   const openExternalLink = async (url: string) => {
@@ -83,10 +84,10 @@ export default function SettingsScreen() {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Unavailable', 'This page is not available yet.');
+        showAlert({ title: 'Unavailable', message: 'This page is not available yet.', icon: 'info' });
       }
     } catch {
-      Alert.alert('Error', 'Could not open the link.');
+      showAlert({ title: 'Error', message: 'Could not open the link.', icon: 'error' });
     }
   };
 

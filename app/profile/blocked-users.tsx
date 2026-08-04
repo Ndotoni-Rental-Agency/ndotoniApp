@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { BlockedUser } from '@/lib/API';
@@ -8,7 +9,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -22,6 +22,7 @@ export default function BlockedUsersScreen() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const { showAlert } = useAlert();
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -49,10 +50,11 @@ export default function BlockedUsersScreen() {
   }, [loadBlockedUsers]);
 
   const handleUnblock = (user: BlockedUser) => {
-    Alert.alert(
-      `Unblock ${user.userName || 'this user'}?`,
-      'They will be able to message you and their listings will appear in your search results again.',
-      [
+    showAlert({
+      title: `Unblock ${user.userName || 'this user'}?`,
+      message: 'They will be able to message you and their listings will appear in your search results again.',
+      icon: 'info',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Unblock',
@@ -64,14 +66,14 @@ export default function BlockedUsersScreen() {
               });
               setBlockedUsers(prev => prev.filter(u => u.blockId !== user.blockId));
             } catch (error: any) {
-              Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
+              showAlert({ title: 'Error', message: error?.message || 'Something went wrong. Please try again.', icon: 'error' });
             } finally {
               setUnblockingId(null);
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const renderItem = ({ item }: { item: BlockedUser }) => (

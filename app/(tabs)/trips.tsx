@@ -3,6 +3,7 @@ import SignUpModal from '@/components/auth/SignUpModal';
 import { PaymentModal, TripCard } from '@/components/trips';
 import ReviewModal from '@/components/trips/ReviewModal';
 import { Booking, TripColors, TripTab } from '@/components/trips/types';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -13,7 +14,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -32,6 +32,7 @@ const TABS: { key: TripTab; label: string }[] = [
 export default function TripsScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showAlert } = useAlert();
   const [activeTab, setActiveTab] = useState<TripTab>('upcoming');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,10 +116,11 @@ export default function TripsScreen() {
   const handleRefresh = async () => { setRefreshing(true); await fetchBookings(); setRefreshing(false); };
 
   const handleCancelBooking = (booking: Booking) => {
-    Alert.alert(
-      'Cancel Booking',
-      `Are you sure you want to cancel your booking at ${booking.property?.title || booking.propertySnapshot?.title || 'this property'}?`,
-      [
+    showAlert({
+      title: 'Cancel Booking',
+      message: `Are you sure you want to cancel your booking at ${booking.property?.title || booking.propertySnapshot?.title || 'this property'}?`,
+      icon: 'warning',
+      buttons: [
         { text: 'Keep', style: 'cancel' },
         {
           text: 'Cancel Booking',
@@ -131,12 +133,12 @@ export default function TripsScreen() {
               });
               await fetchBookings();
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to cancel booking. Please try again.');
+              showAlert({ title: 'Error', message: err?.message || 'Failed to cancel booking. Please try again.', icon: 'error' });
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   // ─── Not authenticated ───

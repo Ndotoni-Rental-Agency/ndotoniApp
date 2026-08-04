@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 import {
   Animated,
-  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -69,7 +68,9 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
 
   const getIconConfig = (icon?: AlertOptions['icon']) => {
     switch (icon) {
-      case 'success': return { name: 'checkmark-circle', color: '#10b981', bg: '#10b98115' };
+      // Uses the app's own brand tint rather than a generic green, so every
+      // success moment reads as distinctly ndotoni.
+      case 'success': return { name: 'checkmark-circle', color: tint, bg: `${tint}15` };
       case 'error': return { name: 'close-circle', color: '#ef4444', bg: '#ef444415' };
       case 'warning': return { name: 'warning', color: '#f59e0b', bg: '#f59e0b15' };
       case 'delete': return { name: 'trash', color: '#ef4444', bg: '#ef444415' };
@@ -83,8 +84,13 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   return (
     <AlertContext.Provider value={{ showAlert }}>
       {children}
-      <Modal visible={visible} transparent animationType="none" statusBarTranslucent>
-        <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
+      {/* Plain overlay rather than a native <Modal> — stacking two native Modals at
+          once (e.g. this alert triggered from inside an already-open screen Modal
+          like sign-in) is unreliable on both iOS and Android; the second one can
+          render hidden behind the first. Rendered last so it paints on top within
+          the same view hierarchy instead of competing for its own presentation layer. */}
+      {visible && (
+        <Animated.View style={[styles.overlay, { opacity: opacityAnim }]} pointerEvents="box-none">
           <TouchableOpacity style={styles.overlayTouch} activeOpacity={1} onPress={() => dismiss()} />
           <Animated.View style={[styles.dialog, { backgroundColor: card, transform: [{ scale: scaleAnim }] }]}>
             {/* Icon */}
@@ -134,18 +140,20 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
             </View>
           </Animated.View>
         </Animated.View>
-      </Modal>
+      )}
     </AlertContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
+    zIndex: 9999,
+    elevation: 24,
   },
   overlayTouch: {
     ...StyleSheet.absoluteFillObject,

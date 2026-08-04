@@ -1,4 +1,6 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { submitContactInquiry } from '@/lib/graphql/mutations';
@@ -6,9 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -37,6 +38,8 @@ const INQUIRY_TYPES = [
 export default function ContactSupportModal({ visible, onClose, initialType, initialSubject, initialMessage }: ContactSupportModalProps) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
@@ -79,20 +82,22 @@ export default function ContactSupportModal({ visible, onClose, initialType, ini
           phone: phone.trim() || undefined,
         },
       });
-      Alert.alert('Sent!', 'We received your message and will get back to you soon.');
+      showAlert({ title: 'Sent!', message: 'We received your message and will get back to you soon.', icon: 'success' });
       setSubject('');
       setMessage('');
       onClose();
     } catch (err: any) {
       console.error('[ContactSupport] Error:', err);
-      Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
+      showAlert({ title: 'Error', message: err?.message || 'Something went wrong. Please try again.', icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: bg }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -206,11 +211,12 @@ export default function ContactSupportModal({ visible, onClose, initialType, ini
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 20 },
   container: { flex: 1 },
   header: {
     flexDirection: 'row',

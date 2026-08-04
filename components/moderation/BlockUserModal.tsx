@@ -1,11 +1,12 @@
+import { useAlert } from '@/contexts/AlertContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
-  Modal,
+  Animated,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,6 +27,8 @@ export default function BlockUserModal({
   onBlock,
 }: BlockUserModalProps) {
   const [isBlocking, setIsBlocking] = useState(false);
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -37,27 +40,24 @@ export default function BlockUserModal({
       if (onBlock) {
         await onBlock();
       }
-      Alert.alert(
-        'User Blocked',
-        `${userName} has been blocked. You will no longer see their content or receive messages from them. Our team has been notified.`,
-        [{ text: 'OK', onPress: onClose }]
-      );
+      showAlert({
+        title: 'User Blocked',
+        message: `${userName} has been blocked. You will no longer see their content or receive messages from them. Our team has been notified.`,
+        icon: 'success',
+        buttons: [{ text: 'OK', onPress: onClose }],
+      });
     } catch (error) {
-      Alert.alert('Error', getSafeErrorMessage(error, 'blocking this user'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'blocking this user'), icon: 'error' });
     } finally {
       setIsBlocking(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <View style={[styles.content, { backgroundColor }]}>
           <View style={styles.iconContainer}>
             <Ionicons name="ban" size={40} color="#dc2626" />
@@ -89,16 +89,17 @@ export default function BlockUserModal({
             <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 100,
+    elevation: 20,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,

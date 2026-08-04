@@ -1,4 +1,6 @@
 import MediaSelector from '@/components/media/MediaSelector';
+import { useAlert } from '@/contexts/AlertContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { UpdatePropertyInput } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -8,8 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
-    Modal,
+    Animated,
     ScrollView,
     StyleSheet,
     Text,
@@ -35,12 +36,15 @@ export default function PublishPropertyModal({
   isLongTerm,
 }: PublishPropertyModalProps) {
   const textColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
   const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
   const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
 
   const [selectedMedia, setSelectedMedia] = useState<string[]>(existingMedia);
   const [isPublishing, setIsPublishing] = useState(false);
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const handleMediaChange = (mediaUrls: string[], images: string[], videos: string[]) => {
     setSelectedMedia(images); // Only use images for now
@@ -48,7 +52,7 @@ export default function PublishPropertyModal({
 
   const handlePublish = async () => {
     if (selectedMedia.length === 0) {
-      Alert.alert('Error', 'Please select or upload at least one image.');
+      showAlert({ title: 'Error', message: 'Please select or upload at least one image.', icon: 'warning' });
       return;
     }
 
@@ -81,41 +85,42 @@ export default function PublishPropertyModal({
       });
 
       if (response.publishProperty?.success) {
-        Alert.alert('Success', 'Your property is now live!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              onClose();
-              onSuccess();
+        showAlert({
+          title: 'Success',
+          message: 'Your property is now live!',
+          icon: 'success',
+          buttons: [
+            {
+              text: 'OK',
+              onPress: () => {
+                onClose();
+                onSuccess();
+              },
             },
-          },
-        ]);
+          ],
+        });
       } else {
         throw new Error(response.publishProperty?.message || 'Failed to publish property');
       }
     } catch (error) {
       console.error('Publish failed:', error);
-      Alert.alert('Error', getSafeErrorMessage(error, 'publishing your property'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'publishing your property'), icon: 'error' });
     } finally {
       setIsPublishing(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
+      <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
           {/* Header */}
           <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
               Select Images to Publish
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={textColor} />
             </TouchableOpacity>
           </View>
@@ -147,7 +152,7 @@ export default function PublishPropertyModal({
               onPress={handlePublish}
               style={[
                 styles.publishButton,
-                { opacity: isPublishing || selectedMedia.length === 0 ? 0.5 : 1 },
+                { backgroundColor: tintColor, opacity: isPublishing || selectedMedia.length === 0 ? 0.5 : 1 },
               ]}
               disabled={isPublishing || selectedMedia.length === 0}
             >
@@ -162,16 +167,17 @@ export default function PublishPropertyModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
   },
   modalContent: {
     borderTopLeftRadius: 20,
@@ -227,7 +233,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#10b981',
     gap: 8,
   },
   publishButtonText: {

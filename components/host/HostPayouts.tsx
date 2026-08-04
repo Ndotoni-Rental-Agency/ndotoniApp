@@ -1,15 +1,17 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { updateUser } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type PayoutMethod = 'MPESA' | 'BANK';
 
 export default function HostPayouts() {
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [method, setMethod] = useState<PayoutMethod>('MPESA');
@@ -41,10 +43,10 @@ export default function HostPayouts() {
   const handleSave = async () => {
     if (method === 'MPESA') {
       const digits = mpesaPhone.replace(/\D/g, '');
-      if (digits.length < 9) { Alert.alert('Invalid', 'Enter a valid M-Pesa number'); return; }
-      if (!mpesaName.trim()) { Alert.alert('Required', 'Enter M-Pesa name'); return; }
+      if (digits.length < 9) { showAlert({ title: 'Invalid', message: 'Enter a valid M-Pesa number', icon: 'warning' }); return; }
+      if (!mpesaName.trim()) { showAlert({ title: 'Required', message: 'Enter M-Pesa name', icon: 'warning' }); return; }
     } else {
-      if (!bankName || !bankAccountName || !bankAccount) { Alert.alert('Required', 'Fill all bank details'); return; }
+      if (!bankName || !bankAccountName || !bankAccount) { showAlert({ title: 'Required', message: 'Fill all bank details', icon: 'warning' }); return; }
     }
 
     setSaving(true);
@@ -64,10 +66,10 @@ export default function HostPayouts() {
       }
 
       await GraphQLClient.executeAuthenticated<any>(updateUser, { input });
-      Alert.alert('✅ Saved', 'Payout details updated');
+      showAlert({ title: 'Saved', message: 'Payout details updated', icon: 'success' });
       setEditing(false);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to save');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to save', icon: 'error' });
     } finally { setSaving(false); }
   };
 
@@ -77,10 +79,15 @@ export default function HostPayouts() {
       <View>
         <View style={[styles.savedCard, { backgroundColor: card, borderColor: border }]}>
           <View style={styles.savedHeader}>
-            <Text style={{ fontSize: 24 }}>{u.payoutMethod === 'MPESA' ? '📱' : '🏦'}</Text>
+            <View style={[styles.methodIconWrap, { backgroundColor: `${tint}12` }]}>
+              <Ionicons name={u.payoutMethod === 'MPESA' ? 'phone-portrait-outline' : 'business-outline'} size={22} color={tint} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.savedTitle, { color: text }]}>{u.payoutMethod === 'MPESA' ? 'M-Pesa' : 'Bank Transfer'}</Text>
-              <Text style={[{ fontSize: 12, color: tint }]}>Connected ✓</Text>
+              <View style={styles.connectedRow}>
+                <Ionicons name="checkmark-circle" size={13} color={tint} />
+                <Text style={[{ fontSize: 12, color: tint }]}>Connected</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={() => setEditing(true)}>
               <Text style={[{ color: tint, fontSize: 14, fontWeight: '600' }]}>Edit</Text>
@@ -113,11 +120,11 @@ export default function HostPayouts() {
       <Text style={[styles.heading, { color: text }]}>Payout method</Text>
       <View style={styles.methodRow}>
         <TouchableOpacity style={[styles.methodCard, { borderColor: method === 'MPESA' ? tint : border, backgroundColor: method === 'MPESA' ? `${tint}08` : card }]} onPress={() => setMethod('MPESA')}>
-          <Text style={{ fontSize: 24 }}>📱</Text>
+          <Ionicons name="phone-portrait-outline" size={24} color={method === 'MPESA' ? tint : subtle} />
           <Text style={[styles.methodLabel, { color: text }]}>M-Pesa</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.methodCard, { borderColor: method === 'BANK' ? tint : border, backgroundColor: method === 'BANK' ? `${tint}08` : card }]} onPress={() => setMethod('BANK')}>
-          <Text style={{ fontSize: 24 }}>🏦</Text>
+          <Ionicons name="business-outline" size={24} color={method === 'BANK' ? tint : subtle} />
           <Text style={[styles.methodLabel, { color: text }]}>Bank</Text>
         </TouchableOpacity>
       </View>
@@ -164,6 +171,8 @@ const styles = StyleSheet.create({
 
   savedCard: { borderRadius: 14, borderWidth: 1, padding: 16 },
   savedHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  methodIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  connectedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   savedTitle: { fontSize: 15, fontWeight: '600' },
   savedDetails: { marginTop: 12, gap: 4 },
   savedLine: { fontSize: 13 },

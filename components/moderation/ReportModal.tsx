@@ -1,10 +1,11 @@
+import { useAlert } from '@/contexts/AlertContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
-  Modal,
+  Animated,
   StyleSheet,
   Text,
   TextInput,
@@ -67,6 +68,8 @@ export default function ReportModal({
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -79,7 +82,7 @@ export default function ReportModal({
 
   const handleSubmit = async () => {
     if (!selectedReason) {
-      Alert.alert('Error', 'Please select a reason for your report');
+      showAlert({ title: 'Error', message: 'Please select a reason for your report', icon: 'warning' });
       return;
     }
 
@@ -88,15 +91,16 @@ export default function ReportModal({
       if (onSubmit) {
         await onSubmit(selectedReason, details);
       }
-      Alert.alert(
-        'Report Submitted',
-        'Thank you for your report. Our team will review this and take appropriate action.',
-        [{ text: 'OK', onPress: onClose }]
-      );
+      showAlert({
+        title: 'Report Submitted',
+        message: 'Thank you for your report. Our team will review this and take appropriate action.',
+        icon: 'success',
+        buttons: [{ text: 'OK', onPress: onClose }],
+      });
       setSelectedReason(null);
       setDetails('');
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Something went wrong. Please try again.');
+      showAlert({ title: 'Error', message: error?.message || 'Something went wrong. Please try again.', icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -111,15 +115,11 @@ export default function ReportModal({
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <View style={[styles.content, { backgroundColor }]}>
           {/* Header */}
           <View style={styles.header}>
@@ -189,15 +189,16 @@ export default function ReportModal({
             )}
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,

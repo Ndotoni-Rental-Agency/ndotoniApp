@@ -1,3 +1,4 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -8,7 +9,6 @@ import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Image,
     ScrollView,
     StyleSheet,
@@ -31,6 +31,7 @@ export default function MediaSelector({
   onAuthRequired,
 }: MediaSelectorProps) {
   const { user } = useAuth();
+  const { showAlert } = useAlert();
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const inputBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
@@ -103,7 +104,7 @@ export default function MediaSelector({
     } else {
       // Add to selection
       if (selectedMedia.length >= maxSelection) {
-        Alert.alert('Limit Reached', `You can select up to ${maxSelection} media items`);
+        showAlert({ title: 'Limit Reached', message: `You can select up to ${maxSelection} media items`, icon: 'warning' });
         return;
       }
 
@@ -120,21 +121,22 @@ export default function MediaSelector({
 
   const checkAuthentication = () => {
     if (!user) {
-      Alert.alert(
-        'Sign In Required',
-        'Please sign in to upload photos',
-        [
+      showAlert({
+        title: 'Sign In Required',
+        message: 'Please sign in to upload photos',
+        icon: 'info',
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Sign In', 
+          {
+            text: 'Sign In',
             onPress: () => {
               if (onAuthRequired) {
                 onAuthRequired();
               }
             }
           },
-        ]
-      );
+        ],
+      });
       return false;
     }
     return true;
@@ -143,10 +145,7 @@ export default function MediaSelector({
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant camera roll permissions to upload photos.'
-      );
+      showAlert({ title: 'Permission Required', message: 'Please grant camera roll permissions to upload photos.', icon: 'warning' });
       return false;
     }
     return true;
@@ -159,7 +158,7 @@ export default function MediaSelector({
     if (!hasPermission) return;
 
     if (selectedMedia.length >= maxSelection) {
-      Alert.alert('Limit Reached', `You can select up to ${maxSelection} media items`);
+      showAlert({ title: 'Limit Reached', message: `You can select up to ${maxSelection} media items`, icon: 'warning' });
       return;
     }
 
@@ -176,7 +175,7 @@ export default function MediaSelector({
       }
     } catch (error) {
       console.error('[MediaSelector] Error picking media:', error);
-      Alert.alert('Error', 'Failed to pick media');
+      showAlert({ title: 'Error', message: 'Failed to pick media', icon: 'error' });
     }
   };
 
@@ -185,15 +184,12 @@ export default function MediaSelector({
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant camera permissions to take photos.'
-      );
+      showAlert({ title: 'Permission Required', message: 'Please grant camera permissions to take photos.', icon: 'warning' });
       return;
     }
 
     if (selectedMedia.length >= maxSelection) {
-      Alert.alert('Limit Reached', `You can select up to ${maxSelection} media items`);
+      showAlert({ title: 'Limit Reached', message: `You can select up to ${maxSelection} media items`, icon: 'warning' });
       return;
     }
 
@@ -207,7 +203,7 @@ export default function MediaSelector({
       }
     } catch (error) {
       console.error('[MediaSelector] Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      showAlert({ title: 'Error', message: 'Failed to take photo', icon: 'error' });
     }
   };
 
@@ -333,11 +329,11 @@ export default function MediaSelector({
       // Show result
       const failedCount = assets.length - uploadedUrls.length;
       if (failedCount > 0) {
-        Alert.alert(
-          'Partial Upload',
-          `${uploadedUrls.length} file(s) uploaded successfully. ${failedCount} file(s) failed.`,
-          [{ text: 'OK' }]
-        );
+        showAlert({
+          title: 'Partial Upload',
+          message: `${uploadedUrls.length} file(s) uploaded successfully. ${failedCount} file(s) failed.`,
+          icon: 'warning',
+        });
       }
 
       // Update thumbnails state
@@ -355,7 +351,7 @@ export default function MediaSelector({
       onMediaChange(newSelectedMedia, images, videos);
     } catch (error) {
       console.error('[MediaSelector] Error uploading media:', error);
-      Alert.alert('Error', 'Failed to upload media');
+      showAlert({ title: 'Error', message: 'Failed to upload media', icon: 'error' });
     } finally {
       setUploading(false);
       setUploadProgress(null);

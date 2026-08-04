@@ -1,10 +1,11 @@
 import { MAPS_CONFIG } from '@/config/maps';
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { geocodeLocation } from '@/lib/geocoding-service';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 interface Coordinates {
@@ -27,6 +28,7 @@ export default function MapCoordinatesPicker({
   district, 
   ward 
 }: MapCoordinatesPickerProps) {
+  const { showAlert } = useAlert();
   const mapRef = React.useRef<MapView>(null);
   const [markerCoords, setMarkerCoords] = useState<Coordinates | null>(value);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -136,9 +138,9 @@ export default function MapCoordinatesPicker({
   const handleSave = () => {
     if (markerCoords) {
       onChange(markerCoords);
-      Alert.alert('Success', 'Location saved successfully!');
+      showAlert({ title: 'Success', message: 'Location saved successfully!', icon: 'success' });
     } else {
-      Alert.alert('No Location', 'Please drag the pin to set a location.');
+      showAlert({ title: 'No Location', message: 'Please drag the pin to set a location.', icon: 'warning' });
     }
   };
 
@@ -161,10 +163,7 @@ export default function MapCoordinatesPicker({
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
-          'Permission Denied',
-          'Location permission is required to use your current location.'
-        );
+        showAlert({ title: 'Permission Denied', message: 'Location permission is required to use your current location.', icon: 'warning' });
         return;
       }
 
@@ -199,10 +198,7 @@ export default function MapCoordinatesPicker({
     } catch (error) {
       console.error('[MapCoordinatesPicker] Error getting current location:', error);
       setIsGeocoding(false);
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please try again or drag the pin manually.'
-      );
+      showAlert({ title: 'Location Error', message: 'Unable to get your current location. Please try again or drag the pin manually.', icon: 'error' });
     }
   };
 

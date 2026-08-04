@@ -9,7 +9,7 @@ import { UpdateShortTermPropertyInput } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Tab = 'details' | 'photos' | 'checkin' | 'settings';
@@ -100,13 +100,13 @@ export default function EditShortTermPropertyScreen() {
     try {
       const result = await updateShortProperty(propertyId, input as UpdateShortTermPropertyInput);
       if (result.success) {
-        Alert.alert('✅ Saved', `${label} updated`);
+        showAlert({ title: 'Saved', message: `${label} updated`, icon: 'success' });
         setDirtyTabs(prev => { const next = new Set(prev); next.delete(tab); return next; });
       } else {
-        Alert.alert('Error', result.message);
+        showAlert({ title: 'Error', message: result.message, icon: 'error' });
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to save');
+      showAlert({ title: 'Error', message: err?.message || 'Failed to save', icon: 'error' });
     } finally { setSaving(false); }
   };
 

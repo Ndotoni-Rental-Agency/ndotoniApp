@@ -6,6 +6,7 @@ import StepPricing from '@/components/create-listing/StepPricing';
 import StepPropertyType from '@/components/create-listing/StepPropertyType';
 import StepTitle from '@/components/create-listing/StepTitle';
 import { CreateListingForm, TOTAL_STEPS } from '@/components/create-listing/types';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
@@ -15,7 +16,6 @@ import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   KeyboardAvoidingView,
   Platform,
@@ -30,6 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function CreatePropertyScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
 
   // Theme colors
   const bg = useThemeColor({}, 'background');
@@ -123,7 +124,7 @@ export default function CreatePropertyScreen() {
 
   const handleSubmit = async () => {
     if (!form.title || (form.images.length === 0 && form.videos.length === 0)) {
-      Alert.alert('Missing info', 'Please add a title and at least one photo or video.');
+      showAlert({ title: 'Missing info', message: 'Please add a title and at least one photo or video.', icon: 'warning' });
       return;
     }
 
@@ -155,16 +156,17 @@ export default function CreatePropertyScreen() {
       );
 
       if (res.createShortTermPropertyDraft?.success) {
-        Alert.alert(
-          '🎉 Your place is listed!',
-          'You can add more details anytime from your dashboard.',
-          [{ text: 'Done', onPress: () => router.replace('/(tabs)/host') }]
-        );
+        showAlert({
+          title: 'Your place is listed!',
+          message: 'You can add more details anytime from your dashboard.',
+          icon: 'success',
+          buttons: [{ text: 'Done', onPress: () => router.replace('/(tabs)/host') }],
+        });
       } else {
-        Alert.alert('Error', res.createShortTermPropertyDraft?.message || 'Failed');
+        showAlert({ title: 'Error', message: res.createShortTermPropertyDraft?.message || 'Failed', icon: 'error' });
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong');
+      showAlert({ title: 'Error', message: err?.message || 'Something went wrong', icon: 'error' });
     } finally {
       setLoading(false);
     }

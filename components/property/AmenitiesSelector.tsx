@@ -1,7 +1,8 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface AmenitiesSelectorProps {
   selectedAmenities: string[];
@@ -60,6 +61,7 @@ export default function AmenitiesSelector({
 }: AmenitiesSelectorProps) {
   const [showModal, setShowModal] = useState(false);
   const [customAmenity, setCustomAmenity] = useState('');
+  const { showAlert } = useAlert();
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
@@ -81,17 +83,17 @@ export default function AmenitiesSelector({
   const addCustomAmenity = () => {
     const trimmed = customAmenity.trim();
     if (!trimmed) {
-      Alert.alert('Error', 'Please enter an amenity name');
+      showAlert({ title: 'Error', message: 'Please enter an amenity name', icon: 'warning' });
       return;
     }
-    
+
     // Check if it already exists (case-insensitive)
     const exists = selectedAmenities.some(
       a => a.toLowerCase() === trimmed.toLowerCase()
     );
-    
+
     if (exists) {
-      Alert.alert('Error', 'This amenity is already added');
+      showAlert({ title: 'Error', message: 'This amenity is already added', icon: 'warning' });
       return;
     }
     
@@ -151,11 +153,11 @@ export default function AmenitiesSelector({
         </View>
       )}
 
-      <Modal visible={showModal} animationType="slide" presentationStyle="pageSheet">
+      <Modal visible={showModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowModal(false)}>
         <View style={[styles.modalContainer, { backgroundColor }]}>
           <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Select Amenities</Text>
-            <TouchableOpacity onPress={() => setShowModal(false)}>
+            <TouchableOpacity onPress={() => setShowModal(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
             </TouchableOpacity>
           </View>

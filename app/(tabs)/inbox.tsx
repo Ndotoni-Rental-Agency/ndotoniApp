@@ -5,6 +5,7 @@ import SignUpModal from '@/components/auth/SignUpModal';
 import VerifyEmailModal from '@/components/auth/VerifyEmailModal';
 import { SwipeableConversationCard } from '@/components/inbox';
 import { NewConversationModal } from '@/components/inbox/NewConversationModal';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -13,7 +14,7 @@ import { useConversationSearch } from '@/hooks/useConversationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MessagesScreen() {
@@ -27,6 +28,7 @@ export default function MessagesScreen() {
   const searchBarBg = useThemeColor({ light: '#f3f4f6', dark: '#1c1c1e' }, 'background');
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showAlert } = useAlert();
   const { conversations, loadConversations, loadingConversations } = useChat();
   const { deleteConversation } = useChatDeletion();
   
@@ -54,10 +56,11 @@ export default function MessagesScreen() {
   };
 
   const handleDeleteConversation = (conversationId: string, conversationName: string) => {
-    Alert.alert(
-      'Delete Conversation',
-      `Are you sure you want to delete this conversation with ${conversationName}?`,
-      [
+    showAlert({
+      title: 'Delete Conversation',
+      message: `Are you sure you want to delete this conversation with ${conversationName}?`,
+      icon: 'delete',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
@@ -70,8 +73,8 @@ export default function MessagesScreen() {
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const formatTime = (timestamp: string) => {

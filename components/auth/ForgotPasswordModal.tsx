@@ -3,18 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
+  Animated,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ForgotPasswordModalProps {
@@ -39,20 +40,23 @@ export default function ForgotPasswordModal({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const { forgotPassword } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const handleSubmit = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      showAlert({ title: 'Email required', message: 'Please enter your email address', icon: 'warning' });
       return;
     }
 
     setIsSubmitting(true);
     try {
       await forgotPassword(email);
-      Alert.alert(
-        'Code Sent',
-        `A password reset code has been sent to ${email}`,
-        [
+      showAlert({
+        title: 'Code Sent',
+        message: `A password reset code has been sent to ${email}`,
+        icon: 'success',
+        buttons: [
           {
             text: 'OK',
             onPress: () => {
@@ -60,25 +64,22 @@ export default function ForgotPasswordModal({
               setEmail('');
             },
           },
-        ]
-      );
+        ],
+      });
     } catch (error: any) {
-      Alert.alert('Error', getSafeErrorMessage(error, 'sending reset code'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'sending reset code'), icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={styles.fill}
       >
         <TouchableOpacity
           style={styles.modalBackdrop}
@@ -136,12 +137,18 @@ export default function ForgotPasswordModal({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
+  },
+  fill: {
     flex: 1,
     justifyContent: 'flex-end',
   },

@@ -1,6 +1,7 @@
 import LocationSelector from '@/components/location/LocationSelector';
 import DatePicker from '@/components/property/DatePicker';
 import GenderPicker from '@/components/property/GenderPicker';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUpdateUser } from '@/hooks/useUpdateUser';
@@ -10,7 +11,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +25,7 @@ type SectionKey = 'personal' | 'contact' | 'address' | 'emergency' | 'identifica
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { showAlert } = useAlert();
   const { updateUserProfile } = useUpdateUser();
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -141,17 +142,22 @@ export default function EditProfileScreen() {
           await refreshUser();
         }
         // Show alert and collapse section after user dismisses it
-        Alert.alert('Success', 'Profile updated successfully', [
-          {
-            text: 'OK',
-            onPress: () => toggleSection(section),
-          },
-        ]);
+        showAlert({
+          title: 'Success',
+          message: 'Profile updated successfully',
+          icon: 'success',
+          buttons: [
+            {
+              text: 'OK',
+              onPress: () => toggleSection(section),
+            },
+          ],
+        });
       } else {
-        Alert.alert('Error', result.message);
+        showAlert({ title: 'Error', message: result.message, icon: 'error' });
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong. Please try again.');
+      showAlert({ title: 'Error', message: err?.message || 'Something went wrong. Please try again.', icon: 'error' });
     } finally {
       setSavingSection(null);
     }

@@ -1,4 +1,6 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { initiatePayment } from '@/lib/graphql/mutations';
 import { getBooking, getPayment } from '@/lib/graphql/queries';
@@ -6,12 +8,11 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
   AppState,
   AppStateStatus,
   Image,
   Linking,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,6 +34,7 @@ interface PaymentModalProps {
 export default function PaymentModal({ visible, booking, onClose, colors }: PaymentModalProps) {
   const { text, tint, card, border, subtle, bg } = colors;
   const { isAuthenticated } = useAuth();
+  const { showAlert } = useAlert();
   const [method, setMethod] = useState<'mobile' | 'card' | null>(null);
   const [phone, setPhone] = useState('');
   const [paying, setPaying] = useState(false);
@@ -44,6 +46,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   // Set when the user leaves for the external card checkout page, so we know to
   // re-check payment status when they return — Linking.openURL gives no callback.
   const awaitingCardReturnRef = useRef(false);
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, status === 'processing' ? () => {} : onClose);
 
   const total = booking?.pricing?.total ?? booking?.totalPrice ?? 0;
   const currency = booking?.pricing?.currency || booking?.property?.currency || 'TZS';
@@ -90,7 +93,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
   const handleMobilePay = async () => {
     const p = phone.replace(/\D/g, '');
-    if (!isValidBookingPhone(p)) { Alert.alert('Invalid number', 'Please enter a valid Tanzanian phone number'); return; }
+    if (!isValidBookingPhone(p)) { showAlert({ title: 'Invalid number', message: 'Please enter a valid Tanzanian phone number', icon: 'warning' }); return; }
     setPaying(true); setStatus('processing'); setError(''); setPollCount(0);
     try {
       const exec = isAuthenticated
@@ -128,7 +131,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
     Linking.openURL(`https://www.ndotonistays.com/pay/${booking.bookingId}`);
   };
 
-  if (!visible || !booking) return null;
+  if (!shouldRender || !booking) return null;
 
   const thumbnail = booking.property?.thumbnail || booking.property?.images?.[0];
 
@@ -364,7 +367,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   );
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={status === 'processing' ? () => {} : onClose}>
+    <Animated.View style={[s.overlay, { opacity: fadeAnim }]}>
       <SafeAreaView style={[s.container, { backgroundColor: bg }]} edges={['top', 'bottom']}>
         <View style={s.header}>
           {status === 'processing' ? (
@@ -397,11 +400,12 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
           {status === 'failed' && renderFailed()}
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const s = StyleSheet.create({
+  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 20 },
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e5e7eb' },
   closeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

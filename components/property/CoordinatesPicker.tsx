@@ -1,7 +1,8 @@
+import { useAlert } from '@/contexts/AlertContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Coordinates {
   latitude: number;
@@ -17,6 +18,7 @@ export default function CoordinatesPicker({ value, onChange }: CoordinatesPicker
   const [latitude, setLatitude] = useState(value?.latitude?.toString() || '');
   const [longitude, setLongitude] = useState(value?.longitude?.toString() || '');
   const [expanded, setExpanded] = useState(false);
+  const { showAlert } = useAlert();
 
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
@@ -29,17 +31,17 @@ export default function CoordinatesPicker({ value, onChange }: CoordinatesPicker
     const lng = parseFloat(longitude);
 
     if (isNaN(lat) || isNaN(lng)) {
-      Alert.alert('Invalid Coordinates', 'Please enter valid latitude and longitude values.');
+      showAlert({ title: 'Invalid Coordinates', message: 'Please enter valid latitude and longitude values.', icon: 'warning' });
       return;
     }
 
     if (lat < -90 || lat > 90) {
-      Alert.alert('Invalid Latitude', 'Latitude must be between -90 and 90.');
+      showAlert({ title: 'Invalid Latitude', message: 'Latitude must be between -90 and 90.', icon: 'warning' });
       return;
     }
 
     if (lng < -180 || lng > 180) {
-      Alert.alert('Invalid Longitude', 'Longitude must be between -180 and 180.');
+      showAlert({ title: 'Invalid Longitude', message: 'Longitude must be between -180 and 180.', icon: 'warning' });
       return;
     }
 

@@ -3,18 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
+  Animated,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOverlayModal } from '@/hooks/useOverlayModal';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ResetPasswordModalProps {
@@ -45,30 +46,33 @@ export default function ResetPasswordModal({
   const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
 
   const { resetPassword } = useAuth();
+  const { showAlert } = useAlert();
+  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
 
   const handleReset = async () => {
     if (!code || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert({ title: 'Missing info', message: 'Please fill in all fields', icon: 'warning' });
       return;
     }
 
     if (newPassword.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      showAlert({ title: 'Weak password', message: 'Password must be at least 8 characters', icon: 'warning' });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showAlert({ title: 'Passwords don’t match', message: 'Please make sure both passwords are the same', icon: 'warning' });
       return;
     }
 
     setIsSubmitting(true);
     try {
       await resetPassword(email, code, newPassword);
-      Alert.alert(
-        'Success',
-        'Password reset successfully! You can now sign in with your new password.',
-        [
+      showAlert({
+        title: 'Success',
+        message: 'Password reset successfully! You can now sign in with your new password.',
+        icon: 'success',
+        buttons: [
           {
             text: 'OK',
             onPress: () => {
@@ -78,25 +82,22 @@ export default function ResetPasswordModal({
               setConfirmPassword('');
             },
           },
-        ]
-      );
+        ],
+      });
     } catch (error: any) {
-      Alert.alert('Error', getSafeErrorMessage(error, 'resetting your password'));
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'resetting your password'), icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={styles.fill}
       >
         <TouchableOpacity
           style={styles.modalBackdrop}
@@ -223,12 +224,18 @@ export default function ResetPasswordModal({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 100,
+    elevation: 20,
+  },
+  fill: {
     flex: 1,
     justifyContent: 'flex-end',
   },
