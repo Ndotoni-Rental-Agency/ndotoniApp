@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AIService } from '@/lib/ai-service';
+import CurrencyPicker from '@/components/property/CurrencyPicker';
 import { EditTabProps } from '../types';
 
 export default function PricingSection({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
@@ -41,7 +42,7 @@ export default function PricingSection({ form, upd, saving, saveSec, text, tint,
 
       <View style={s.row}>
         <View style={s.col}><Text style={[s.label, { color: text }]}>Service %</Text><TextInput style={[s.input, { color: text, borderColor: border }]} value={form.serviceFeePercentage} onChangeText={v => upd('serviceFeePercentage', v)} keyboardType="number-pad" placeholder="10" placeholderTextColor={subtle} /></View>
-        <View style={s.col}><Text style={[s.label, { color: text }]}>Currency</Text><TextInput style={[s.input, { color: text, borderColor: border }]} value={form.currency} onChangeText={v => upd('currency', v)} placeholder="TZS" placeholderTextColor={subtle} /></View>
+        <View style={s.col}><Text style={[s.label, { color: text }]}>Currency</Text><CurrencyPicker value={form.currency} onChange={v => upd('currency', v)} /></View>
       </View>
       <TouchableOpacity style={[s.saveBtn, { backgroundColor: tint, opacity: saving ? 0.5 : 1 }]} onPress={() => saveSec('Pricing', { nightlyRate: parseFloat(form.nightlyRate) || 0, cleaningFee: parseFloat(form.cleaningFee) || undefined, serviceFeePercentage: parseFloat(form.serviceFeePercentage) || undefined, currency: form.currency })} disabled={saving}>
         {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={s.saveBtnText}>Save pricing</Text>}

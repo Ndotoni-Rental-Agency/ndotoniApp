@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { formatBookingPhone, isValidBookingPhone } from '@/lib/utils/phoneValidation';
 import { ReservationColors } from './types';
 
 interface StepGuestInfoProps {
@@ -30,12 +31,12 @@ export default function StepGuestInfo({
   onSignIn,
 }: StepGuestInfoProps) {
   const { text, tint, card, border, subtle } = colors;
+  // Validate the normalized form — guestPhone may arrive pre-filled straight from the
+  // user's profile (e.g. "+255712345678") without having passed through handlePhoneChange.
+  const phoneInvalid = guestPhone.length > 0 && !isValidBookingPhone(formatBookingPhone(guestPhone));
 
   const handlePhoneChange = (t: string) => {
-    let v = t.replace(/\D/g, '');
-    if (v.startsWith('0')) v = '255' + v.substring(1);
-    else if (v.startsWith('7') || v.startsWith('6')) v = '255' + v;
-    onGuestPhoneChange(v.slice(0, 12));
+    onGuestPhoneChange(formatBookingPhone(t));
   };
 
   return (
@@ -90,14 +91,16 @@ export default function StepGuestInfo({
           WhatsApp / Phone <Text style={{ color: subtle, fontWeight: '400' }}>(optional)</Text>
         </Text>
         <TextInput
-          style={[s.input, { color: text, borderColor: border, backgroundColor: card }]}
+          style={[s.input, { color: text, borderColor: phoneInvalid ? '#ef4444' : border, backgroundColor: card }]}
           value={guestPhone}
           onChangeText={handlePhoneChange}
           placeholder="0712 345 678"
           placeholderTextColor={subtle}
           keyboardType="phone-pad"
         />
-        <Text style={[s.hint, { color: subtle }]}>For check-in details via WhatsApp</Text>
+        <Text style={[s.hint, { color: phoneInvalid ? '#ef4444' : subtle }]}>
+          {phoneInvalid ? "That doesn't look like a valid Tanzanian number" : 'For check-in details via WhatsApp'}
+        </Text>
       </View>
 
       {!isAuthenticated && (

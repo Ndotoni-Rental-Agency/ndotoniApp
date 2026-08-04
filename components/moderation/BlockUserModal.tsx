@@ -1,4 +1,5 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -42,7 +43,7 @@ export default function BlockUserModal({
         [{ text: 'OK', onPress: onClose }]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to block user. Please try again.');
+      Alert.alert('Error', getSafeErrorMessage(error, 'blocking this user'));
     } finally {
       setIsBlocking(false);
     }

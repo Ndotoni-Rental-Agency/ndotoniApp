@@ -78,6 +78,24 @@ export function formatPhoneNumber(phone: string): string {
 }
 
 /**
+ * Format raw input into the booking flow's phone convention: digits-only,
+ * with local Tanzanian numbers normalized to a 255-prefixed international
+ * format (no leading '+'). Shared by the guest-info and payment steps of the
+ * booking wizard, which previously each duplicated this transform.
+ */
+export function formatBookingPhone(input: string): string {
+  let v = input.replace(/\D/g, '');
+  if (v.startsWith('0')) v = '255' + v.substring(1);
+  else if (v.startsWith('7') || v.startsWith('6')) v = '255' + v;
+  return v.slice(0, 12);
+}
+
+/** Matches the 255-prefixed digits-only convention produced by formatBookingPhone. */
+export function isValidBookingPhone(phone: string): boolean {
+  return /^255[67]\d{8}$/.test(phone);
+}
+
+/**
  * Get example phone numbers for different regions
  */
 export function getPhoneExamples(): { [key: string]: string } {

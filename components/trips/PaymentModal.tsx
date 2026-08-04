@@ -20,6 +20,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { formatBookingPhone, isValidBookingPhone } from '@/lib/utils/phoneValidation';
 import { Booking, TripColors, formatDate, getNights } from './types';
 
 interface PaymentModalProps {
@@ -38,6 +39,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   const [status, setStatus] = useState<'pick' | 'processing' | 'success' | 'failed'>('pick');
   const [error, setError] = useState('');
   const [pollCount, setPollCount] = useState(0);
+  const phoneInvalid = phone.length > 0 && !isValidBookingPhone(phone);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Set when the user leaves for the external card checkout page, so we know to
   // re-check payment status when they return — Linking.openURL gives no callback.
@@ -88,7 +90,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
   const handleMobilePay = async () => {
     const p = phone.replace(/\D/g, '');
-    if (p.length < 10) { Alert.alert('Invalid number', 'Please enter a valid Tanzanian phone number'); return; }
+    if (!isValidBookingPhone(p)) { Alert.alert('Invalid number', 'Please enter a valid Tanzanian phone number'); return; }
     setPaying(true); setStatus('processing'); setError(''); setPollCount(0);
     try {
       const exec = isAuthenticated
@@ -204,21 +206,16 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
       <Text style={[s.label, { color: text }]}>Mobile money number</Text>
       <TextInput
-        style={[s.input, { color: text, borderColor: border, backgroundColor: card }]}
+        style={[s.input, { color: text, borderColor: phoneInvalid ? '#ef4444' : border, backgroundColor: card }]}
         value={phone}
-        onChangeText={(t) => {
-          let v = t.replace(/\D/g, '');
-          if (v.startsWith('0')) v = '255' + v.substring(1);
-          else if (v.startsWith('7') || v.startsWith('6')) v = '255' + v;
-          setPhone(v.slice(0, 12));
-        }}
+        onChangeText={(t) => setPhone(formatBookingPhone(t))}
         placeholder="e.g. 0712 345 678"
         placeholderTextColor={subtle}
         keyboardType="phone-pad"
         accessibilityLabel="Mobile money phone number"
       />
-      <Text style={[s.inputHint, { color: subtle }]}>
-        Enter the number registered with your mobile money account
+      <Text style={[s.inputHint, { color: phoneInvalid ? '#ef4444' : subtle }]}>
+        {phoneInvalid ? "That doesn't look like a valid Tanzanian number" : 'Enter the number registered with your mobile money account'}
       </Text>
 
       <TouchableOpacity

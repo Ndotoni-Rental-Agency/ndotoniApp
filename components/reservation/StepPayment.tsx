@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { formatBookingPhone, isValidBookingPhone } from '@/lib/utils/phoneValidation';
 import { ReservationColors } from './types';
 
 interface StepPaymentProps {
@@ -25,12 +26,10 @@ export default function StepPayment({
   const { text, tint, card, border, subtle } = colors;
   const cur = currency === 'TZS' ? 'Tshs' : currency;
   const fmt = (n: number) => (n ?? 0).toLocaleString();
+  const phoneInvalid = phoneNumber.length > 0 && !isValidBookingPhone(phoneNumber);
 
   const handlePhoneChange = (t: string) => {
-    let v = t.replace(/\D/g, '');
-    if (v.startsWith('0')) v = '255' + v.substring(1);
-    else if (v.startsWith('7') || v.startsWith('6')) v = '255' + v;
-    onPhoneNumberChange(v.slice(0, 12));
+    onPhoneNumberChange(formatBookingPhone(t));
   };
 
   return (
@@ -74,13 +73,16 @@ export default function StepPayment({
         <View style={styles.payForm}>
           <Text style={[styles.inputLabel, { color: text }]}>Phone number</Text>
           <TextInput
-            style={[styles.input, styles.phoneInput, { color: text, borderColor: border, backgroundColor: card }]}
+            style={[styles.input, styles.phoneInput, { color: text, borderColor: phoneInvalid ? '#ef4444' : border, backgroundColor: card }]}
             value={phoneNumber}
             onChangeText={handlePhoneChange}
             placeholder="0712 345 678"
             placeholderTextColor={subtle}
             keyboardType="phone-pad"
           />
+          {phoneInvalid && (
+            <Text style={styles.phoneError}>That doesn't look like a valid Tanzanian number</Text>
+          )}
           <TouchableOpacity style={styles.switchMethod} onPress={() => onPaymentMethodChange(null)}>
             <Text style={[styles.switchMethodText, { color: tint }]}>← Use a different method</Text>
           </TouchableOpacity>
@@ -117,6 +119,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
   phoneInput: { fontSize: 20, fontWeight: '600', letterSpacing: 1 },
+  phoneError: { color: '#ef4444', fontSize: 12, marginTop: 6 },
   switchMethod: { marginTop: 16, alignItems: 'center' },
   switchMethodText: { fontSize: 14, fontWeight: '600' },
   cardInfo: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 14, borderWidth: 1, alignItems: 'center' },

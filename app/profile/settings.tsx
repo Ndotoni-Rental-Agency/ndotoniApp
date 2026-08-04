@@ -1,4 +1,5 @@
 import AppSwitch from '@/components/ui/AppSwitch';
+import ContactSupportModal from '@/components/profile/ContactSupportModal';
 import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -6,7 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Linking,
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const { setThemeMode, isDark } = useTheme();
   const { language, setLanguage } = useLanguage();
   const { showAlert } = useAlert();
+  const [showDeleteRequest, setShowDeleteRequest] = useState(false);
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -62,19 +64,15 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
+    // Account deletion isn't self-service yet — it goes through support for
+    // verification. Route straight into a prefilled request instead of a second
+    // dead-end alert that told the user to "contact support" with no way to do so.
     Alert.alert(
-      'Delete Account',
-      'This action is permanent and cannot be undone. All your data, bookings, and saved properties will be removed.',
+      'Request Account Deletion',
+      "This will permanently remove your data, bookings, and saved properties once processed. We'll send your request to our support team to verify and complete it.",
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implement account deletion API call
-            Alert.alert('Contact Support', 'Please contact support to complete account deletion.');
-          },
-        },
+        { text: 'Continue', style: 'destructive', onPress: () => setShowDeleteRequest(true) },
       ]
     );
   };
@@ -250,12 +248,20 @@ export default function SettingsScreen() {
                 <View style={[styles.settingIcon, { backgroundColor: '#ef444420' }]}>
                   <Ionicons name="trash-outline" size={22} color="#ef4444" />
                 </View>
-                <Text style={[styles.settingLabel, { color: '#ef4444' }]}>Delete Account</Text>
+                <Text style={[styles.settingLabel, { color: '#ef4444' }]}>Request Account Deletion</Text>
               </View>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      <ContactSupportModal
+        visible={showDeleteRequest}
+        onClose={() => setShowDeleteRequest(false)}
+        initialType="SUPPORT"
+        initialSubject="Account Deletion Request"
+        initialMessage={`I would like to permanently delete my account${user?.email ? ` (${user.email})` : ''}. Please verify and process this request.`}
+      />
     </SafeAreaView>
   );
 }

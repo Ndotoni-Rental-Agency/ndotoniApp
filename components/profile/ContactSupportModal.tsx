@@ -3,7 +3,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { submitContactInquiry } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface ContactSupportModalProps {
   visible: boolean;
   onClose: () => void;
+  initialType?: string;
+  initialSubject?: string;
+  initialMessage?: string;
 }
 
 const INQUIRY_TYPES = [
@@ -31,7 +34,7 @@ const INQUIRY_TYPES = [
   { key: 'PARTNERSHIP', label: 'Partnership', icon: 'people' as const },
 ] as const;
 
-export default function ContactSupportModal({ visible, onClose }: ContactSupportModalProps) {
+export default function ContactSupportModal({ visible, onClose, initialType, initialSubject, initialMessage }: ContactSupportModalProps) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const bg = useThemeColor({}, 'background');
@@ -41,13 +44,23 @@ export default function ContactSupportModal({ visible, onClose }: ContactSupport
   const border = useThemeColor({ light: '#e5e5e5', dark: '#333' }, 'background');
   const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
 
-  const [inquiryType, setInquiryType] = useState<string>('SUPPORT');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [inquiryType, setInquiryType] = useState<string>(initialType || 'SUPPORT');
+  const [subject, setSubject] = useState(initialSubject || '');
+  const [message, setMessage] = useState(initialMessage || '');
   const [name, setName] = useState(user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phoneNumber || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Re-apply prefill each time the modal opens, since it's a persistent component
+  // and different callers (general support vs. a specific request) reuse it.
+  useEffect(() => {
+    if (visible) {
+      setInquiryType(initialType || 'SUPPORT');
+      setSubject(initialSubject || '');
+      setMessage(initialMessage || '');
+    }
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canSubmit = subject.trim() && message.trim() && name.trim() && email.trim();
 

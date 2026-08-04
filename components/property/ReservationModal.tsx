@@ -34,6 +34,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { isValidBookingPhone } from '@/lib/utils/phoneValidation';
 import CalendarDatePicker from './CalendarDatePicker';
 
 interface ReservationModalProps {
@@ -260,7 +261,7 @@ export default function ReservationModal({
 
   const handleMobilePay = async () => {
     const phone = phoneNumber.replace(/\D/g, '');
-    if (phone.length < 10) { Alert.alert('Invalid number', 'Enter a valid phone number'); return; }
+    if (!isValidBookingPhone(phone)) { Alert.alert('Invalid number', 'Enter a valid Tanzanian phone number'); return; }
     setIsLoading(true); setError(''); setStep('processing');
     try {
       const exec = isAuthenticated

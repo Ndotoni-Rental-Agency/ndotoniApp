@@ -29,6 +29,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<{ region?: stri
 
 export default function LocationSection({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
   const [resolving, setResolving] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastResolved = useRef(form.googleMapsUrl || '');
 
@@ -40,11 +41,18 @@ export default function LocationSection({ form, upd, saving, saveSec, text, tint
     debounceTimer.current = setTimeout(() => {
       lastResolved.current = link;
       setResolving(true);
+      setGeocodeError(null);
       GoogleMapsParser.parseAsync(link).then(async (coords) => {
-        if (coords) {
-          const location = await reverseGeocode(coords.latitude, coords.longitude);
+        if (!coords) {
+          setGeocodeError("Couldn't read a location from this link — please select region/district manually below.");
+          return;
+        }
+        const location = await reverseGeocode(coords.latitude, coords.longitude);
+        if (location.region || location.district) {
           if (location.region) upd('region', location.region);
           if (location.district) upd('district', location.district);
+        } else {
+          setGeocodeError("Couldn't resolve region/district from this link — please select manually below.");
         }
       }).finally(() => setResolving(false));
     }, 600);
@@ -71,6 +79,7 @@ export default function LocationSection({ form, upd, saving, saveSec, text, tint
           autoCorrect={false}
         />
         {resolving && <Text style={[s.hint, { color: subtle || '#999' }]}>Resolving location...</Text>}
+        {!resolving && geocodeError && <Text style={[s.hint, { color: '#ef4444' }]}>{geocodeError}</Text>}
       </View>
 
       <Text style={[s.divider, { color: subtle || '#999' }]}>or select manually</Text>
