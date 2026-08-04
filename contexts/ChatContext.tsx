@@ -8,11 +8,20 @@ import {
   getConversationMessages, 
   getUnreadCount 
 } from '@/lib/graphql/queries';
-import { 
-  sendMessage as sendMessageMutation, 
+import {
+  sendMessage as sendMessageMutation,
   markAsRead,
   initializePropertyChat
 } from '@/lib/graphql/mutations';
+
+// Lazy-load expo-notifications to avoid bundler crash in Expo Go
+let Notifications: typeof import('expo-notifications') | null = null;
+try {
+  Notifications = require('expo-notifications');
+} catch (e) {
+  console.log(e);
+  // Not available (e.g. Expo Go)
+}
 
 interface LandlordInfo {
   firstName: string;
@@ -292,6 +301,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       ).sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime())
     );
   };
+
+  // Keep the OS app icon badge in sync with the real unread count.
+  // The backend sends a hardcoded badge value with every push, which iOS/Android
+  // then applies verbatim and never clears on its own — so we own the source of
+  // truth here and overwrite it any time unreadCount changes (poll, foreground,
+  // mark-as-read, logout).
+  useEffect(() => {
+    Notifications?.setBadgeCountAsync(unreadCount).catch(() => {});
+  }, [unreadCount]);
 
   // Set up initial load when user is authenticated
   useEffect(() => {

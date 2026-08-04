@@ -122,6 +122,64 @@ export function usePushNotifications() {
     }
   }, []);
 
+  // Route based on a notification response's data payload.
+  // Shared between the live tap listener and the cold-start check below,
+  // since a notification can be tapped while the app is running OR used to launch it.
+  const handleNotificationResponse = useCallback((response: any) => {
+    const data = response?.notification?.request?.content?.data;
+    console.log('[PushNotifications] Notification tapped, data:', data);
+
+    switch (data?.type) {
+      case 'new_message':
+        if (data.conversationId) {
+          const encodedId = encodeURIComponent(data.conversationId);
+          router.push(`/conversation/${encodedId}`);
+        }
+        break;
+
+      case 'new_booking':
+      case 'booking_approved':
+      case 'payment_received':
+      case 'booking_cancelled':
+        // Host-facing booking events → open conversation with guest
+        if (data.conversationId) {
+          router.push(`/conversation/${encodeURIComponent(data.conversationId)}`);
+        } else {
+          router.push('/(tabs)/host');
+        }
+        break;
+
+      case 'booking_confirmed':
+      case 'booking_declined':
+      case 'payment_receipt':
+        // Guest-facing booking events → open conversation with host
+        if (data.conversationId) {
+          router.push(`/conversation/${encodeURIComponent(data.conversationId)}`);
+        } else {
+          router.push('/(tabs)/trips');
+        }
+        break;
+
+      case 'new_review':
+        // Review notification → property page or host tab
+        if (data.propertyId) {
+          router.push(`/short-property/${data.propertyId}`);
+        } else {
+          router.push('/(tabs)/host');
+        }
+        break;
+
+      default:
+        // Fallback: if there's a conversationId, go to chat; otherwise home
+        console.warn('[PushNotifications] Unhandled notification type:', data?.type, data);
+        if (data?.conversationId) {
+          const encodedId = encodeURIComponent(data.conversationId);
+          router.push(`/conversation/${encodedId}`);
+        }
+        break;
+    }
+  }, [router]);
+
   useEffect(() => {
     if (!Notifications) return;
 
@@ -133,64 +191,22 @@ export function usePushNotifications() {
       }
     );
 
-    // Listen for notification taps (user interaction)
+    // Listen for notification taps while the app is already running (foreground/background)
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response: any) => {
-        const data = response.notification.request.content.data;
-        console.log('[PushNotifications] Notification tapped, data:', data);
-
-        // Route based on notification type
-        switch (data?.type) {
-          case 'new_message':
-            if (data.conversationId) {
-              const encodedId = encodeURIComponent(data.conversationId);
-              router.push(`/conversation/${encodedId}`);
-            }
-            break;
-
-          case 'new_booking':
-          case 'booking_approved':
-          case 'payment_received':
-          case 'booking_cancelled':
-            // Host-facing booking events → open conversation with guest
-            if (data.conversationId) {
-              router.push(`/conversation/${encodeURIComponent(data.conversationId)}`);
-            } else {
-              router.push('/(tabs)/host');
-            }
-            break;
-
-          case 'booking_confirmed':
-          case 'booking_declined':
-          case 'payment_receipt':
-            // Guest-facing booking events → open conversation with host
-            if (data.conversationId) {
-              router.push(`/conversation/${encodeURIComponent(data.conversationId)}`);
-            } else {
-              router.push('/(tabs)/trips');
-            }
-            break;
-
-          case 'new_review':
-            // Review notification → property page or host tab
-            if (data.propertyId) {
-              router.push(`/short-property/${data.propertyId}`);
-            } else {
-              router.push('/(tabs)/host');
-            }
-            break;
-
-          default:
-            // Fallback: if there's a conversationId, go to chat; otherwise home
-            console.warn('[PushNotifications] Unhandled notification type:', data?.type, data);
-            if (data?.conversationId) {
-              const encodedId = encodeURIComponent(data.conversationId);
-              router.push(`/conversation/${encodedId}`);
-            }
-            break;
-        }
-      }
+      handleNotificationResponse
     );
+
+    // Handle the tap that launched the app from a killed state.
+    // addNotificationResponseReceivedListener does NOT fire for this case — the tap
+    // happens before this listener exists, so it's silently dropped and the app just
+    // opens to the home screen. getLastNotificationResponseAsync() is the only way
+    // to recover it.
+    Notifications.getLastNotificationResponseAsync().then((response: any) => {
+      if (response) {
+        handleNotificationResponse(response);
+        Notifications.clearLastNotificationResponseAsync?.();
+      }
+    });
 
     return () => {
       if (notificationListener.current) {
@@ -200,7 +216,7 @@ export function usePushNotifications() {
         responseListener.current.remove();
       }
     };
-  }, [router]);
+  }, [handleNotificationResponse]);
 
   return {
     expoPushToken,
