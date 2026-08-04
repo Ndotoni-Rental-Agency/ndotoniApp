@@ -3,6 +3,7 @@
  * Only THIS component re-renders when favorites change — the parent card/list doesn't.
  */
 
+import { Secondary } from '@/constants/theme';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -36,7 +37,7 @@ export default function FavoriteButton({ propertyId, size = 18, variant = 'dark-
       <Ionicons
         name={favorited ? 'heart' : 'heart-outline'}
         size={size}
-        color={favorited ? '#ff385c' : variant === 'dark-bg' ? '#fff' : '#222'}
+        color={favorited ? Secondary[600] : variant === 'dark-bg' ? '#fff' : '#222'}
       />
     </TouchableOpacity>
   );

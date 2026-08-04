@@ -54,7 +54,7 @@ export interface TripColors {
 
 export const getStatusColor = (b: Booking, subtle: string): string => {
   if (b.status === 'CONFIRMED' && b.paymentStatus !== 'CAPTURED' && b.paymentStatus !== 'AUTHORIZED') return '#f59e0b';
-  if (b.status === 'CONFIRMED') return '#16a34a';
+  if (b.status === 'CONFIRMED') return '#00ce54';
   if (b.status === 'PENDING') return '#f59e0b';
   if (b.status === 'CANCELLED') return '#ef4444';
   if (b.status === 'COMPLETED') return subtle;

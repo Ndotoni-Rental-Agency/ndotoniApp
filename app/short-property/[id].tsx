@@ -270,9 +270,9 @@ export default function ShortTermPropertyDetailsScreen() {
                 <Text style={[styles.typeText, { color: tint }]}>{property.propertyType}</Text>
               </View>
               {property.instantBookEnabled && (
-                <View style={[styles.instantBadge, { backgroundColor: '#10b98110' }]}>
-                  <Ionicons name="flash" size={12} color="#10b981" />
-                  <Text style={[styles.instantText, { color: '#10b981' }]}>Instant</Text>
+                <View style={[styles.instantBadge, { backgroundColor: '#00ce5410' }]}>
+                  <Ionicons name="flash" size={12} color="#00ce54" />
+                  <Text style={[styles.instantText, { color: '#00ce54' }]}>Instant</Text>
                 </View>
               )}
             </View>

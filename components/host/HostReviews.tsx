@@ -215,7 +215,7 @@ export default function HostReviews({ propertyIds, propertyNames }: Props) {
               <Text style={[styles.guestName, { color: text }]}>{r.guestName || 'Guest'}</Text>
               {r.verifiedStay && (
                 <View style={styles.verifiedBadge}>
-                  <Ionicons name="shield-checkmark" size={11} color="#10b981" />
+                  <Ionicons name="shield-checkmark" size={11} color="#00ce54" />
                   <Text style={styles.verifiedText}>Verified</Text>
                 </View>
               )}
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   guestName: { fontSize: 15, fontWeight: '600' },
   verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  verifiedText: { fontSize: 11, color: '#10b981', fontWeight: '600' },
+  verifiedText: { fontSize: 11, color: '#00ce54', fontWeight: '600' },
   propName: { fontSize: 12, marginTop: 3 },
   ratingPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   ratingPillText: { fontSize: 13, fontWeight: '700', color: '#92400e' },

@@ -40,9 +40,14 @@ export default function SearchScreen() {
   const [multiRegionHasMore, setMultiRegionHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<FilterOptions>({});
+  const [filters, setFilters] = useState<FilterOptions>(() => {
+    const g = params.guests ? parseInt(params.guests as string, 10) : undefined;
+    return g && g !== 2 ? { guests: g } : {};
+  });
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [regions, setRegions] = useState<any[]>([]);
+  const [instantOnly, setInstantOnly] = useState(false);
+  const [topRatedOnly, setTopRatedOnly] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -57,6 +62,7 @@ export default function SearchScreen() {
   const checkInDate = params.checkInDate as string;
   const checkOutDate = params.checkOutDate as string;
   const category = params.category as string;
+  const initialGuests = params.guests ? parseInt(params.guests as string, 10) : 2;
 
   const [selectedRegion, setSelectedRegion] = useState(region || '');
   const [selectedDistrict, setSelectedDistrict] = useState(district || '');
@@ -79,7 +85,7 @@ export default function SearchScreen() {
         district: selectedDistrict,
         checkInDate: (checkInDate || today.toISOString().split('T')[0]).split('T')[0],
         checkOutDate: (checkOutDate || twoDaysLater.toISOString().split('T')[0]).split('T')[0],
-        numberOfGuests: 2,
+        numberOfGuests: filters.guests || initialGuests,
         ...(category ? { stayCategory: category } : {}),
         ...(filters.priceMin ? { minPrice: filters.priceMin } : {}),
         ...(filters.priceMax ? { maxPrice: filters.priceMax } : {}),
@@ -162,7 +168,7 @@ export default function SearchScreen() {
     fetchProperties(true);
   };
 
-  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict, filters.priceMin, filters.priceMax, filters.bedrooms, filters.propertyTypes?.[0]]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict, filters.priceMin, filters.priceMax, filters.bedrooms, filters.propertyTypes?.[0], filters.guests]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRegions = async () => {
     try {
@@ -191,6 +197,12 @@ export default function SearchScreen() {
       // Not supported by the search API (no `bathrooms` param), so this stays client-side.
       result = result.filter(p => (p.bathrooms || 0) >= filters.bathrooms!);
     }
+    if (instantOnly) {
+      result = result.filter(p => !!p.instantBookEnabled);
+    }
+    if (topRatedOnly) {
+      result = result.filter(p => (p.averageRating || 0) >= 4.5);
+    }
     if (filters.sortBy) {
       result.sort((a, b) => {
         switch (filters.sortBy) {
@@ -202,13 +214,14 @@ export default function SearchScreen() {
       });
     }
     return result;
-  }, [properties, filters, hiddenIds]);
+  }, [properties, filters, hiddenIds, instantOnly, topRatedOnly]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;
     if (filters.priceMin || filters.priceMax) c++;
     if (filters.propertyTypes?.length) c++;
     if (filters.bedrooms) c++;
+    if (filters.guests) c++;
     if (filters.sortBy) c++;
     return c;
   }, [filters]);
@@ -313,29 +326,36 @@ export default function SearchScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Price sort chips */}
+          {/* Instant Book quick filter */}
           <TouchableOpacity
-            style={[styles.chip, { borderColor }, filters.sortBy === 'price_asc' && { borderColor: tintColor, backgroundColor: `${tintColor}10` }]}
-            onPress={() => setFilters(f => ({ ...f, sortBy: f.sortBy === 'price_asc' ? undefined : 'price_asc' }))}
+            style={[styles.chip, { borderColor }, instantOnly && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
+            onPress={() => setInstantOnly(v => !v)}
           >
-            <Text style={[styles.chipText, { color: filters.sortBy === 'price_asc' ? tintColor : textColor }]}>
-              Price ↑
+            <Ionicons name="flash" size={14} color={instantOnly ? tintColor : textColor} />
+            <Text style={[styles.chipText, { color: instantOnly ? tintColor : textColor }]}>
+              Instant Book
             </Text>
           </TouchableOpacity>
+
+          {/* Top rated quick filter */}
           <TouchableOpacity
-            style={[styles.chip, { borderColor }, filters.sortBy === 'price_desc' && { borderColor: tintColor, backgroundColor: `${tintColor}10` }]}
-            onPress={() => setFilters(f => ({ ...f, sortBy: f.sortBy === 'price_desc' ? undefined : 'price_desc' }))}
+            style={[styles.chip, { borderColor }, topRatedOnly && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
+            onPress={() => setTopRatedOnly(v => !v)}
           >
-            <Text style={[styles.chipText, { color: filters.sortBy === 'price_desc' ? tintColor : textColor }]}>
-              Price ↓
+            <Ionicons name="star" size={14} color={topRatedOnly ? tintColor : textColor} />
+            <Text style={[styles.chipText, { color: topRatedOnly ? tintColor : textColor }]}>
+              Top rated
             </Text>
           </TouchableOpacity>
+
+          {/* Guests quick filter */}
           <TouchableOpacity
-            style={[styles.chip, { borderColor }, filters.sortBy === 'newest' && { borderColor: tintColor, backgroundColor: `${tintColor}10` }]}
-            onPress={() => setFilters(f => ({ ...f, sortBy: f.sortBy === 'newest' ? undefined : 'newest' }))}
+            style={[styles.chip, { borderColor }, !!filters.guests && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
+            onPress={() => setShowFilterModal(true)}
           >
-            <Text style={[styles.chipText, { color: filters.sortBy === 'newest' ? tintColor : textColor }]}>
-              Newest
+            <Ionicons name="people-outline" size={14} color={filters.guests ? tintColor : textColor} />
+            <Text style={[styles.chipText, { color: filters.guests ? tintColor : textColor }]}>
+              {filters.guests ? `${filters.guests} guests` : 'Guests'}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -461,7 +481,7 @@ const styles = StyleSheet.create({
   cardInstantBadge: {
     position: 'absolute', top: 12, left: 12,
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#10b981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
+    backgroundColor: '#00ce54', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
   },
   cardInstantText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { paddingTop: 10 },

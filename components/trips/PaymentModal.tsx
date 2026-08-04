@@ -164,8 +164,8 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
         onPress={() => setMethod('mobile')}
         activeOpacity={0.7}
       >
-        <View style={[s.methodIcon, { backgroundColor: '#f0fdf4' }]}>
-          <Ionicons name="phone-portrait-outline" size={22} color="#16a34a" />
+        <View style={[s.methodIcon, { backgroundColor: '#f0fcf5' }]}>
+          <Ionicons name="phone-portrait-outline" size={22} color="#00ce54" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.methodName, { color: text }]}>Mobile Money</Text>
@@ -312,7 +312,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
   const renderSuccess = () => (
     <View style={s.center}>
-      <View style={[s.successIcon, { backgroundColor: '#f0fdf4' }]}>
+      <View style={[s.successIcon, { backgroundColor: '#f0fcf5' }]}>
         <Ionicons name="checkmark-circle" size={64} color={tint} />
       </View>
       <Text style={[s.statusTitle, { color: text }]}>Payment successful!</Text>

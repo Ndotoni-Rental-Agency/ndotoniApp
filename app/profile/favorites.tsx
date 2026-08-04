@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   ratingText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   instantBadge: {
     position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#10b981', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6,
+    backgroundColor: '#00ce54', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6,
   },
   instantText: { color: '#fff', fontSize: 9, fontWeight: '700' },
 

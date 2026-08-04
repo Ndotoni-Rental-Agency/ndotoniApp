@@ -46,14 +46,14 @@ export default function PropertyRules({
               <Ionicons
                 name={policy.allowed ? (policy.iconY as any) : (policy.iconN as any)}
                 size={20}
-                color={policy.allowed ? '#10b981' : secondaryText}
+                color={policy.allowed ? '#00ce54' : secondaryText}
               />
               <Text style={[styles.policyText, { color: textColor }]}>
                 {policy.label}
               </Text>
               <Text style={[
                 styles.policyStatus,
-                { color: policy.allowed ? '#10b981' : '#ef4444' },
+                { color: policy.allowed ? '#00ce54' : '#ef4444' },
               ]}>
                 {policy.allowed ? 'Allowed' : 'Not allowed'}
               </Text>

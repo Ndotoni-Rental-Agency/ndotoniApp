@@ -101,7 +101,7 @@ export function usePushNotifications() {
           name: 'Messages',
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#16a34a',
+          lightColor: '#00ce54',
           sound: 'default',
         });
         await Notifications.setNotificationChannelAsync('bookings', {

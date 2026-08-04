@@ -145,7 +145,7 @@ export default function PropertyReviews({
               {/* Verified badge */}
               {review.verifiedStay && (
                 <View style={styles.verified}>
-                  <Ionicons name="checkmark-circle" size={13} color="#10b981" />
+                  <Ionicons name="checkmark-circle" size={13} color="#00ce54" />
                   <Text style={styles.verifiedText}>Verified stay</Text>
                 </View>
               )}
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   verifiedText: {
     fontSize: 12,
-    color: '#10b981',
+    color: '#00ce54',
     fontWeight: '500',
   },
   showMoreBtn: {

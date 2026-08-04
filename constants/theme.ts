@@ -5,9 +5,11 @@
 
 import { Platform } from 'react-native';
 
-// Brand green matching ndotonistays tailwind config
-const tintColorLight = '#16a34a'; // brand-600
-const tintColorDark = '#22c55e'; // brand-500
+// Brand green sampled directly from the ndotoni app icon/logo (#00ce54) — not a generic
+// Tailwind green. Kept identical across light/dark so the accent reads as "ndotoni" no
+// matter the theme, the same way the logo itself never changes shade.
+const tintColorLight = '#00ce54'; // brand-600
+const tintColorDark = '#00ce54'; // brand-600
 
 export const Colors = {
   light: {
@@ -38,18 +40,20 @@ export const Colors = {
   },
 };
 
-// Extended brand palette for component usage
+// Extended brand palette for component usage — generated from the true logo green (#00ce54
+// at 600) rather than a generic Tailwind scale, so every tint of green in the app traces
+// back to the same source as the icon.
 export const Brand = {
-  50: '#f0fdf4',
-  100: '#dcfce7',
-  200: '#bbf7d0',
-  300: '#86efac',
-  400: '#4ade80',
-  500: '#22c55e',
-  600: '#16a34a',
-  700: '#15803d',
-  800: '#166534',
-  900: '#14532d',
+  50: '#f0fcf5',
+  100: '#ddf8e8',
+  200: '#b9f4d1',
+  300: '#7ef1ad',
+  400: '#34f482',
+  500: '#00f062',
+  600: '#00ce54', // = logo green
+  700: '#00a845',
+  800: '#037c35',
+  900: '#075025',
 };
 
 export const Secondary = {

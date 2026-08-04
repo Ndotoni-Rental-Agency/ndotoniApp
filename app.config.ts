@@ -62,7 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           image: "./assets/images/splash-icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#f0fdf4",
+          backgroundColor: "#f0fcf5",
           dark: {
             backgroundColor: "#000000",
           },
@@ -72,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "expo-notifications",
         {
           icon: "./assets/images/icon.png",
-          color: "#16a34a",
+          color: "#00ce54",
           sounds: [],
         },
       ],

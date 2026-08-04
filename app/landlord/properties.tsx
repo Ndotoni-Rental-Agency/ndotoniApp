@@ -59,7 +59,7 @@ export default function LandlordPropertiesScreen() {
       case 'ACTIVE':
       case 'PUBLISHED':
       case 'AVAILABLE':
-        return '#10b981';
+        return '#00ce54';
       case 'DRAFT':
         return '#f59e0b';
       case 'PENDING':
@@ -494,8 +494,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   publishButton: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
+    backgroundColor: '#00ce54',
+    borderColor: '#00ce54',
   },
   publishButtonText: {
     color: '#fff',

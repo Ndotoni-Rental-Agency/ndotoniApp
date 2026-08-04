@@ -119,7 +119,7 @@ export default function HostBookings({ propertyIds, onRefresh }: Props) {
   const statusColor = (s: string, expired?: boolean, paymentStatus?: string) => {
     if (s === 'PENDING' && expired) return '#6b7280';
     if (s === 'PENDING') return '#f59e0b';
-    if (s === 'CONFIRMED' && (paymentStatus === 'CAPTURED' || paymentStatus === 'AUTHORIZED')) return '#16a34a';
+    if (s === 'CONFIRMED' && (paymentStatus === 'CAPTURED' || paymentStatus === 'AUTHORIZED')) return '#00ce54';
     if (s === 'CONFIRMED') return '#3b82f6';
     if (s === 'CANCELLED' || s === 'DECLINED') return '#ef4444';
     return subtle;

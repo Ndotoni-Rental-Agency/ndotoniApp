@@ -17,6 +17,7 @@ export interface FilterOptions {
   propertyTypes?: string[];
   bedrooms?: number;
   bathrooms?: number;
+  guests?: number;
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'oldest';
 }
 
@@ -70,6 +71,7 @@ export default function FilterModal({
   const [selectedTypes, setSelectedTypes] = useState<string[]>(currentFilters.propertyTypes || []);
   const [bedrooms, setBedrooms] = useState<number | undefined>(currentFilters.bedrooms);
   const [bathrooms, setBathrooms] = useState<number | undefined>(currentFilters.bathrooms);
+  const [guests, setGuests] = useState<number>(currentFilters.guests || 2);
   const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>(currentFilters.sortBy);
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -101,6 +103,7 @@ export default function FilterModal({
       propertyTypes: selectedTypes.length > 0 ? selectedTypes : undefined,
       bedrooms,
       bathrooms,
+      guests: guests !== 2 ? guests : undefined,
       sortBy,
     };
     onApply(filters);
@@ -113,10 +116,11 @@ export default function FilterModal({
     setSelectedTypes([]);
     setBedrooms(undefined);
     setBathrooms(undefined);
+    setGuests(2);
     setSortBy(undefined);
   };
 
-  const hasActiveFilters = priceMin || priceMax || selectedTypes.length > 0 || bedrooms || bathrooms || sortBy;
+  const hasActiveFilters = priceMin || priceMax || selectedTypes.length > 0 || bedrooms || bathrooms || guests !== 2 || sortBy;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
@@ -140,6 +144,33 @@ export default function FilterModal({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Guests */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>Guests</Text>
+            <View style={[styles.guestStepper, { backgroundColor: cardBg, borderColor }]}>
+              <Text style={[styles.guestStepperText, { color: textColor }]}>
+                {guests} guest{guests !== 1 ? 's' : ''}
+              </Text>
+              <View style={styles.stepperControls}>
+                <TouchableOpacity
+                  style={[styles.stepperBtn, { borderColor: guests <= 1 ? `${borderColor}80` : tintColor }]}
+                  onPress={() => setGuests(Math.max(1, guests - 1))}
+                  disabled={guests <= 1}
+                  accessibilityLabel="Decrease guests"
+                >
+                  <Ionicons name="remove" size={18} color={guests <= 1 ? secondaryText : tintColor} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.stepperBtn, { borderColor: tintColor }]}
+                  onPress={() => setGuests(Math.min(50, guests + 1))}
+                  accessibilityLabel="Increase guests"
+                >
+                  <Ionicons name="add" size={18} color={tintColor} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
           {/* Sort By */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Sort by</Text>
@@ -360,6 +391,31 @@ const styles = StyleSheet.create({
   },
   optionsGrid: {
     gap: 10,
+  },
+  guestStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  guestStepperText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  stepperControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  stepperBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sortOption: {
     flexDirection: 'row',

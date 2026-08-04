@@ -464,6 +464,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   blockBtn: { backgroundColor: '#dc2626' },
-  unblockBtn: { backgroundColor: '#16a34a' },
+  unblockBtn: { backgroundColor: '#00ce54' },
   bottomBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

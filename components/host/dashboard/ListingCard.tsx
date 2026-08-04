@@ -28,7 +28,7 @@ export default function ListingCard({ property: p, colors, onPress, onEdit, onCa
             <Ionicons name="image-outline" size={20} color={tint} />
           </View>
         )}
-        <View style={[s.tag, { backgroundColor: live ? '#16a34a' : '#f59e0b' }]}>
+        <View style={[s.tag, { backgroundColor: live ? '#00ce54' : '#f59e0b' }]}>
           <Text style={s.tagText}>{live ? 'Live' : 'Draft'}</Text>
         </View>
       </View>

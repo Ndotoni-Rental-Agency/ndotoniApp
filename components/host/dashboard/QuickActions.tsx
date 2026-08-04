@@ -11,7 +11,7 @@ interface QuickActionsProps {
 
 const ACTIONS = [
   { key: 'bookings' as Subpage, icon: 'calendar', label: 'Bookings', desc: 'Manage guest requests', color: '#3b82f6' },
-  { key: 'stats' as Subpage, icon: 'trending-up', label: 'Earnings', desc: 'Revenue & analytics', color: '#16a34a' },
+  { key: 'stats' as Subpage, icon: 'trending-up', label: 'Earnings', desc: 'Revenue & analytics', color: '#00ce54' },
   { key: 'reviews' as Subpage, icon: 'star', label: 'Reviews', desc: 'What guests say', color: '#f59e0b' },
   { key: 'payouts' as Subpage, icon: 'card', label: 'Payouts', desc: 'M-Pesa & bank setup', color: '#8b5cf6' },
   { key: 'whatsapp' as Subpage, icon: 'logo-whatsapp', label: 'WhatsApp', desc: 'Notification number', color: '#25d366' },
