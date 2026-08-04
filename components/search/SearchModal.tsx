@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useLocationSearch } from '@/hooks/useLocationSearch';
 import type { FlattenedLocation } from '@/lib/location/types';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -38,12 +38,12 @@ export interface SearchParams {
 }
 
 const DESTINATIONS = [
-  { name: 'Dar es Salaam', emoji: '🌆', region: 'DAR ES SALAAM' },
-  { name: 'Zanzibar', emoji: '🏝️', region: 'ZANZIBAR' },
-  { name: 'Arusha', emoji: '🏔️', region: 'ARUSHA' },
-  { name: 'Mwanza', emoji: '🌊', region: 'MWANZA' },
-  { name: 'Dodoma', emoji: '🏛️', region: 'DODOMA' },
-  { name: 'Mbeya', emoji: '⛰️', region: 'MBEYA' },
+  { name: 'Dar es Salaam', icon: 'business', region: 'DAR ES SALAAM' },
+  { name: 'Zanzibar', icon: 'boat-outline', region: 'ZANZIBAR' },
+  { name: 'Arusha', icon: 'terrain', family: 'material', region: 'ARUSHA' },
+  { name: 'Mwanza', icon: 'water', region: 'MWANZA' },
+  { name: 'Dodoma', icon: 'business-outline', region: 'DODOMA' },
+  { name: 'Mbeya', icon: 'terrain', family: 'material', region: 'MBEYA' },
 ];
 
 export default function SearchModal({ visible, onClose, onSearch }: SearchModalProps) {
@@ -247,7 +247,11 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                           onPress={() => selectDestination(d)}
                           activeOpacity={0.8}
                         >
-                          <Text style={styles.destEmoji}>{d.emoji}</Text>
+                          {'family' in d && d.family === 'material' ? (
+                            <MaterialIcons name={d.icon as any} size={26} color={tint} />
+                          ) : (
+                            <Ionicons name={d.icon as any} size={26} color={tint} />
+                          )}
                           <Text style={[styles.destName, { color: text }]}>{d.name}</Text>
                         </TouchableOpacity>
                       ))}
@@ -559,7 +563,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  destEmoji: { fontSize: 28 },
   destName: { fontSize: 13, fontWeight: '600' },
 
   // Flexible button

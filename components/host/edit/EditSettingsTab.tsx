@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AppSwitch from '@/components/ui/AppSwitch';
@@ -12,11 +12,11 @@ interface Props extends EditTabProps {
 export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint, border, subtle, onDeactivate, deactivating }: Props) {
   return (
     <>
-      <ToggleRow label="⚡ Instant Book" desc="Guests book without waiting for approval" val={form.instantBookEnabled} set={v => upd('instantBookEnabled', v)} text={text} subtle={subtle} border={border} tint={tint} />
-      <ToggleRow label="🐾 Pets allowed" val={form.allowsPets} set={v => upd('allowsPets', v)} text={text} subtle={subtle} border={border} tint={tint} />
-      <ToggleRow label="🚬 Smoking allowed" val={form.allowsSmoking} set={v => upd('allowsSmoking', v)} text={text} subtle={subtle} border={border} tint={tint} />
-      <ToggleRow label="👶 Children allowed" val={form.allowsChildren} set={v => upd('allowsChildren', v)} text={text} subtle={subtle} border={border} tint={tint} />
-      <ToggleRow label="🍼 Infants allowed" val={form.allowsInfants} set={v => upd('allowsInfants', v)} text={text} subtle={subtle} border={border} tint={tint} />
+      <ToggleRow icon={<Ionicons name="flash" size={18} color={tint} />} label="Instant Book" desc="Guests book without waiting for approval" val={form.instantBookEnabled} set={v => upd('instantBookEnabled', v)} text={text} subtle={subtle} border={border} tint={tint} />
+      <ToggleRow icon={<Ionicons name="paw" size={18} color={tint} />} label="Pets allowed" val={form.allowsPets} set={v => upd('allowsPets', v)} text={text} subtle={subtle} border={border} tint={tint} />
+      <ToggleRow icon={<MaterialIcons name="smoking-rooms" size={18} color={tint} />} label="Smoking allowed" val={form.allowsSmoking} set={v => upd('allowsSmoking', v)} text={text} subtle={subtle} border={border} tint={tint} />
+      <ToggleRow icon={<MaterialIcons name="child-friendly" size={18} color={tint} />} label="Children allowed" val={form.allowsChildren} set={v => upd('allowsChildren', v)} text={text} subtle={subtle} border={border} tint={tint} />
+      <ToggleRow icon={<MaterialIcons name="child-care" size={18} color={tint} />} label="Infants allowed" val={form.allowsInfants} set={v => upd('allowsInfants', v)} text={text} subtle={subtle} border={border} tint={tint} />
 
       <Text style={[s.secTitle, { color: text }]}>Cancellation policy</Text>
       {[
@@ -43,9 +43,10 @@ export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint
   );
 }
 
-function ToggleRow({ label, desc, val, set, text, subtle, border, tint }: { label: string; desc?: string; val: boolean; set: (v: boolean) => void; text: string; subtle: string; border: string; tint: string }) {
+function ToggleRow({ icon, label, desc, val, set, text, subtle, border, tint }: { icon?: React.ReactNode; label: string; desc?: string; val: boolean; set: (v: boolean) => void; text: string; subtle: string; border: string; tint: string }) {
   return (
     <View style={[s.toggleRow, { borderBottomColor: border }]}>
+      {icon && <View style={[s.toggleIcon, { backgroundColor: `${tint}12` }]}>{icon}</View>}
       <View style={{ flex: 1 }}><Text style={[s.toggleLabel, { color: text }]}>{label}</Text>{desc && <Text style={[s.toggleDesc, { color: subtle }]}>{desc}</Text>}</View>
       <AppSwitch value={val} onValueChange={set} />
     </View>
@@ -54,7 +55,8 @@ function ToggleRow({ label, desc, val, set, text, subtle, border, tint }: { labe
 
 const s = StyleSheet.create({
   secTitle: { fontSize: 17, fontWeight: '700', marginTop: 28, marginBottom: 10 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1, gap: 12 },
+  toggleIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   toggleLabel: { fontSize: 16, fontWeight: '600' },
   toggleDesc: { fontSize: 13, marginTop: 3, lineHeight: 18 },
   policyCard: { padding: 16, borderRadius: 14, borderWidth: 1.5, marginBottom: 10 },

@@ -5,7 +5,7 @@ import AppSwitch from '@/components/ui/AppSwitch';
 import { StepProps } from './types';
 
 export default function StepBasics({ form, updateField, colors }: StepProps) {
-  const { text, card, border, subtle } = colors;
+  const { text, tint, card, border, subtle } = colors;
 
   const Counter = ({ label, valueKey, min, max }: {
     label: string; valueKey: string; min: number; max: number;
@@ -52,8 +52,11 @@ export default function StepBasics({ form, updateField, colors }: StepProps) {
       </View>
 
       <View style={[styles.toggleCard, { backgroundColor: card, borderColor: border }]}>
+        <View style={[styles.toggleIcon, { backgroundColor: `${tint}12` }]}>
+          <Ionicons name="flash" size={18} color={tint} />
+        </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.toggleTitle, { color: text }]}>⚡ Instant Book</Text>
+          <Text style={[styles.toggleTitle, { color: text }]}>Instant Book</Text>
           <Text style={[styles.toggleDesc, { color: subtle }]}>
             Guests can book without waiting for your approval
           </Text>
@@ -116,10 +119,18 @@ const styles = StyleSheet.create({
   toggleCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     marginTop: 28,
     padding: 18,
     borderRadius: 14,
     borderWidth: 1,
+  },
+  toggleIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   toggleTitle: {
     fontSize: 16,

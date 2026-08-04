@@ -165,7 +165,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
         activeOpacity={0.7}
       >
         <View style={[s.methodIcon, { backgroundColor: '#f0fdf4' }]}>
-          <Text style={s.methodEmoji}>📱</Text>
+          <Ionicons name="phone-portrait-outline" size={22} color="#16a34a" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.methodName, { color: text }]}>Mobile Money</Text>
@@ -179,7 +179,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
         activeOpacity={0.7}
       >
         <View style={[s.methodIcon, { backgroundColor: '#eff6ff' }]}>
-          <Text style={s.methodEmoji}>💳</Text>
+          <Ionicons name="card-outline" size={22} color="#2563eb" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.methodName, { color: text }]}>Card Payment</Text>
@@ -429,7 +429,6 @@ const s = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 14 },
   methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 14, borderWidth: 1, gap: 14 },
   methodIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  methodEmoji: { fontSize: 22 },
   methodName: { fontSize: 15, fontWeight: '600' },
   methodSub: { fontSize: 12, marginTop: 2 },
 

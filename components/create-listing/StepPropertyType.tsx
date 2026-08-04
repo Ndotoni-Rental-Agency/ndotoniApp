@@ -32,7 +32,7 @@ export default function StepPropertyType({ form, updateField, colors }: StepProp
               accessibilityState={{ selected }}
               accessibilityLabel={pt.label}
             >
-              <Text style={styles.emoji}>{pt.icon}</Text>
+              <Ionicons name={pt.icon as any} size={30} color={selected ? tint : text} style={styles.icon} />
               <Text style={[styles.label, { color: selected ? tint : text }]}>
                 {pt.label}
               </Text>
@@ -69,8 +69,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     position: 'relative',
   },
-  emoji: {
-    fontSize: 32,
+  icon: {
     marginBottom: 8,
   },
   label: {

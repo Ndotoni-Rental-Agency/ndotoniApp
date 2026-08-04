@@ -1,4 +1,5 @@
 import MediaSelector from '@/components/media/MediaSelector';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StepProps } from './types';
@@ -33,12 +34,14 @@ export default function StepPhotos({ form, updateField, colors }: StepProps) {
       </View>
 
       {(imageCount > 0 || videoCount > 0) && (
-        <Text style={[styles.count, { color: tint }]}>
-          {imageCount > 0 && `${imageCount} photo${imageCount !== 1 ? 's' : ''}`}
-          {imageCount > 0 && videoCount > 0 && ' · '}
-          {videoCount > 0 && `${videoCount} video${videoCount !== 1 ? 's' : ''}`}
-          {' ✓'}
-        </Text>
+        <View style={styles.countRow}>
+          <Text style={[styles.count, { color: tint }]}>
+            {imageCount > 0 && `${imageCount} photo${imageCount !== 1 ? 's' : ''}`}
+            {imageCount > 0 && videoCount > 0 && ' · '}
+            {videoCount > 0 && `${videoCount} video${videoCount !== 1 ? 's' : ''}`}
+          </Text>
+          <Ionicons name="checkmark-circle" size={16} color={tint} />
+        </View>
       )}
     </>
   );
@@ -60,9 +63,14 @@ const styles = StyleSheet.create({
   mediaWrap: {
     minHeight: 200,
   },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
   count: {
     fontSize: 15,
     fontWeight: '600',
-    marginTop: 12,
   },
 });

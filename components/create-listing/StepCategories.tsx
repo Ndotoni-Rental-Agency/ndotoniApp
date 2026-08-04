@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { STAY_CATEGORIES, StepProps } from './types';
@@ -42,7 +43,7 @@ export default function StepCategories({ form, updateField, colors }: StepProps)
               accessibilityState={{ selected }}
               accessibilityLabel={cat.label}
             >
-              <Text style={styles.emoji}>{cat.icon}</Text>
+              <Ionicons name={cat.icon as any} size={18} color={selected ? tint : text} />
               <Text style={[styles.label, { color: selected ? tint : text }]}>
                 {cat.label}
               </Text>
@@ -79,9 +80,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 24,
-  },
-  emoji: {
-    fontSize: 20,
   },
   label: {
     fontSize: 15,

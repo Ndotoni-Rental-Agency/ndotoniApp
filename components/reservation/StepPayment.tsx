@@ -45,7 +45,9 @@ export default function StepPayment({
             onPress={() => onPaymentMethodChange('mobile')}
             activeOpacity={0.7}
           >
-            <Text style={styles.payMethodIcon}>📱</Text>
+            <View style={[styles.payMethodIconWrap, { backgroundColor: `${tint}12` }]}>
+              <Ionicons name="phone-portrait-outline" size={22} color={tint} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.payMethodTitle, { color: text }]}>Mobile Money</Text>
               <Text style={[styles.payMethodDesc, { color: subtle }]}>M-Pesa, Airtel, Tigo, Halotel</Text>
@@ -58,7 +60,9 @@ export default function StepPayment({
             onPress={() => onPaymentMethodChange('card')}
             activeOpacity={0.7}
           >
-            <Text style={styles.payMethodIcon}>💳</Text>
+            <View style={[styles.payMethodIconWrap, { backgroundColor: `${tint}12` }]}>
+              <Ionicons name="card-outline" size={22} color={tint} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.payMethodTitle, { color: text }]}>Card / Apple Pay</Text>
               <Text style={[styles.payMethodDesc, { color: subtle }]}>Visa, Mastercard, Google Pay</Text>
@@ -112,7 +116,7 @@ const styles = StyleSheet.create({
   payTotalBig: { fontSize: 32, fontWeight: '800', marginTop: 8, marginBottom: 24 },
   payMethods: { gap: 12 },
   payMethodCard: { flexDirection: 'row', alignItems: 'center', padding: 18, borderRadius: 14, borderWidth: 1, gap: 14 },
-  payMethodIcon: { fontSize: 28 },
+  payMethodIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   payMethodTitle: { fontSize: 15, fontWeight: '600' },
   payMethodDesc: { fontSize: 12, marginTop: 2 },
   payForm: { marginTop: 4 },

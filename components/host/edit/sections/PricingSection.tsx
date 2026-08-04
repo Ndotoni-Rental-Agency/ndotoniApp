@@ -27,7 +27,7 @@ export default function PricingSection({ form, upd, saving, saveSec, text, tint,
       {/* AI Price */}
       <TouchableOpacity style={s.aiBtn} onPress={suggestPrice} disabled={predicting || !form.district}>
         {predicting ? <ActivityIndicator size="small" color={tint} /> : <Ionicons name="sparkles" size={14} color={tint} />}
-        <Text style={[s.aiBtnText, { color: tint }]}>{predicting ? 'Analyzing...' : '✨ AI Price Suggestion'}</Text>
+        <Text style={[s.aiBtnText, { color: tint }]}>{predicting ? 'Analyzing...' : 'AI Price Suggestion'}</Text>
       </TouchableOpacity>
       {suggestion && (
         <View style={[s.suggBox, { backgroundColor: `${tint}08`, borderColor: `${tint}25` }]}>

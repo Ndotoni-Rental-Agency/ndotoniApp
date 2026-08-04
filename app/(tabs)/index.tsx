@@ -25,12 +25,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Visual category cards
 const CATEGORIES = [
-  { id: 'stays', label: 'Nightly Stays', emoji: '🏠', param: 'NIGHTLY_STAY', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=500&auto=format&fit=crop' },
-  { id: 'beach', label: 'Beach', emoji: '🏖️', param: 'BEACH', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop' },
-  { id: 'safari', label: 'Safari', emoji: '🦁', param: 'SAFARI', img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=500&auto=format&fit=crop' },
-  { id: 'parties', label: 'Parties', emoji: '🎉', param: 'PARTY', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=500&auto=format&fit=crop' },
-  { id: 'photos', label: 'Photoshoot', emoji: '📸', param: 'PHOTOSHOOT', img: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?q=80&w=500&auto=format&fit=crop' },
-  { id: 'business', label: 'Business', emoji: '💼', param: 'MEETING', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=500&auto=format&fit=crop' },
+  { id: 'stays', label: 'Nightly Stays', icon: 'moon', param: 'NIGHTLY_STAY', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=500&auto=format&fit=crop' },
+  { id: 'beach', label: 'Beach', icon: 'sunny', param: 'BEACH', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=500&auto=format&fit=crop' },
+  { id: 'safari', label: 'Safari', icon: 'paw', param: 'SAFARI', img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=500&auto=format&fit=crop' },
+  { id: 'parties', label: 'Parties', icon: 'musical-notes', param: 'PARTY', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=500&auto=format&fit=crop' },
+  { id: 'photos', label: 'Photoshoot', icon: 'camera', param: 'PHOTOSHOOT', img: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?q=80&w=500&auto=format&fit=crop' },
+  { id: 'business', label: 'Business', icon: 'briefcase', param: 'MEETING', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=500&auto=format&fit=crop' },
 ];
 
 export default function HomeScreen() {
@@ -199,7 +199,7 @@ export default function HomeScreen() {
               <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
               <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />
               <View style={styles.catOverlay}>
-                <Text style={styles.catEmoji}>{cat.emoji}</Text>
+                <Ionicons name={cat.icon as any} size={18} color="#fff" style={styles.catIcon} />
                 <Text style={styles.catLabel}>{cat.label}</Text>
               </View>
             </TouchableOpacity>
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   catImg: { width: '100%', height: '100%' },
   catGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%' },
   catOverlay: { position: 'absolute', bottom: 12, left: 10 },
-  catEmoji: { fontSize: 20, marginBottom: 2 },
+  catIcon: { marginBottom: 4 },
   catLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   // Feed
