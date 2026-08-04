@@ -30,10 +30,10 @@ export default function SearchBar({
   checkOutDate,
   guests,
 }: SearchBarProps) {
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const cardBg = useThemeColor({}, 'card');
   const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({ light: '#ddd', dark: '#333' }, 'background');
-  const subtleColor = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const borderColor = useThemeColor({}, 'border');
+  const subtleColor = useThemeColor({}, 'textSecondary');
   const shadowBg = useThemeColor({ light: '#000', dark: '#000' }, 'background');
 
   const [placeholderIdx, setPlaceholderIdx] = useState(0);

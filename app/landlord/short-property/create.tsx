@@ -36,9 +36,9 @@ export default function CreatePropertyScreen() {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const card = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#ddd', dark: '#333' }, 'background');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const card = useThemeColor({}, 'card');
+  const border = useThemeColor({}, 'border');
+  const subtle = useThemeColor({}, 'textSecondary');
   const colors = { text, tint, card, border, subtle };
 
   // State

@@ -31,8 +31,8 @@ export default function PropertyReviews({
 
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
-  const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
+  const subtle = useThemeColor({}, 'textSecondary');
+  const border = useThemeColor({}, 'border');
 
   useEffect(() => {
     fetchReviews();

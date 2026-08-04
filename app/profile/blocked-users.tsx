@@ -27,9 +27,9 @@ export default function BlockedUsersScreen() {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const secondaryText = useThemeColor({}, 'textSecondary');
 
   const loadBlockedUsers = useCallback(async () => {
     try {

@@ -54,8 +54,8 @@ export default function HomeScreen() {
   const bg = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const border = useThemeColor({ light: '#f0f0f0', dark: '#222' }, 'background');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const border = useThemeColor({}, 'border');
+  const subtle = useThemeColor({}, 'textSecondary');
 
   // Merge all properties into one feed, deduped and filtered
   const feed = React.useMemo(() => {

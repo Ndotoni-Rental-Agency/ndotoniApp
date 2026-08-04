@@ -22,8 +22,8 @@ export default function CurrencyPicker({ value, onChange }: CurrencyPickerProps)
   const [showModal, setShowModal] = useState(false);
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
   const backgroundColor = useThemeColor({}, 'background');
 
   const selectedCurrency = CURRENCIES.find(c => c.code === value);

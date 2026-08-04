@@ -45,8 +45,8 @@ export default function PropertyCard({
   const [imageError, setImageError] = useState(false);
   
   const textColor = useThemeColor({}, 'text');
-  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
-  const subtleColor = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const cardBg = useThemeColor({}, 'card');
+  const subtleColor = useThemeColor({}, 'textSecondary');
 
   const formatPrice = (amount: number) => {
     return amount.toLocaleString('en-US');

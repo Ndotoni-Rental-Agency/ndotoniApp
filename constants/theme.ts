@@ -17,6 +17,12 @@ export const Colors = {
     icon: '#64748b', // ink-500
     tabIconDefault: '#64748b',
     tabIconSelected: tintColorLight,
+    // Semantic tokens for consistent surfaces/text hierarchy across the app.
+    // Anchored to the Ink scale so every screen shares the same cool-gray undertone.
+    textSecondary: '#64748b', // ink-500
+    textTertiary: '#94a3b8', // ink-400 (placeholders, least-prominent text)
+    border: '#e2e8f0', // ink-200
+    card: '#ffffff', // elevated surface (modals, cards, inputs)
   },
   dark: {
     text: '#f1f5f9', // ink-100
@@ -25,6 +31,10 @@ export const Colors = {
     icon: '#94a3b8', // ink-400
     tabIconDefault: '#94a3b8',
     tabIconSelected: tintColorDark,
+    textSecondary: '#94a3b8', // ink-400
+    textTertiary: '#64748b', // ink-500 (placeholders, least-prominent text)
+    border: '#1e293b', // ink-800
+    card: '#1c1c1e', // elevated surface (modals, cards, inputs)
   },
 };
 

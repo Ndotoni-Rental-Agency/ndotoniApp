@@ -23,9 +23,9 @@ export default function LandlordPropertiesScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const secondaryText = useThemeColor({}, 'textSecondary');
 
   const [refreshing, setRefreshing] = useState(false);
   const [publishModalVisible, setPublishModalVisible] = useState(false);

@@ -36,9 +36,9 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const inputBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
+  const inputBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const placeholderColor = useThemeColor({}, 'textTertiary');
 
   const { signIn, signInWithSocial, isAuthenticated } = useAuth();
   const { showAlert } = useAlert();

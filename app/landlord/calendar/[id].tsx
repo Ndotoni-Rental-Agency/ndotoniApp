@@ -28,9 +28,9 @@ export default function PropertyCalendarScreen() {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const card = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const card = useThemeColor({}, 'card');
+  const border = useThemeColor({}, 'border');
+  const subtle = useThemeColor({}, 'textSecondary');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

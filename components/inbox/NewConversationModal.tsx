@@ -36,9 +36,9 @@ export function NewConversationModal({ visible, onClose }: Props) {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const secondaryText = useThemeColor({ light: '#666', dark: '#9ca3af' }, 'text');
-  const searchBarBg = useThemeColor({ light: '#f3f4f6', dark: '#2c2c2e' }, 'background');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
+  const secondaryText = useThemeColor({}, 'textSecondary');
+  const searchBarBg = useThemeColor({}, 'border');
+  const cardBg = useThemeColor({}, 'card');
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ChatUser[]>([]);

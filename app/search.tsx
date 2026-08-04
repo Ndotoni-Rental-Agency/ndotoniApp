@@ -47,9 +47,9 @@ export default function SearchScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
-  const subtleColor = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const subtleColor = useThemeColor({}, 'textSecondary');
 
   const location = params.location as string;
   const region = params.region as string;

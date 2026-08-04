@@ -64,10 +64,10 @@ export default function HostReviews({ propertyIds, propertyNames }: Props) {
 
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const card = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#ebebeb', dark: '#2c2c2e' }, 'background');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
-  const inputBg = useThemeColor({ light: '#f5f5f5', dark: '#2c2c2e' }, 'background');
+  const card = useThemeColor({}, 'card');
+  const border = useThemeColor({}, 'border');
+  const subtle = useThemeColor({}, 'textSecondary');
+  const inputBg = useThemeColor({}, 'border');
 
   useEffect(() => {
     if (USE_DEMO_DATA) {

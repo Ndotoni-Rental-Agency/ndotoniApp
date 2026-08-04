@@ -31,10 +31,10 @@ export default function EditProfileScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#2c2c2e' }, 'background');
-  const inputBg = useThemeColor({ light: '#f9fafb', dark: '#1c1c1e' }, 'background');
-  const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const inputBg = useThemeColor({}, 'card');
+  const placeholderColor = useThemeColor({}, 'textTertiary');
 
   const [expandedSections, setExpandedSections] = useState<Set<SectionKey>>(new Set(['personal']));
   const [savingSection, setSavingSection] = useState<SectionKey | null>(null);

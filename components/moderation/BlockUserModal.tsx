@@ -32,7 +32,7 @@ export default function BlockUserModal({
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
-  const placeholderColor = useThemeColor({ light: '#999', dark: '#6b7280' }, 'text');
+  const placeholderColor = useThemeColor({}, 'textTertiary');
 
   const handleBlock = async () => {
     setIsBlocking(true);

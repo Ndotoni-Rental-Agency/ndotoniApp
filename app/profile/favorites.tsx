@@ -56,9 +56,9 @@ export default function FavoritesScreen() {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
-  const cardBg = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
-  const borderColor = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
+  const subtle = useThemeColor({}, 'textSecondary');
+  const cardBg = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
 
   const fetchFavorites = useCallback(async () => {
     if (!isAuthenticated) {

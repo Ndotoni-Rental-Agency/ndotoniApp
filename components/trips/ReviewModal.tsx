@@ -48,9 +48,9 @@ export default function ReviewModal({
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
-  const card = useThemeColor({ light: '#f7f7f7', dark: '#1c1c1e' }, 'background');
-  const border = useThemeColor({ light: '#e5e5e5', dark: '#333' }, 'background');
-  const subtle = useThemeColor({ light: '#717171', dark: '#a1a1aa' }, 'text');
+  const card = useThemeColor({}, 'card');
+  const border = useThemeColor({}, 'border');
+  const subtle = useThemeColor({}, 'textSecondary');
 
   const [ratings, setRatings] = useState<Record<string, number>>({
     cleanliness: 0,
