@@ -1,10 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AppSwitch from '@/components/ui/AppSwitch';
 import { EditTabProps } from './types';
 
-export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint, border, subtle }: EditTabProps) {
+interface Props extends EditTabProps {
+  onDeactivate?: () => void;
+  deactivating?: boolean;
+}
+
+export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint, border, subtle, onDeactivate, deactivating }: Props) {
   return (
     <>
       <ToggleRow label="⚡ Instant Book" desc="Guests book without waiting for approval" val={form.instantBookEnabled} set={v => upd('instantBookEnabled', v)} text={text} subtle={subtle} border={border} tint={tint} />
@@ -30,8 +35,8 @@ export default function EditSettingsTab({ form, upd, saving, saveSec, text, tint
       </TouchableOpacity>
 
       <Text style={[s.secTitle, { color: '#ef4444', marginTop: 32 }]}>Danger zone</Text>
-      <TouchableOpacity style={s.dangerBtn} onPress={() => Alert.alert('Deactivate', 'This will hide your listing from guests.', [{ text: 'Cancel' }, { text: 'Deactivate', style: 'destructive' }])}>
-        <Ionicons name="eye-off-outline" size={18} color="#ef4444" />
+      <TouchableOpacity style={[s.dangerBtn, { opacity: deactivating ? 0.5 : 1 }]} onPress={onDeactivate} disabled={deactivating}>
+        {deactivating ? <ActivityIndicator size="small" color="#ef4444" /> : <Ionicons name="eye-off-outline" size={18} color="#ef4444" />}
         <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>Deactivate listing</Text>
       </TouchableOpacity>
     </>

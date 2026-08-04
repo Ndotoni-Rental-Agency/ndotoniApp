@@ -28,12 +28,17 @@ interface FilterModalProps {
   isShortTerm: boolean;
 }
 
+// Kept in sync with components/create-listing/types.ts PROPERTY_TYPES —
+// these are the only values a listing can actually be created with.
 const PROPERTY_TYPES = [
-  { value: 'HOUSE', label: 'House' },
   { value: 'APARTMENT', label: 'Apartment' },
+  { value: 'HOUSE', label: 'House' },
   { value: 'VILLA', label: 'Villa' },
   { value: 'STUDIO', label: 'Studio' },
-  { value: 'CONDO', label: 'Condo' },
+  { value: 'ROOM', label: 'Room' },
+  { value: 'GUESTHOUSE', label: 'Guesthouse' },
+  { value: 'HOTEL', label: 'Hotel' },
+  { value: 'COTTAGE', label: 'Cottage' },
 ];
 
 const SORT_OPTIONS = [
@@ -84,10 +89,9 @@ export default function FilterModal({
     setPriceMax(formatted);
   };
 
+  // Single-select: the search backend only accepts one propertyType per query.
   const togglePropertyType = (type: string) => {
-    setSelectedTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
+    setSelectedTypes(prev => (prev.includes(type) ? [] : [type]));
   };
 
   const handleApply = () => {

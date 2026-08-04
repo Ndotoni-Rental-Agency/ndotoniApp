@@ -15,12 +15,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { createBooking, initiatePayment } from '@/lib/graphql/mutations';
-import { getBlockedDates, getPayment } from '@/lib/graphql/queries';
+import { getBlockedDates, getBooking, getPayment } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
+  AppStateStatus,
   Keyboard,
   Linking,
   Modal,
@@ -68,6 +70,9 @@ export default function ReservationModal({
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Set when the user leaves the app for the external card checkout page, so we know
+  // to re-check payment status when they come back — Linking.openURL gives no callback.
+  const awaitingCardReturnRef = useRef(false);
 
   // Guest info
   const [firstName, setFirstName] = useState('');
@@ -117,6 +122,42 @@ export default function ReservationModal({
       setStep('guest-info');
     }
   }, [user, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Card payment opens an external browser checkout with no completion callback —
+  // when the user comes back to the app, re-check the booking's real payment status
+  // instead of leaving the modal exactly where it was (which looks identical whether
+  // the payment succeeded, failed, or was abandoned).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active' && awaitingCardReturnRef.current && bookingId) {
+        awaitingCardReturnRef.current = false;
+        checkCardPaymentStatus();
+      }
+    });
+    return () => sub.remove();
+  }, [bookingId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const checkCardPaymentStatus = async () => {
+    if (!bookingId) return;
+    setIsLoading(true);
+    try {
+      const exec = isAuthenticated
+        ? GraphQLClient.executeAuthenticated.bind(GraphQLClient)
+        : GraphQLClient.executePublic.bind(GraphQLClient);
+      const res = await exec<any>(getBooking, { bookingId });
+      const paymentStatus = res.getBooking?.paymentStatus;
+      if (paymentStatus === 'CAPTURED' || paymentStatus === 'PAID' || paymentStatus === 'AUTHORIZED') {
+        setStep('success');
+      } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+        setError('Payment was not completed'); setStep('failed');
+      }
+      // PENDING/PROCESSING: leave the user on the payment step to retry or wait.
+    } catch {
+      // Non-critical — the user can still retry payment manually.
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // ─── Business logic ───
 
@@ -169,6 +210,13 @@ export default function ReservationModal({
     if (!firstName.trim()) { Alert.alert('Name required', 'Please enter your first name'); return; }
     if (!lastName.trim()) { Alert.alert('Name required', 'Please enter your last name'); return; }
     if (!guestEmail.trim() || !guestEmail.includes('@')) { Alert.alert('Email required', 'Please enter a valid email'); return; }
+
+    // Already created this booking earlier in the session (e.g. user went back from
+    // the payment step) — don't submit a second createBooking for the same stay.
+    if (bookingId) {
+      setStep(bookingStatus === 'CONFIRMED' ? 'payment' : 'success');
+      return;
+    }
 
     setIsLoading(true); setError('');
     try {
@@ -231,6 +279,7 @@ export default function ReservationModal({
 
   const handleCardPay = () => {
     if (!bookingId) return;
+    awaitingCardReturnRef.current = true;
     const payUrl = `https://www.ndotonistays.com/pay/${bookingId}`;
     Linking.openURL(payUrl);
   };
@@ -265,18 +314,25 @@ export default function ReservationModal({
   // ─── Render ───
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={resetAndClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={step === 'processing' ? () => {} : resetAndClose}>
       <SafeAreaView style={[s.container, { backgroundColor: bg }]} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={s.header}>
-          <TouchableOpacity onPress={step === 'dates' ? resetAndClose : () => {
-            if (step === 'auth-choice') setStep('dates');
-            else if (step === 'guest-info') setStep(isAuthenticated ? 'dates' : 'auth-choice');
-            else if (step === 'payment') setStep('guest-info');
-            else resetAndClose();
-          }} style={[s.closeBtn, { backgroundColor: `${text}08` }]}>
-            <Ionicons name={step === 'dates' ? 'close' : 'arrow-back'} size={20} color={text} />
-          </TouchableOpacity>
+          {step === 'processing' ? (
+            // A mobile-money prompt may still be live on the guest's phone — closing
+            // the modal here would only stop us from watching for the result, not
+            // cancel the actual prompt, so back navigation is disabled until it resolves.
+            <View style={[s.closeBtn, { opacity: 0.3 }]} />
+          ) : (
+            <TouchableOpacity onPress={step === 'dates' ? resetAndClose : () => {
+              if (step === 'auth-choice') setStep('dates');
+              else if (step === 'guest-info') setStep(isAuthenticated ? 'dates' : 'auth-choice');
+              else if (step === 'payment') setStep('guest-info');
+              else resetAndClose();
+            }} style={[s.closeBtn, { backgroundColor: `${text}08` }]}>
+              <Ionicons name={step === 'dates' ? 'close' : 'arrow-back'} size={20} color={text} />
+            </TouchableOpacity>
+          )}
           <Text style={[s.headerTitle, { color: text }]}>
             {step === 'dates' ? 'Book your stay' : step === 'auth-choice' ? '' : step === 'guest-info' ? 'Your details' : step === 'payment' ? 'Payment' : ''}
           </Text>

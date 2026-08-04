@@ -8,7 +8,7 @@ import { formatDateShort, toTitleCase } from '@/lib/utils/common';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -33,6 +33,11 @@ export default function SearchScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextToken, setNextToken] = useState<string | null>(null);
+  // Per-region pagination cursors, used only when no single region is selected
+  // (the search backend requires a region per query, so we fan out across all of them).
+  const regionTokensRef = useRef<Record<string, string | null>>({});
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const [multiRegionHasMore, setMultiRegionHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -76,40 +81,62 @@ export default function SearchScreen() {
         checkOutDate: (checkOutDate || twoDaysLater.toISOString().split('T')[0]).split('T')[0],
         numberOfGuests: 2,
         ...(category ? { stayCategory: category } : {}),
+        ...(filters.priceMin ? { minPrice: filters.priceMin } : {}),
+        ...(filters.priceMax ? { maxPrice: filters.priceMax } : {}),
+        ...(filters.bedrooms ? { bedrooms: filters.bedrooms } : {}),
+        ...(filters.propertyTypes?.[0] ? { propertyType: filters.propertyTypes[0] } : {}),
         limit: 20,
-        nextToken: loadMore ? nextToken : null,
       };
 
       let newProps: any[] = [];
-      let newNextToken: string | null = null;
 
       if (selectedRegion) {
-        // Single region query
+        // Single region query — backend gives us a real cursor.
         const data = await GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
           searchShortTermProperties,
-          { input: { ...baseInput, region: selectedRegion } }
+          { input: { ...baseInput, region: selectedRegion, nextToken: loadMore ? nextToken : null } }
         );
         const result = data.searchShortTermProperties;
         newProps = result?.properties || [];
-        newNextToken = result?.nextToken || null;
+        setNextToken(result?.nextToken || null);
       } else {
-        // No region selected — query all regions in parallel (like the web)
-        const queries = ALL_REGIONS.map((r) =>
-          GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
-            searchShortTermProperties,
-            { input: { ...baseInput, region: r } }
-          ).then((d) => d.searchShortTermProperties?.properties || [])
-           .catch(() => [] as any[])
+        // No region selected — the backend requires one, so fan out across all of them
+        // and merge. Each region keeps its own cursor so "load more" fetches the NEXT
+        // page per region instead of re-fetching page one and re-shuffling every time.
+        if (!loadMore) {
+          regionTokensRef.current = {};
+          seenIdsRef.current = new Set();
+        }
+        const regionsToQuery = loadMore
+          ? ALL_REGIONS.filter(r => regionTokensRef.current[r] !== null)
+          : ALL_REGIONS;
+
+        const results = await Promise.all(
+          regionsToQuery.map((r) =>
+            GraphQLClient.executePublic<{ searchShortTermProperties: any }>(
+              searchShortTermProperties,
+              { input: { ...baseInput, region: r, nextToken: loadMore ? (regionTokensRef.current[r] ?? null) : null } }
+            )
+              .then((d) => ({ region: r, properties: d.searchShortTermProperties?.properties || [], nextToken: d.searchShortTermProperties?.nextToken || null }))
+              .catch(() => ({ region: r, properties: [] as any[], nextToken: null as string | null }))
+          )
         );
-        const allResults = await Promise.all(queries);
-        const seen = new Set<string>();
-        newProps = allResults.flat().filter((p: any) => {
-          if (seen.has(p.propertyId)) return false;
-          seen.add(p.propertyId);
-          return true;
-        });
-        // Shuffle for variety
-        newProps.sort(() => Math.random() - 0.5);
+
+        for (const r of results) {
+          regionTokensRef.current[r.region] = r.nextToken;
+          for (const p of r.properties) {
+            if (!seenIdsRef.current.has(p.propertyId)) {
+              seenIdsRef.current.add(p.propertyId);
+              newProps.push(p);
+            }
+          }
+        }
+        if (!loadMore) {
+          // Shuffle once, on the first page only — re-shuffling on every load-more
+          // visibly reorders cards the user has already scrolled past.
+          newProps.sort(() => Math.random() - 0.5);
+        }
+        setMultiRegionHasMore(Object.values(regionTokensRef.current).some(t => t !== null));
       }
 
       if (loadMore) {
@@ -117,7 +144,6 @@ export default function SearchScreen() {
       } else {
         setProperties(newProps);
       }
-      setNextToken(newNextToken);
     } catch (err) {
       console.error('[Search] Error:', err);
       if (!loadMore) setError('Failed to load stays');
@@ -128,13 +154,15 @@ export default function SearchScreen() {
     }
   };
 
+  const canLoadMore = selectedRegion ? !!nextToken : multiRegionHasMore;
+
   const handleLoadMore = () => {
-    if (!nextToken || isLoadingMore) return;
+    if (!canLoadMore || isLoadingMore) return;
     setIsLoadingMore(true);
     fetchProperties(true);
   };
 
-  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchProperties(); }, [selectedRegion, selectedDistrict, filters.priceMin, filters.priceMax, filters.bedrooms, filters.propertyTypes?.[0]]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRegions = async () => {
     try {
@@ -158,6 +186,10 @@ export default function SearchScreen() {
     }
     if (filters.bedrooms) {
       result = result.filter(p => (p.bedrooms || 0) >= filters.bedrooms!);
+    }
+    if (filters.bathrooms) {
+      // Not supported by the search API (no `bathrooms` param), so this stays client-side.
+      result = result.filter(p => (p.bathrooms || 0) >= filters.bathrooms!);
     }
     if (filters.sortBy) {
       result.sort((a, b) => {
@@ -330,7 +362,7 @@ export default function SearchScreen() {
               <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                 <ActivityIndicator size="small" color={tintColor} />
               </View>
-            ) : nextToken ? (
+            ) : canLoadMore ? (
               <TouchableOpacity style={{ paddingVertical: 20, alignItems: 'center' }} onPress={handleLoadMore}>
                 <Text style={{ color: tintColor, fontWeight: '600', fontSize: 14 }}>Load more</Text>
               </TouchableOpacity>

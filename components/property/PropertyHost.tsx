@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
@@ -48,10 +47,6 @@ export default function PropertyHost({
           <Text style={[styles.hostName, { color: textColor }]}>
             {firstName}
           </Text>
-          <View style={styles.verifiedRow}>
-            <Ionicons name="shield-checkmark" size={14} color="#10b981" />
-            <Text style={styles.verifiedText}>Verified Host</Text>
-          </View>
         </View>
       </View>
     </View>
@@ -92,16 +87,5 @@ const styles = StyleSheet.create({
   hostName: {
     fontSize: 17,
     fontWeight: '600',
-  },
-  verifiedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 4,
-  },
-  verifiedText: {
-    fontSize: 13,
-    color: '#10b981',
-    fontWeight: '500',
   },
 });

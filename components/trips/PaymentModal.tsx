@@ -1,12 +1,14 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { initiatePayment } from '@/lib/graphql/mutations';
-import { getPayment } from '@/lib/graphql/queries';
+import { getBooking, getPayment } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
+  AppStateStatus,
   Image,
   Linking,
   Modal,
@@ -37,6 +39,9 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   const [error, setError] = useState('');
   const [pollCount, setPollCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Set when the user leaves for the external card checkout page, so we know to
+  // re-check payment status when they return — Linking.openURL gives no callback.
+  const awaitingCardReturnRef = useRef(false);
 
   const total = booking?.pricing?.total ?? booking?.totalPrice ?? 0;
   const currency = booking?.pricing?.currency || booking?.property?.currency || 'TZS';
@@ -47,6 +52,39 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
     if (visible) { setMethod(null); setStatus('pick'); setError(''); setPhone(''); setPollCount(0); }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [visible]);
+
+  // Card payment opens an external browser checkout with no completion callback —
+  // when the user comes back, re-check the booking's real payment status instead of
+  // leaving the modal exactly where it was (looks identical whether payment succeeded,
+  // failed, or was abandoned).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active' && awaitingCardReturnRef.current && booking?.bookingId) {
+        awaitingCardReturnRef.current = false;
+        checkCardPaymentStatus();
+      }
+    });
+    return () => sub.remove();
+  }, [booking?.bookingId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const checkCardPaymentStatus = async () => {
+    if (!booking?.bookingId) return;
+    try {
+      const exec = isAuthenticated
+        ? GraphQLClient.executeAuthenticated.bind(GraphQLClient)
+        : GraphQLClient.executePublic.bind(GraphQLClient);
+      const res = await exec<any>(getBooking, { bookingId: booking.bookingId });
+      const paymentStatus = res.getBooking?.paymentStatus;
+      if (paymentStatus === 'CAPTURED' || paymentStatus === 'PAID' || paymentStatus === 'AUTHORIZED') {
+        setStatus('success');
+      } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+        setError('Payment was not completed'); setStatus('failed');
+      }
+      // PENDING/PROCESSING: leave the user on the method picker to retry or wait.
+    } catch {
+      // Non-critical — the user can still retry payment manually.
+    }
+  };
 
   const handleMobilePay = async () => {
     const p = phone.replace(/\D/g, '');
@@ -84,6 +122,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
   const handleCardPay = () => {
     if (!booking) return;
+    awaitingCardReturnRef.current = true;
     Linking.openURL(`https://www.ndotonistays.com/pay/${booking.bookingId}`);
   };
 
@@ -328,12 +367,19 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   );
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={status === 'processing' ? () => {} : onClose}>
       <SafeAreaView style={[s.container, { backgroundColor: bg }]} edges={['top', 'bottom']}>
         <View style={s.header}>
-          <TouchableOpacity onPress={onClose} style={[s.closeBtn, { backgroundColor: `${text}08` }]} accessibilityRole="button" accessibilityLabel="Close">
-            <Ionicons name="close" size={20} color={text} />
-          </TouchableOpacity>
+          {status === 'processing' ? (
+            // A mobile-money prompt may still be live on the guest's phone — closing
+            // the modal here would only stop us from watching for the result, not
+            // cancel the actual prompt, so back navigation is disabled until it resolves.
+            <View style={[s.closeBtn, { opacity: 0.3 }]} />
+          ) : (
+            <TouchableOpacity onPress={onClose} style={[s.closeBtn, { backgroundColor: `${text}08` }]} accessibilityRole="button" accessibilityLabel="Close">
+              <Ionicons name="close" size={20} color={text} />
+            </TouchableOpacity>
+          )}
           <Text style={[s.headerTitle, { color: text }]}>
             {status === 'pick' ? 'Complete payment' : status === 'processing' ? 'Processing' : status === 'success' ? 'Confirmed' : 'Payment issue'}
           </Text>

@@ -2,6 +2,9 @@ import { EditDetailsTab, EditPhotosTab, EditCheckInTab, EditSettingsTab, EditFor
 import { useShortTermPropertyDetail } from '@/hooks/propertyDetails/useShortTermPropertyDetail';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUpdateProperty } from '@/hooks/useUpdateProperty';
+import { useAlert } from '@/contexts/AlertContext';
+import { GraphQLClient } from '@/lib/graphql-client';
+import { deactivateShortTermProperty } from '@/lib/graphql/mutations';
 import { UpdateShortTermPropertyInput } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,6 +21,8 @@ export default function EditShortTermPropertyScreen() {
 
   const { property, loading, error } = useShortTermPropertyDetail(propertyId);
   const { updateShortProperty } = useUpdateProperty();
+  const { showAlert } = useAlert();
+  const [deactivating, setDeactivating] = useState(false);
 
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
@@ -86,6 +91,31 @@ export default function EditShortTermPropertyScreen() {
     } finally { setSaving(false); }
   };
 
+  const handleDeactivate = () => {
+    showAlert({
+      title: 'Deactivate Listing',
+      message: `This will hide "${form.title || 'this listing'}" from guests. You can reactivate it anytime from your properties list.`,
+      icon: 'warning',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Deactivate', style: 'destructive', onPress: async () => {
+          setDeactivating(true);
+          try {
+            await GraphQLClient.executeAuthenticated(deactivateShortTermProperty, { propertyId });
+            showAlert({
+              title: 'Listing Deactivated', message: 'Guests can no longer book this listing.', icon: 'success',
+              buttons: [{ text: 'OK', onPress: () => router.back() }],
+            });
+          } catch (err: any) {
+            showAlert({ title: 'Error', message: err?.message || 'Failed to deactivate listing.', icon: 'error', buttons: [{ text: 'OK' }] });
+          } finally {
+            setDeactivating(false);
+          }
+        }},
+      ],
+    });
+  };
+
   if (loading) return <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}><View style={s.center}><ActivityIndicator size="large" color={tint} /></View></SafeAreaView>;
   if (error || !property) return (
     <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
@@ -137,7 +167,7 @@ export default function EditShortTermPropertyScreen() {
           {tab === 'details' && <EditDetailsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
           {tab === 'photos' && <EditPhotosTab images={images} setImages={setImages} saving={saving} saveSec={saveSec} text={text} tint={tint} subtle={subtle} />}
           {tab === 'checkin' && <EditCheckInTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
-          {tab === 'settings' && <EditSettingsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} {...colors} />}
+          {tab === 'settings' && <EditSettingsTab form={form} upd={upd} toggleCat={toggleCat} saving={saving} saveSec={saveSec} onDeactivate={handleDeactivate} deactivating={deactivating} {...colors} />}
           <View style={{ height: 60 }} />
         </ScrollView>
       </KeyboardAvoidingView>
