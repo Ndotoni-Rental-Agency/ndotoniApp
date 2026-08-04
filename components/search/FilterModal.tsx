@@ -43,9 +43,9 @@ const PROPERTY_TYPES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'price_asc', label: 'Price: Low to High', icon: 'arrow-up' },
-  { value: 'price_desc', label: 'Price: High to Low', icon: 'arrow-down' },
-  { value: 'newest', label: 'Newest First', icon: 'time' },
+  { value: 'price_asc', label: 'Price ↑', icon: 'arrow-up' },
+  { value: 'price_desc', label: 'Price ↓', icon: 'arrow-down' },
+  { value: 'newest', label: 'Newest', icon: 'time' },
 ];
 
 export default function FilterModal({
@@ -126,12 +126,12 @@ export default function FilterModal({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View style={[styles.container, { backgroundColor }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={onClose} 
-            style={[styles.closeButton, { backgroundColor: borderColor }]}
+        <View style={[styles.header, { borderBottomColor: borderColor }]}>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeButton, { backgroundColor: cardBg, borderColor }]}
           >
-            <Ionicons name="close" size={24} color={textColor} />
+            <Ionicons name="close" size={22} color={textColor} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: textColor }]}>Filters</Text>
           {hasActiveFilters ? (
@@ -145,15 +145,15 @@ export default function FilterModal({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Guests */}
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: borderColor }]}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Guests</Text>
-            <View style={[styles.guestStepper, { backgroundColor: cardBg, borderColor }]}>
+            <View style={styles.guestStepper}>
               <Text style={[styles.guestStepperText, { color: textColor }]}>
                 {guests} guest{guests !== 1 ? 's' : ''}
               </Text>
               <View style={styles.stepperControls}>
                 <TouchableOpacity
-                  style={[styles.stepperBtn, { borderColor: guests <= 1 ? `${borderColor}80` : tintColor }]}
+                  style={[styles.stepperBtn, { borderColor: guests <= 1 ? borderColor : tintColor }]}
                   onPress={() => setGuests(Math.max(1, guests - 1))}
                   disabled={guests <= 1}
                   accessibilityLabel="Decrease guests"
@@ -171,48 +171,43 @@ export default function FilterModal({
             </View>
           </View>
 
-          {/* Sort By */}
-          <View style={styles.section}>
+          {/* Sort By — compact segmented row instead of a stacked card list */}
+          <View style={[styles.section, { borderBottomColor: borderColor }]}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Sort by</Text>
-            <View style={styles.optionsGrid}>
-              {SORT_OPTIONS.map(option => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.sortOption,
-                    { backgroundColor: cardBg, borderColor },
-                    sortBy === option.value && { borderColor: tintColor, backgroundColor: `${tintColor}10` },
-                  ]}
-                  onPress={() => setSortBy(option.value as any)}
-                >
-                  <Ionicons
-                    name={option.icon as any}
-                    size={20}
-                    color={sortBy === option.value ? tintColor : secondaryText}
-                  />
-                  <Text
+            <View style={[styles.segmented, { borderColor }]}>
+              {SORT_OPTIONS.map((option, i) => {
+                const active = sortBy === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
                     style={[
-                      styles.sortOptionText,
-                      { color: sortBy === option.value ? tintColor : textColor },
+                      styles.segment,
+                      i > 0 && { borderLeftWidth: 1, borderLeftColor: borderColor },
+                      active && { backgroundColor: tintColor },
                     ]}
+                    onPress={() => setSortBy(active ? undefined : (option.value as any))}
                   >
-                    {option.label}
-                  </Text>
-                  {sortBy === option.value && (
-                    <Ionicons name="checkmark-circle" size={20} color={tintColor} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    <Ionicons
+                      name={option.icon as any}
+                      size={15}
+                      color={active ? '#fff' : secondaryText}
+                    />
+                    <Text style={[styles.segmentText, { color: active ? '#fff' : textColor }]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
-          {/* Price Range */}
-          <View style={styles.section}>
+          {/* Price Range — single unified field split by a divider, not two floating cards */}
+          <View style={[styles.section, { borderBottomColor: borderColor }]}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>
               Price range (TZS per {isShortTerm ? 'night' : 'month'})
             </Text>
-            <View style={styles.priceInputs}>
-              <View style={[styles.priceInputContainer, { backgroundColor: cardBg, borderColor }]}>
+            <View style={[styles.priceRow, { borderColor }]}>
+              <View style={styles.priceField}>
                 <Text style={[styles.priceLabel, { color: secondaryText }]}>Min</Text>
                 <TextInput
                   style={[styles.priceInput, { color: textColor }]}
@@ -223,8 +218,8 @@ export default function FilterModal({
                   keyboardType="numeric"
                 />
               </View>
-              <Text style={[styles.priceSeparator, { color: secondaryText }]}>—</Text>
-              <View style={[styles.priceInputContainer, { backgroundColor: cardBg, borderColor }]}>
+              <View style={[styles.priceDivider, { backgroundColor: borderColor }]} />
+              <View style={styles.priceField}>
                 <Text style={[styles.priceLabel, { color: secondaryText }]}>Max</Text>
                 <TextInput
                   style={[styles.priceInput, { color: textColor }]}
@@ -239,98 +234,88 @@ export default function FilterModal({
           </View>
 
           {/* Property Type */}
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: borderColor }]}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Property type</Text>
             <View style={styles.typeGrid}>
-              {PROPERTY_TYPES.map(type => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={[
-                    styles.typeChip,
-                    { backgroundColor: cardBg, borderColor },
-                    selectedTypes.includes(type.value) && {
-                      borderColor: tintColor,
-                      backgroundColor: `${tintColor}10`,
-                    },
-                  ]}
-                  onPress={() => togglePropertyType(type.value)}
-                >
-                  <Text
+              {PROPERTY_TYPES.map(type => {
+                const active = selectedTypes.includes(type.value);
+                return (
+                  <TouchableOpacity
+                    key={type.value}
                     style={[
-                      styles.typeChipText,
-                      { color: selectedTypes.includes(type.value) ? tintColor : textColor },
+                      styles.typeChip,
+                      { borderColor },
+                      active && { borderColor: tintColor, backgroundColor: tintColor },
                     ]}
+                    onPress={() => togglePropertyType(type.value)}
                   >
-                    {type.label}
-                  </Text>
-                  {selectedTypes.includes(type.value) && (
-                    <Ionicons name="checkmark-circle" size={18} color={tintColor} />
-                  )}
-                </TouchableOpacity>
-              ))}
+                    <Text style={[styles.typeChipText, { color: active ? '#fff' : textColor }]}>
+                      {type.label}
+                    </Text>
+                    {active && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
           {/* Bedrooms */}
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: borderColor }]}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Bedrooms</Text>
             <View style={styles.numberGrid}>
-              {[1, 2, 3, 4, 5].map(num => (
-                <TouchableOpacity
-                  key={num}
-                  style={[
-                    styles.numberButton,
-                    { backgroundColor: cardBg, borderColor },
-                    bedrooms === num && { borderColor: tintColor, backgroundColor: `${tintColor}10` },
-                  ]}
-                  onPress={() => setBedrooms(bedrooms === num ? undefined : num)}
-                >
-                  <Text
+              {[1, 2, 3, 4, 5].map(num => {
+                const active = bedrooms === num;
+                return (
+                  <TouchableOpacity
+                    key={num}
                     style={[
-                      styles.numberButtonText,
-                      { color: bedrooms === num ? tintColor : textColor },
+                      styles.numberButton,
+                      { borderColor },
+                      active && { borderColor: tintColor, backgroundColor: tintColor },
                     ]}
+                    onPress={() => setBedrooms(active ? undefined : num)}
                   >
-                    {num}+
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={[styles.numberButtonText, { color: active ? '#fff' : textColor }]}>
+                      {num}+
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
           {/* Bathrooms */}
-          <View style={styles.section}>
+          <View style={styles.sectionLast}>
             <Text style={[styles.sectionTitle, { color: textColor }]}>Bathrooms</Text>
             <View style={styles.numberGrid}>
-              {[1, 2, 3, 4].map(num => (
-                <TouchableOpacity
-                  key={num}
-                  style={[
-                    styles.numberButton,
-                    { backgroundColor: cardBg, borderColor },
-                    bathrooms === num && { borderColor: tintColor, backgroundColor: `${tintColor}10` },
-                  ]}
-                  onPress={() => setBathrooms(bathrooms === num ? undefined : num)}
-                >
-                  <Text
+              {[1, 2, 3, 4].map(num => {
+                const active = bathrooms === num;
+                return (
+                  <TouchableOpacity
+                    key={num}
                     style={[
-                      styles.numberButtonText,
-                      { color: bathrooms === num ? tintColor : textColor },
+                      styles.numberButton,
+                      { borderColor },
+                      active && { borderColor: tintColor, backgroundColor: tintColor },
                     ]}
+                    onPress={() => setBathrooms(active ? undefined : num)}
                   >
-                    {num}+
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={[styles.numberButtonText, { color: active ? '#fff' : textColor }]}>
+                      {num}+
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         </ScrollView>
 
         {/* Footer */}
-        <View style={[styles.footer, { borderTopColor: borderColor }]}>
+        <View style={[styles.footer, { borderTopColor: borderColor, backgroundColor }]}>
           <TouchableOpacity
             style={[styles.applyButton, { backgroundColor: tintColor }]}
             onPress={handleApply}
+            activeOpacity={0.9}
           >
             <Text style={styles.applyButtonText}>Show results</Text>
           </TouchableOpacity>
@@ -348,57 +333,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 18,
     paddingBottom: 16,
+    borderBottomWidth: 1,
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     letterSpacing: -0.5,
   },
   clearButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
   },
   clearText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   placeholder: {
-    width: 40,
+    width: 38,
   },
   content: {
     flex: 1,
-    paddingTop: 8,
   },
   section: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    borderBottomWidth: 1,
+  },
+  sectionLast: {
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    paddingBottom: 40,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
-    marginBottom: 16,
-    letterSpacing: -0.3,
+    marginBottom: 14,
+    letterSpacing: -0.2,
   },
-  optionsGrid: {
-    gap: 10,
-  },
+
+  // Guests
   guestStepper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 2,
   },
   guestStepperText: {
     fontSize: 16,
@@ -410,117 +398,110 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   stepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sortOption: {
+
+  // Sort — segmented control
+  segmented: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  segment: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 2,
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
   },
-  sortOptionText: {
-    fontSize: 15,
+  segmentText: {
+    fontSize: 13,
     fontWeight: '600',
-    flex: 1,
-    letterSpacing: -0.2,
   },
-  priceInputs: {
+
+  // Price range — one unified field
+  priceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    alignItems: 'stretch',
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  priceInputContainer: {
+  priceField: {
     flex: 1,
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  priceDivider: {
+    width: 1,
   },
   priceLabel: {
     fontSize: 11,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   priceInput: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.5,
+    padding: 0,
   },
-  priceSeparator: {
-    fontSize: 24,
-    fontWeight: '300',
-    opacity: 0.4,
-  },
+
+  // Property type
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 28,
-    borderWidth: 2,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    gap: 6,
   },
   typeChipText: {
     fontSize: 14,
     fontWeight: '600',
     letterSpacing: -0.2,
   },
+
+  // Number grids (bedrooms/bathrooms)
   numberGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   numberButton: {
     flex: 1,
-    paddingVertical: 18,
-    borderRadius: 16,
-    borderWidth: 2,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
   numberButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
+
   footer: {
-    padding: 24,
+    padding: 20,
     paddingBottom: 32,
+    borderTopWidth: 1,
   },
   applyButton: {
-    paddingVertical: 18,
-    borderRadius: 16,
+    paddingVertical: 17,
+    borderRadius: 14,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -530,7 +511,7 @@ const styles = StyleSheet.create({
   },
   applyButtonText: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
   },

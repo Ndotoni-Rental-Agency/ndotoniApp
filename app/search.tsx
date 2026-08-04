@@ -200,9 +200,7 @@ export default function SearchScreen() {
     if (instantOnly) {
       result = result.filter(p => !!p.instantBookEnabled);
     }
-    if (topRatedOnly) {
-      result = result.filter(p => (p.averageRating || 0) >= 4.5);
-    }
+    // "Top rated" is a no-op for now — chip is visible but not wired to a filter yet.
     if (filters.sortBy) {
       result.sort((a, b) => {
         switch (filters.sortBy) {
@@ -345,17 +343,6 @@ export default function SearchScreen() {
             <Ionicons name="star" size={14} color={topRatedOnly ? tintColor : textColor} />
             <Text style={[styles.chipText, { color: topRatedOnly ? tintColor : textColor }]}>
               Top rated
-            </Text>
-          </TouchableOpacity>
-
-          {/* Guests quick filter */}
-          <TouchableOpacity
-            style={[styles.chip, { borderColor }, !!filters.guests && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
-            onPress={() => setShowFilterModal(true)}
-          >
-            <Ionicons name="people-outline" size={14} color={filters.guests ? tintColor : textColor} />
-            <Text style={[styles.chipText, { color: filters.guests ? tintColor : textColor }]}>
-              {filters.guests ? `${filters.guests} guests` : 'Guests'}
             </Text>
           </TouchableOpacity>
         </ScrollView>
