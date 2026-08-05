@@ -6,6 +6,7 @@ import { useDeleteProperty } from '@/hooks/useProperty';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   FlatList,
@@ -247,7 +248,7 @@ export default function LandlordPropertiesScreen() {
         ListEmptyComponent={
           loading && !refreshing ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
+              <BrandLoader />
               <Text style={[styles.loadingText, { color: secondaryText }]}>Loading properties...</Text>
             </View>
           ) : error ? (

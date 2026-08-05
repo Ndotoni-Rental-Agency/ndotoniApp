@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ReservationColors } from './types';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 interface StepResultProps {
   colors: ReservationColors;
@@ -16,7 +17,7 @@ export default function StepResult({ colors, state, bookingStatus, error }: Step
   if (state === 'processing') {
     return (
       <View style={styles.centerWrap}>
-        <ActivityIndicator size="large" color={tint} />
+        <BrandLoader />
         <Text style={[styles.stepHeading, { color: text, marginTop: 24 }]}>Processing payment</Text>
         <Text style={[styles.stepSub, { color: subtle, textAlign: 'center' }]}>
           Check your phone and confirm{'\n'}the M-Pesa prompt

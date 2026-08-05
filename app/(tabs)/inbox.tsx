@@ -14,8 +14,9 @@ import { useConversationSearch } from '@/hooks/useConversationSearch';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -97,7 +98,7 @@ export default function MessagesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
+          <BrandLoader />
         </View>
       </SafeAreaView>
     );
@@ -315,7 +316,7 @@ export default function MessagesScreen() {
             ) : null
           ) : (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
+              <BrandLoader />
             </View>
           )
         }

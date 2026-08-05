@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   Modal, View, Text, TextInput, TouchableOpacity, FlatList,
   ActivityIndicator, StyleSheet, Image, KeyboardAvoidingView, Platform,
@@ -204,7 +205,7 @@ export function NewConversationModal({ visible, onClose }: Props) {
           ListEmptyComponent={
             isSearching ? (
               <View style={styles.emptyState}>
-                <ActivityIndicator size="large" color={tintColor} />
+                <BrandLoader />
                 <Text style={[styles.emptyText, { color: secondaryText }]}>Searching...</Text>
               </View>
             ) : query.length >= 2 ? (

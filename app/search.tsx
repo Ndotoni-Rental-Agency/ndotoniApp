@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   FlatList,
@@ -351,7 +352,7 @@ export default function SearchScreen() {
       {/* Results */}
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={tintColor} />
+          <BrandLoader />
         </View>
       ) : error ? (
         <View style={styles.center}>

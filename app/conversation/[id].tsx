@@ -13,6 +13,7 @@ import BlockUserModal from '@/components/moderation/BlockUserModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
     FlatList,
@@ -494,7 +495,7 @@ export default function ConversationScreen() {
       >
       {loadingMessages ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
+          <BrandLoader />
         </View>
       ) : (
         <FlatList

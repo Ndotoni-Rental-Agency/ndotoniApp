@@ -10,8 +10,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -237,7 +237,7 @@ export default function HomeScreen() {
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={tint} />
+          <BrandLoader />
         </View>
       ) : error ? (
         <View style={styles.center}>

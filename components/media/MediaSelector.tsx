@@ -7,6 +7,7 @@ import { getMediaLibrary } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
     Image,
@@ -479,7 +480,7 @@ export default function MediaSelector({
         <View style={styles.libraryContainer}>
           {loadingLibrary ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
+              <BrandLoader />
               <Text style={[styles.loadingText, { color: placeholderColor }]}>
                 Loading your media library...
               </Text>

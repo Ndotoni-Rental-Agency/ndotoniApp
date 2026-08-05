@@ -9,8 +9,9 @@ import { UpdateShortTermPropertyInput } from '@/lib/API';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 type Tab = 'details' | 'photos' | 'checkin' | 'settings';
 
@@ -160,7 +161,7 @@ export default function EditShortTermPropertyScreen() {
     });
   };
 
-  if (loading) return <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}><View style={s.center}><ActivityIndicator size="large" color={tint} /></View></SafeAreaView>;
+  if (loading) return <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}><View style={s.center}><BrandLoader /></View></SafeAreaView>;
   if (error || !property) return (
     <SafeAreaView style={[s.fill, { backgroundColor: bg }]} edges={['top']}>
       <View style={s.center}><Text style={{ color: text }}>{error || 'Not found'}</Text><TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}><Text style={{ color: tint }}>Go back</Text></TouchableOpacity></View>

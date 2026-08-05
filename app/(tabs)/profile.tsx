@@ -19,6 +19,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppSwitch from '@/components/ui/AppSwitch';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -142,7 +143,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
+          <BrandLoader />
         </View>
       </SafeAreaView>
     );

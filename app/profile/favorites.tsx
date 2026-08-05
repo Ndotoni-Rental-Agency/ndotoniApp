@@ -8,8 +8,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -290,7 +290,7 @@ export default function FavoritesScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={tint} />
+          <BrandLoader />
         </View>
       ) : properties.length === 0 ? (
         /* Empty state */

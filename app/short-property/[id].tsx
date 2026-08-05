@@ -29,6 +29,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   Animated,
@@ -150,7 +151,7 @@ export default function ShortTermPropertyDetailsScreen() {
   if (loading) {
     return (
       <View style={[styles.fill, { backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={tint} />
+        <BrandLoader />
         <Text style={{ color: subtle, marginTop: 12, fontSize: 14 }}>Loading property...</Text>
       </View>
     );

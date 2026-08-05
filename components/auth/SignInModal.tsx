@@ -5,6 +5,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
     Animated,
@@ -179,7 +180,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           {isSocialLoading && (
             <View style={[styles.loadingOverlay, { backgroundColor }]}>
               <View style={[styles.loadingCard, { backgroundColor: inputBg, borderColor }]}>
-                <ActivityIndicator size="large" color={tintColor} />
+                <BrandLoader />
                 <Text style={[styles.loadingText, { color: textColor }]}>Signing you in...</Text>
                 <Text style={[styles.loadingSubtext, { color: placeholderColor }]}>Please wait while we set things up</Text>
               </View>

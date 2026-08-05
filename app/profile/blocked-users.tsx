@@ -7,6 +7,7 @@ import { toggleBlockUser as toggleBlockMutation } from '@/lib/graphql/mutations'
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   FlatList,
@@ -110,7 +111,7 @@ export default function BlockedUsersScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tint} />
+          <BrandLoader />
         </View>
       ) : (
         <FlatList

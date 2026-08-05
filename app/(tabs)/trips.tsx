@@ -12,6 +12,7 @@ import { cancelBooking } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   FlatList,
@@ -178,7 +179,7 @@ export default function TripsScreen() {
       </View>
 
       {loading ? (
-        <View style={s.centerWrap}><ActivityIndicator size="large" color={tint} /></View>
+        <View style={s.centerWrap}><BrandLoader /></View>
       ) : (
         <FlatList
           data={bookings}

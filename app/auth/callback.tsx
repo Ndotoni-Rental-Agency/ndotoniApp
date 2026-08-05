@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import BrandLoader from '@/components/ui/BrandLoader';
 
 /**
  * OAuth callback route handler for Android.
@@ -42,7 +43,7 @@ export default function AuthCallback() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#2563eb" />
+      <BrandLoader />
       <Text style={styles.text}>Signing you in...</Text>
     </View>
   );

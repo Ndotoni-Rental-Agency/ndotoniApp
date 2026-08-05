@@ -6,6 +6,7 @@ import { initiatePayment } from '@/lib/graphql/mutations';
 import { getBooking, getPayment } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
   Animated,
@@ -283,7 +284,7 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
   const renderProcessing = () => (
     <View style={s.center}>
       <View style={[s.processingIcon, { borderColor: tint }]}>
-        <ActivityIndicator size="large" color={tint} />
+        <BrandLoader />
       </View>
       <Text style={[s.statusTitle, { color: text }]}>Waiting for payment</Text>
       <Text style={[s.statusSub, { color: subtle }]}>

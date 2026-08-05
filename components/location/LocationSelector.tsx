@@ -3,8 +3,8 @@ import { GraphQLClient } from '@/lib/graphql-client';
 import { getDistricts, getRegions, getWards } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import BrandLoader from '@/components/ui/BrandLoader';
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -237,7 +237,7 @@ export default function LocationSelector({ value, onChange, required }: Location
             />
 
             {loading ? (
-              <ActivityIndicator size="large" color={tintColor} style={styles.loader} />
+              <BrandLoader style={styles.loader} />
             ) : (
               <FlatList
                 data={filteredRegions}
@@ -290,7 +290,7 @@ export default function LocationSelector({ value, onChange, required }: Location
             />
 
             {loading ? (
-              <ActivityIndicator size="large" color={tintColor} style={styles.loader} />
+              <BrandLoader style={styles.loader} />
             ) : (
               <FlatList
                 data={filteredDistricts}
@@ -343,7 +343,7 @@ export default function LocationSelector({ value, onChange, required }: Location
             />
 
             {loading ? (
-              <ActivityIndicator size="large" color={tintColor} style={styles.loader} />
+              <BrandLoader style={styles.loader} />
             ) : (
               <FlatList
                 data={filteredWards}
