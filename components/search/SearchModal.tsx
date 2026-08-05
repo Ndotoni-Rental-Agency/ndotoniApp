@@ -290,35 +290,8 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                   <Ionicons name="pencil" size={14} color={subtle} />
                 </TouchableOpacity>
 
-                {/* Date selection */}
-                <View style={styles.dateRow}>
-                  <TouchableOpacity
-                    style={[styles.dateBox, { borderColor: checkIn ? tint : border, backgroundColor: checkIn ? `${tint}08` : card }]}
-                    onPress={() => setShowCalendar(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-IN</Text>
-                    <Text style={[styles.dateVal, { color: checkIn ? text : subtle }]}>
-                      {checkIn ? formatDateShort(checkIn) : 'Add date'}
-                    </Text>
-                  </TouchableOpacity>
-                  <View style={[styles.dateArrow, { backgroundColor: border }]}>
-                    <Ionicons name="arrow-forward" size={12} color={subtle} />
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.dateBox, { borderColor: checkOut ? tint : border, backgroundColor: checkOut ? `${tint}08` : card }]}
-                    onPress={() => setShowCalendar(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-OUT</Text>
-                    <Text style={[styles.dateVal, { color: checkOut ? text : subtle }]}>
-                      {checkOut ? formatDateShort(checkOut) : 'Add date'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Quick select chips */}
-                <Text style={[styles.sectionLabel, { color: subtle }]}>Quick select</Text>
+                {/* Quick select — the fastest path for most people, so it leads */}
+                <Text style={[styles.sectionLabel, { color: subtle, marginTop: 0 }]}>Quick select</Text>
                 <View style={styles.chipRow}>
                   {[
                     { label: 'Tonight', days: 1, icon: 'moon-outline' as const },
@@ -326,13 +299,14 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                     { label: 'Week', days: 7, icon: 'calendar-outline' as const },
                     { label: 'Month', days: 30, icon: 'calendar' as const },
                   ].map(opt => {
-                    const active = checkIn && checkOut && Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000) === opt.days;
+                    const active = !!checkIn && !!checkOut && Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000) === opt.days;
                     return (
                       <TouchableOpacity
                         key={opt.label}
                         style={[
                           styles.chip,
-                          { borderColor: active ? tint : border, backgroundColor: active ? `${tint}10` : 'transparent' },
+                          { borderColor: border },
+                          active && { borderColor: tint, backgroundColor: tint },
                         ]}
                         onPress={() => {
                           const d = new Date();
@@ -343,25 +317,63 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                         }}
                         activeOpacity={0.8}
                       >
-                        <Ionicons name={opt.icon} size={14} color={active ? tint : text} />
-                        <Text style={[styles.chipText, { color: active ? tint : text }]}>{opt.label}</Text>
+                        <Ionicons name={opt.icon} size={14} color={active ? '#fff' : text} />
+                        <Text style={[styles.chipText, { color: active ? '#fff' : text }]}>{opt.label}</Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
 
+                {/* Or pick exact dates */}
+                <Text style={[styles.sectionLabel, { color: subtle }]}>Or pick exact dates</Text>
+                <View style={styles.dateRow}>
+                  <TouchableOpacity
+                    style={[styles.dateBox, { borderColor: checkIn ? tint : border, backgroundColor: checkIn ? `${tint}0C` : card }]}
+                    onPress={() => setShowCalendar(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-IN</Text>
+                    <Text style={[styles.dateVal, { color: checkIn ? text : subtle }]}>
+                      {checkIn ? formatDateShort(checkIn) : 'Add date'}
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={[styles.dateArrow, { backgroundColor: `${tint}14` }]}>
+                    <Ionicons name="arrow-forward" size={12} color={tint} />
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.dateBox, { borderColor: checkOut ? tint : border, backgroundColor: checkOut ? `${tint}0C` : card }]}
+                    onPress={() => setShowCalendar(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.dateLabel, { color: subtle }]}>CHECK-OUT</Text>
+                    <Text style={[styles.dateVal, { color: checkOut ? text : subtle }]}>
+                      {checkOut ? formatDateShort(checkOut) : 'Add date'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {checkIn && checkOut && (
+                  <Text style={[styles.nightsNote, { color: subtle }]}>
+                    {Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)} night
+                    {Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000) !== 1 ? 's' : ''}
+                  </Text>
+                )}
+
                 {/* Skip / Next */}
                 <View style={styles.whenActions}>
-                  <TouchableOpacity onPress={() => { setCheckIn(''); setCheckOut(''); setStep('who'); }}>
-                    <Text style={[styles.skipText, { color: subtle }]}>Skip</Text>
+                  <TouchableOpacity
+                    style={[styles.skipBtn, { borderColor: border }]}
+                    onPress={() => { setCheckIn(''); setCheckOut(''); setStep('who'); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.skipText, { color: text }]}>Skip</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.nextBtn, { backgroundColor: text }]}
+                    style={[styles.nextBtn, { backgroundColor: tint }]}
                     onPress={() => setStep('who')}
                     activeOpacity={0.85}
                   >
-                    <Text style={[styles.nextBtnText, { color: bg }]}>Next</Text>
-                    <Ionicons name="arrow-forward" size={14} color={bg} />
+                    <Text style={styles.nextBtnText}>Next</Text>
+                    <Ionicons name="arrow-forward" size={14} color="#fff" />
                   </TouchableOpacity>
                 </View>
               </>
@@ -645,6 +657,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  nightsNote: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 10,
+    textAlign: 'center',
+  },
 
   // Chips
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -663,19 +681,32 @@ const styles = StyleSheet.create({
   whenActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 32,
+    gap: 12,
+    marginTop: 28,
   },
-  skipText: { fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' },
+  skipBtn: {
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  skipText: { fontSize: 15, fontWeight: '600' },
   nextBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  nextBtnText: { fontSize: 15, fontWeight: '700' },
+  nextBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
   // Guest card
   guestCard: {
