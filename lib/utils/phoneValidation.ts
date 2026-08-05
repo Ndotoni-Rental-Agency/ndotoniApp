@@ -96,6 +96,18 @@ export function isValidBookingPhone(phone: string): boolean {
 }
 
 /**
+ * Loose phone check for fields that accept any country's number — e.g. the optional
+ * WhatsApp/contact field in the booking guest-info step, where a foreign guest's
+ * number is perfectly valid and isn't used for Tanzanian mobile-money routing.
+ * Just sanity-checks digit count against the real-world international range (ITU
+ * E.164 allows up to 15) rather than assuming a Tanzanian prefix.
+ */
+export function isValidGeneralPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+/**
  * Get example phone numbers for different regions
  */
 export function getPhoneExamples(): { [key: string]: string } {

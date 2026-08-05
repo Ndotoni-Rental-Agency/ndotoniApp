@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { formatBookingPhone, isValidBookingPhone } from '@/lib/utils/phoneValidation';
+import { isValidGeneralPhone } from '@/lib/utils/phoneValidation';
 import { ReservationColors } from './types';
 
 interface StepGuestInfoProps {
@@ -31,12 +31,13 @@ export default function StepGuestInfo({
   onSignIn,
 }: StepGuestInfoProps) {
   const { text, tint, card, border, subtle } = colors;
-  // Validate the normalized form — guestPhone may arrive pre-filled straight from the
-  // user's profile (e.g. "+255712345678") without having passed through handlePhoneChange.
-  const phoneInvalid = guestPhone.length > 0 && !isValidBookingPhone(formatBookingPhone(guestPhone));
+  // This is a general WhatsApp/contact number, not a mobile-money payment number —
+  // guests can be from anywhere, so any country's number is valid here.
+  const phoneInvalid = guestPhone.length > 0 && !isValidGeneralPhone(guestPhone);
 
   const handlePhoneChange = (t: string) => {
-    onGuestPhoneChange(formatBookingPhone(t));
+    // Light sanitization only — keep digits/+/spaces/dashes, don't force a Tanzanian prefix.
+    onGuestPhoneChange(t.replace(/[^\d+\s-]/g, ''));
   };
 
   return (
@@ -94,12 +95,12 @@ export default function StepGuestInfo({
           style={[s.input, { color: text, borderColor: phoneInvalid ? '#ef4444' : border, backgroundColor: card }]}
           value={guestPhone}
           onChangeText={handlePhoneChange}
-          placeholder="0712 345 678"
+          placeholder="0712 345 678 or +1 234 567 8900"
           placeholderTextColor={subtle}
           keyboardType="phone-pad"
         />
         <Text style={[s.hint, { color: phoneInvalid ? '#ef4444' : subtle }]}>
-          {phoneInvalid ? "That doesn't look like a valid Tanzanian number" : 'For check-in details via WhatsApp'}
+          {phoneInvalid ? "That doesn't look like a valid phone number" : 'For check-in details via WhatsApp'}
         </Text>
       </View>
 
