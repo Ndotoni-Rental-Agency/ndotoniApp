@@ -241,16 +241,16 @@ export default function CalendarDatePicker({
         {/* Selected Dates Display */}
         {mode === 'range' ? (
           <View style={styles.selectedDatesContainer}>
-            <View style={[styles.dateBox, { borderColor }]}>
+            <View style={[styles.dateBox, { borderColor: checkInDate ? tintColor : borderColor, backgroundColor: checkInDate ? `${tintColor}0C` : 'transparent' }]}>
               <Text style={[styles.dateLabel, { color: secondaryText }]}>Check-in</Text>
               <Text style={[styles.dateValue, { color: textColor }]}>
                 {formatDateDisplay(checkInDate)}
               </Text>
             </View>
-            
+
             <Ionicons name="arrow-forward" size={20} color={secondaryText} />
-            
-            <View style={[styles.dateBox, { borderColor }]}>
+
+            <View style={[styles.dateBox, { borderColor: checkOutDate ? tintColor : borderColor, backgroundColor: checkOutDate ? `${tintColor}0C` : 'transparent' }]}>
               <Text style={[styles.dateLabel, { color: secondaryText }]}>Check-out</Text>
               <Text style={[styles.dateValue, { color: textColor }]}>
                 {formatDateDisplay(checkOutDate)}
@@ -259,7 +259,7 @@ export default function CalendarDatePicker({
           </View>
         ) : (
           <View style={styles.selectedDatesContainer}>
-            <View style={[styles.singleDateBox, { borderColor }]}>
+            <View style={[styles.singleDateBox, { borderColor: checkInDate ? tintColor : borderColor, backgroundColor: checkInDate ? `${tintColor}0C` : 'transparent' }]}>
               <Text style={[styles.dateLabel, { color: secondaryText }]}>{singleDateLabel}</Text>
               <Text style={[styles.dateValue, { color: textColor }]}>
                 {formatDateDisplay(checkInDate)}
@@ -448,14 +448,14 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
   },
   blockedDay: {
-    borderRadius: 8,
+    borderRadius: 999,
     borderWidth: 2,
   },
   blockedText: {
     fontWeight: '600',
   },
   selectedDay: {
-    borderRadius: 8,
+    borderRadius: 999,
   },
   selectedText: {
     color: '#fff',
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
   legendBox: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: 10,
   },
   legendText: {
     fontSize: 13,
@@ -489,9 +489,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   doneButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 17,
+    borderRadius: 14,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   doneButtonDisabled: {
     opacity: 0.5,

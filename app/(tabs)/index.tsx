@@ -198,8 +198,10 @@ export default function HomeScreen() {
             >
               <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
               <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />
+              <View style={[styles.catIconBadge, { backgroundColor: tint }]}>
+                <Ionicons name={cat.icon as any} size={14} color="#fff" />
+              </View>
               <View style={styles.catOverlay}>
-                <Ionicons name={cat.icon as any} size={18} color="#fff" style={styles.catIcon} />
                 <Text style={styles.catLabel}>{cat.label}</Text>
               </View>
             </TouchableOpacity>
@@ -297,11 +299,15 @@ const styles = StyleSheet.create({
   catSection: { marginTop: 28, marginBottom: 8 },
   catTitle: { fontSize: 19, fontWeight: '700', marginBottom: 14, paddingHorizontal: 20, letterSpacing: -0.3 },
   catScroll: { paddingHorizontal: 16 },
-  catCard: { width: 130, height: 160, borderRadius: 14, overflow: 'hidden', marginRight: 10, position: 'relative' },
+  catCard: { width: 130, height: 160, borderRadius: 20, overflow: 'hidden', marginRight: 10, position: 'relative' },
   catImg: { width: '100%', height: '100%' },
   catGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%' },
+  catIconBadge: {
+    position: 'absolute', top: 10, left: 10,
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
   catOverlay: { position: 'absolute', bottom: 12, left: 10 },
-  catIcon: { marginBottom: 4 },
   catLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   // Feed
