@@ -14,8 +14,8 @@ export default function TabLayout() {
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
 
-  const tabBarBg = isDark ? '#0a0a0a' : '#ffffff';
-  const inactiveColor = isDark ? '#6b7280' : '#9ca3af';
+  const tabBarBg = Colors[colorScheme ?? 'light'].card;
+  const inactiveColor = Colors[colorScheme ?? 'light'].textTertiary;
   const activeColor = Colors[colorScheme ?? 'light'].tint;
 
   return (
