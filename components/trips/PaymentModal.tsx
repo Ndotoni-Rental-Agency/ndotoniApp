@@ -7,6 +7,7 @@ import { getBooking, getPayment } from '@/lib/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import BrandLoader from '@/components/ui/BrandLoader';
+import CelebrationCheck from '@/components/ui/CelebrationCheck';
 import {
   ActivityIndicator,
   Animated,
@@ -313,10 +314,8 @@ export default function PaymentModal({ visible, booking, onClose, colors }: Paym
 
   const renderSuccess = () => (
     <View style={s.center}>
-      <View style={[s.successIcon, { backgroundColor: '#f0fcf5' }]}>
-        <Ionicons name="checkmark-circle" size={64} color={tint} />
-      </View>
-      <Text style={[s.statusTitle, { color: text }]}>Payment successful!</Text>
+      <CelebrationCheck size={72} />
+      <Text style={[s.statusTitle, { color: text, marginTop: 4 }]}>Payment successful!</Text>
       <Text style={[s.statusSub, { color: subtle }]}>
         Your booking for {booking.property?.title} is now confirmed.{'\n'}
         You'll receive a confirmation message shortly.
@@ -458,7 +457,6 @@ const s = StyleSheet.create({
   processingHint: { fontSize: 12, marginTop: 16, textAlign: 'center' },
 
   // Success state
-  successIcon: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
   successDetails: { width: '100%', borderRadius: 14, borderWidth: 1, padding: 18, marginTop: 24, gap: 12 },
   successRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   successLabel: { fontSize: 14 },

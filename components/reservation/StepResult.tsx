@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ReservationColors } from './types';
 import BrandLoader from '@/components/ui/BrandLoader';
+import CelebrationCheck from '@/components/ui/CelebrationCheck';
 
 interface StepResultProps {
   colors: ReservationColors;
@@ -27,16 +28,21 @@ export default function StepResult({ colors, state, bookingStatus, error }: Step
   }
 
   if (state === 'success') {
+    const confirmed = bookingStatus === 'CONFIRMED';
     return (
       <View style={styles.centerWrap}>
-        <View style={[styles.resultCircle, { backgroundColor: `${tint}12` }]}>
-          <Ionicons name="checkmark-circle" size={60} color={tint} />
-        </View>
-        <Text style={[styles.stepHeading, { color: text, marginTop: 20 }]}>
-          {bookingStatus === 'CONFIRMED' ? 'Booking confirmed!' : 'Request sent!'}
+        {confirmed ? (
+          <CelebrationCheck size={72} />
+        ) : (
+          <View style={[styles.resultCircle, { backgroundColor: `${tint}12` }]}>
+            <Ionicons name="checkmark-circle" size={60} color={tint} />
+          </View>
+        )}
+        <Text style={[styles.stepHeading, { color: text, marginTop: confirmed ? 4 : 20 }]}>
+          {confirmed ? 'Booking confirmed!' : 'Request sent!'}
         </Text>
         <Text style={[styles.stepSub, { color: subtle, textAlign: 'center', lineHeight: 22 }]}>
-          {bookingStatus === 'CONFIRMED'
+          {confirmed
             ? 'Your stay is booked. The host will share check-in details via WhatsApp.'
             : 'The host will review and confirm. You\'ll get a notification once accepted.'}
         </Text>
