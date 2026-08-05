@@ -247,11 +247,13 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                           onPress={() => selectDestination(d)}
                           activeOpacity={0.8}
                         >
-                          {'family' in d && d.family === 'material' ? (
-                            <MaterialIcons name={d.icon as any} size={26} color={tint} />
-                          ) : (
-                            <Ionicons name={d.icon as any} size={26} color={tint} />
-                          )}
+                          <View style={[styles.destIconWrap, { backgroundColor: `${tint}14` }]}>
+                            {'family' in d && d.family === 'material' ? (
+                              <MaterialIcons name={d.icon as any} size={22} color={tint} />
+                            ) : (
+                              <Ionicons name={d.icon as any} size={22} color={tint} />
+                            )}
+                          </View>
                           <Text style={[styles.destName, { color: text }]}>{d.name}</Text>
                         </TouchableOpacity>
                       ))}
@@ -556,12 +558,19 @@ const styles = StyleSheet.create({
   },
   destCard: {
     width: '47%',
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+  },
+  destIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   destName: { fontSize: 13, fontWeight: '600' },
 

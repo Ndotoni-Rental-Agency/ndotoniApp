@@ -34,6 +34,7 @@ export default function SearchBar({
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'border');
   const subtleColor = useThemeColor({}, 'textSecondary');
+  const tintColor = useThemeColor({}, 'tint');
   const shadowBg = useThemeColor({ light: '#000', dark: '#000' }, 'background');
 
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
@@ -73,9 +74,10 @@ export default function SearchBar({
       onPress={onPress}
       activeOpacity={0.9}
     >
-      {/* Search icon */}
-      <View style={styles.searchIconWrap}>
-        <Ionicons name="search" size={18} color={textColor} />
+      {/* Search icon — filled with the brand green so the pill carries a spark of
+          ndotoni identity even before any content loads */}
+      <View style={[styles.searchIconWrap, { backgroundColor: tintColor }]}>
+        <Ionicons name="search" size={16} color="#fff" />
       </View>
 
       {/* Content area — Airbnb style stacked text */}
@@ -104,10 +106,9 @@ export default function SearchBar({
         </View>
       </View>
 
-      {/* Filter button */}
-      <View style={[styles.filterBtn, { borderColor }]}>
-        <Ionicons name="options-outline" size={16} color={textColor} />
-      </View>
+      {/* Trailing chevron — the whole pill is a single tap target, so this signals
+          "opens something" rather than implying a separately-tappable filter button */}
+      <Ionicons name="chevron-forward" size={18} color={subtleColor} style={styles.chevron} />
     </TouchableOpacity>
   );
 }
@@ -157,13 +158,8 @@ const styles = StyleSheet.create({
     borderRadius: 1.25,
     marginHorizontal: 6,
   },
-  filterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
+  chevron: {
+    marginLeft: 6,
+    marginRight: 6,
   },
 });

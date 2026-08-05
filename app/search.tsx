@@ -457,29 +457,29 @@ const styles = StyleSheet.create({
 
   // List
   list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  card: { marginBottom: 24 },
-  cardImg: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  card: { marginBottom: 28 },
+  cardImg: { borderRadius: 20, overflow: 'hidden', backgroundColor: '#f0f0f0' },
   cardFav: {
     position: 'absolute', top: 12, right: 12,
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center', justifyContent: 'center',
   },
   cardInstantBadge: {
     position: 'absolute', top: 12, left: 12,
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#00ce54', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
+    backgroundColor: '#00ce54', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
   },
   cardInstantText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { paddingTop: 10 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardLoc: { fontSize: 15, fontWeight: '600', flex: 1 },
+  cardLoc: { fontSize: 15, fontWeight: '700', flex: 1, letterSpacing: -0.2 },
   cardRating: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  cardRatingNum: { fontSize: 14, fontWeight: '500' },
+  cardRatingNum: { fontSize: 14, fontWeight: '600' },
   cardName: { fontSize: 14, marginTop: 2 },
   cardMeta: { fontSize: 13, marginTop: 2 },
-  cardPrice: { fontSize: 15, fontWeight: '600', marginTop: 5 },
-  cardNight: { fontWeight: '400' },
+  cardPrice: { fontSize: 17, fontWeight: '800', marginTop: 6, letterSpacing: -0.3 },
+  cardNight: { fontWeight: '400', fontSize: 14 },
 
   // States
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, paddingVertical: 80 },
