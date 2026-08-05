@@ -28,11 +28,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Publish OTA update (iOS)
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+          MSG=$(printf '%s' "$COMMIT_MSG" | head -n 1)
           eas update --branch production --platform ios --environment production --message "$MSG"
 
       - name: Publish OTA update (Android)
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1)
+          MSG=$(printf '%s' "$COMMIT_MSG" | head -n 1)
           eas update --branch production --platform android --environment production --message "$MSG"
