@@ -229,7 +229,7 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                             <Text style={[styles.resultName, { color: text }]}>{toTitleCase(loc.displayName)}</Text>
                             <Text style={[styles.resultType, { color: subtle }]}>{loc.type === 'region' ? 'Region' : 'District'}</Text>
                           </View>
-                          <Ionicons name="chevron-forward" size={16} color={border} />
+                          <Ionicons name="chevron-forward" size={16} color={subtle} />
                         </TouchableOpacity>
                       ))
                     ) : (
@@ -412,18 +412,20 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
                   </View>
                   <View style={styles.counter}>
                     <TouchableOpacity
-                      style={[styles.counterBtn, { borderColor: guests <= 1 ? border : text, opacity: guests <= 1 ? 0.4 : 1 }]}
+                      style={[styles.counterBtn, { borderColor: guests <= 1 ? border : tint }]}
                       onPress={() => setGuests(Math.max(1, guests - 1))}
                       disabled={guests <= 1}
+                      accessibilityLabel="Decrease guests"
                     >
-                      <Ionicons name="remove" size={18} color={text} />
+                      <Ionicons name="remove" size={18} color={guests <= 1 ? subtle : tint} />
                     </TouchableOpacity>
                     <Text style={[styles.counterNum, { color: text }]}>{guests}</Text>
                     <TouchableOpacity
-                      style={[styles.counterBtn, { borderColor: text }]}
+                      style={[styles.counterBtn, { borderColor: tint }]}
                       onPress={() => setGuests(Math.min(50, guests + 1))}
+                      accessibilityLabel="Increase guests"
                     >
-                      <Ionicons name="add" size={18} color={text} />
+                      <Ionicons name="add" size={18} color={tint} />
                     </TouchableOpacity>
                   </View>
                 </View>
