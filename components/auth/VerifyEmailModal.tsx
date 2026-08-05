@@ -5,11 +5,7 @@ import {
   StyleSheet,
   Animated,
   TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -25,64 +21,37 @@ interface VerifyEmailModalProps {
   onVerified: () => void;
 }
 
+/**
+ * Shown right after sign-up (or when signing in to an unverified account).
+ * Verification is link-based now: Cognito emails a deep link
+ * (ndotoniapp://auth/verify-email?...) that lands on app/auth/verify-email.tsx
+ * and confirms silently, so this modal just tells the user to check their
+ * email instead of asking them to type a code.
+ */
 export default function VerifyEmailModal({
   visible,
   onClose,
   email,
   onVerified,
 }: VerifyEmailModalProps) {
-  const [code, setCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const inputBg = useThemeColor({}, 'card');
-  const borderColor = useThemeColor({}, 'border');
   const placeholderColor = useThemeColor({}, 'textTertiary');
 
-  const { verifyEmail, resendVerificationCode } = useAuth();
+  const { resendVerificationCode } = useAuth();
   const { showAlert } = useAlert();
   const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
-
-  const handleVerify = async () => {
-    if (!code) {
-      showAlert({ title: 'Code required', message: 'Please enter the verification code', icon: 'warning' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await verifyEmail(email, code);
-      showAlert({
-        title: 'Success',
-        message: 'Email verified successfully! You can now sign in.',
-        icon: 'success',
-        buttons: [
-          {
-            text: 'OK',
-            onPress: () => {
-              onVerified();
-              setCode('');
-            },
-          },
-        ],
-      });
-    } catch (error: any) {
-      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'verifying your email'), icon: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleResend = async () => {
     setIsResending(true);
     try {
       await resendVerificationCode(email);
-      showAlert({ title: 'Success', message: 'Verification code sent to your email', icon: 'success' });
+      showAlert({ title: 'Success', message: 'Confirmation link resent to your email', icon: 'success' });
     } catch (error: any) {
-      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'resending verification code'), icon: 'error' });
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'resending confirmation email'), icon: 'error' });
     } finally {
       setIsResending(false);
     }
@@ -92,10 +61,7 @@ export default function VerifyEmailModal({
 
   return (
     <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.fill}
-      >
+      <View style={styles.fill}>
         <TouchableOpacity
           style={styles.modalBackdrop}
           activeOpacity={1}
@@ -105,69 +71,41 @@ export default function VerifyEmailModal({
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
-              Verify Email
+              Check your email
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Email Info */}
-            <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
-              <Text style={[styles.infoText, { color: textColor }]}>
-                A verification code has been sent to{' '}
-                <Text style={styles.emailText}>{email}</Text>
-              </Text>
-            </View>
+          <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
+            <Text style={[styles.infoText, { color: textColor }]}>
+              We sent a confirmation link to{' '}
+              <Text style={styles.emailText}>{email}</Text>. Tap it to activate your account, then sign in.
+            </Text>
+          </View>
 
-            {/* Code Input */}
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>
-                Verification Code
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { color: textColor, backgroundColor: inputBg, borderColor },
-                ]}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor={placeholderColor}
-                value={code}
-                onChangeText={setCode}
-                keyboardType="number-pad"
-                maxLength={6}
-                autoCapitalize="none"
-              />
-            </View>
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: tintColor }]}
+            onPress={() => {
+              onVerified();
+            }}
+          >
+            <Text style={styles.submitButtonText}>Got it</Text>
+          </TouchableOpacity>
 
-            {/* Verify Button */}
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: tintColor }]}
-              onPress={handleVerify}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>Verify Email</Text>
-              )}
+          <View style={styles.resendContainer}>
+            <Text style={[styles.resendText, { color: placeholderColor }]}>
+              Didn't receive the link?{' '}
+            </Text>
+            <TouchableOpacity onPress={handleResend} disabled={isResending}>
+              <Text style={[styles.resendLink, { color: tintColor }]}>
+                {isResending ? 'Sending...' : 'Resend'}
+              </Text>
             </TouchableOpacity>
-
-            {/* Resend Code */}
-            <View style={styles.resendContainer}>
-              <Text style={[styles.resendText, { color: placeholderColor }]}>
-                Didn't receive the code?{' '}
-              </Text>
-              <TouchableOpacity onPress={handleResend} disabled={isResending}>
-                <Text style={[styles.resendLink, { color: tintColor }]}>
-                  {isResending ? 'Sending...' : 'Resend'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
+          </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Animated.View>
   );
 }
@@ -191,8 +129,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    maxHeight: '70%',
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingTop: 4,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -221,24 +159,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   emailText: {
-    fontWeight: '600',
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    textAlign: 'center',
-    letterSpacing: 8,
-    fontSize: 20,
     fontWeight: '600',
   },
   submitButton: {

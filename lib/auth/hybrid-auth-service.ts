@@ -56,7 +56,10 @@ export class HybridAuthService {
           given_name: firstName,
           family_name: lastName,
           ...(phoneNumber && { phone_number: phoneNumber })
-        }
+        },
+        // Forwarded to the CustomMessage trigger as event.request.clientMetadata
+        // so it can email a deep link back into this app instead of a raw code.
+        clientMetadata: { platform: 'ndotoniapp' }
       }
     });
   }
@@ -76,7 +79,8 @@ export class HybridAuthService {
    */
   static async resendCode(email: string) {
     return await amplifyResendCode({
-      username: email
+      username: email,
+      options: { clientMetadata: { platform: 'ndotoniapp' } }
     });
   }
 
@@ -241,7 +245,8 @@ export class HybridAuthService {
    */
   static async forgotPassword(email: string) {
     return await amplifyResetPassword({
-      username: email
+      username: email,
+      options: { clientMetadata: { platform: 'ndotoniapp' } }
     });
   }
 

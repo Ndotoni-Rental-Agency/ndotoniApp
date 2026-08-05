@@ -699,7 +699,7 @@ type Mutation {
   deleteTeamMeeting(meetingId: ID!): SuccessResponse! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
   deleteUser(userId: ID!): SuccessResponse! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
   dummyMutation: String @aws_api_key @aws_cognito_user_pools
-  forgotPassword(email: String!): SuccessResponse! @aws_api_key @aws_cognito_user_pools
+  forgotPassword(email: String!, platform: String): SuccessResponse! @aws_api_key @aws_cognito_user_pools
   generateDataUploadUrl(dataType: DataType!, filename: String): UploadUrlResponse! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
   getMediaUploadUrl(contentType: String!, fileName: String!): MediaUploadResponse! @aws_api_key @aws_cognito_user_pools
   importLocationsFromCSV(csvData: String!): LocationImportResponse! @aws_cognito_user_pools
@@ -722,7 +722,7 @@ type Mutation {
   rejectProperty(propertyId: ID!, reason: String!): SuccessResponse! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
   removeBusyBlock(blockId: ID!, blockStartUtc: String!): SuccessResponse! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
   removePropertyAgent(propertyId: ID!): SuccessResponse! @aws_cognito_user_pools
-  resendVerificationCode(email: String!): SuccessResponse! @aws_api_key @aws_cognito_user_pools
+  resendVerificationCode(email: String!, platform: String): SuccessResponse! @aws_api_key @aws_cognito_user_pools
   resetPassword(confirmationCode: String!, email: String!, newPassword: String!): SuccessResponse! @aws_api_key @aws_cognito_user_pools
   respondToReview(input: RespondToReviewInput!): Review! @aws_cognito_user_pools
   reviewLandlordApplication(applicationId: ID!, notes: String, status: LandlordApplicationStatus!): LandlordApplication! @aws_cognito_user_pools(cognito_groups : ["ADMINS"])
@@ -1927,6 +1927,7 @@ input SignUpInput {
   lastName: String!
   password: String!
   phoneNumber: String!
+  platform: String
 }
 
 input SubmitApplicationInput {

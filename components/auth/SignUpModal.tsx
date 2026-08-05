@@ -95,8 +95,8 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
       // Check if user already exists but is unconfirmed
       if (error?.existingUnconfirmed) {
         const message = error.codeResent
-          ? 'An account with this email already exists but is not verified. A new verification code has been sent to your email.'
-          : 'An account with this email already exists but is not verified. Please check your email for the verification code.';
+          ? 'An account with this email already exists but is not verified. A new confirmation link has been sent to your email.'
+          : 'An account with this email already exists but is not verified. Please check your email for the confirmation link.';
         
         showAlert({
           title: 'Account Exists',

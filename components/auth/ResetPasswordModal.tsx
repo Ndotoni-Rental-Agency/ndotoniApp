@@ -1,22 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Animated,
   TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useAlert } from '@/contexts/AlertContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
-import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ResetPasswordModalProps {
   visible: boolean;
@@ -25,80 +17,31 @@ interface ResetPasswordModalProps {
   onReset: () => void;
 }
 
+/**
+ * Shown right after ForgotPasswordModal sends the reset email. Password
+ * reset is link-based now: Cognito emails a deep link
+ * (ndotoniapp://auth/reset-password?...) that lands on
+ * app/auth/reset-password.tsx and collects the new password there, so this
+ * modal just tells the user to check their email instead of asking for a
+ * code + new password here.
+ */
 export default function ResetPasswordModal({
   visible,
   onClose,
   email,
   onReset,
 }: ResetPasswordModalProps) {
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
-  const inputBg = useThemeColor({}, 'card');
-  const borderColor = useThemeColor({}, 'border');
-  const placeholderColor = useThemeColor({}, 'textTertiary');
 
-  const { resetPassword } = useAuth();
-  const { showAlert } = useAlert();
   const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
-
-  const handleReset = async () => {
-    if (!code || !newPassword || !confirmPassword) {
-      showAlert({ title: 'Missing info', message: 'Please fill in all fields', icon: 'warning' });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      showAlert({ title: 'Weak password', message: 'Password must be at least 8 characters', icon: 'warning' });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      showAlert({ title: 'Passwords don’t match', message: 'Please make sure both passwords are the same', icon: 'warning' });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await resetPassword(email, code, newPassword);
-      showAlert({
-        title: 'Success',
-        message: 'Password reset successfully! You can now sign in with your new password.',
-        icon: 'success',
-        buttons: [
-          {
-            text: 'OK',
-            onPress: () => {
-              onReset();
-              setCode('');
-              setNewPassword('');
-              setConfirmPassword('');
-            },
-          },
-        ],
-      });
-    } catch (error: any) {
-      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'resetting your password'), icon: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (!shouldRender) return null;
 
   return (
     <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.fill}
-      >
+      <View style={styles.fill}>
         <TouchableOpacity
           style={styles.modalBackdrop}
           activeOpacity={1}
@@ -108,122 +51,28 @@ export default function ResetPasswordModal({
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
-              Reset Password
+              Check your email
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Email Info */}
-            <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
-              <Text style={[styles.infoText, { color: textColor }]}>
-                Enter the code sent to{' '}
-                <Text style={styles.emailText}>{email}</Text>
-              </Text>
-            </View>
+          <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
+            <Text style={[styles.infoText, { color: textColor }]}>
+              We sent a password reset link to{' '}
+              <Text style={styles.emailText}>{email}</Text>. Tap it to choose a new password.
+            </Text>
+          </View>
 
-            {/* Code Input */}
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>
-                Verification Code
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { color: textColor, backgroundColor: inputBg, borderColor },
-                ]}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor={placeholderColor}
-                value={code}
-                onChangeText={setCode}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-            </View>
-
-            {/* New Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>
-                New Password
-              </Text>
-              <View
-                style={[
-                  styles.passwordContainer,
-                  { backgroundColor: inputBg, borderColor },
-                ]}
-              >
-                <TextInput
-                  style={[styles.passwordInput, { color: textColor }]}
-                  placeholder="At least 8 characters"
-                  placeholderTextColor={placeholderColor}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={22}
-                    color={placeholderColor}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>
-                Confirm Password
-              </Text>
-              <View
-                style={[
-                  styles.passwordContainer,
-                  { backgroundColor: inputBg, borderColor },
-                ]}
-              >
-                <TextInput
-                  style={[styles.passwordInput, { color: textColor }]}
-                  placeholder="Re-enter password"
-                  placeholderTextColor={placeholderColor}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-off' : 'eye'}
-                    size={22}
-                    color={placeholderColor}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Reset Button */}
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: tintColor }]}
-              onPress={handleReset}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>Reset Password</Text>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: tintColor }]}
+            onPress={onReset}
+          >
+            <Text style={styles.submitButtonText}>Got it</Text>
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Animated.View>
   );
 }
@@ -248,7 +97,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingBottom: 40,
-    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -279,41 +127,10 @@ const styles = StyleSheet.create({
   emailText: {
     fontWeight: '600',
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    paddingHorizontal: 16,
-  },
   submitButton: {
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
   },
   submitButtonText: {
     color: '#fff',

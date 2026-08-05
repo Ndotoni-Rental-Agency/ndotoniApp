@@ -53,8 +53,8 @@ export default function ForgotPasswordModal({
     try {
       await forgotPassword(email);
       showAlert({
-        title: 'Code Sent',
-        message: `A password reset code has been sent to ${email}`,
+        title: 'Check your email',
+        message: `We sent a password reset link to ${email}`,
         icon: 'success',
         buttons: [
           {
@@ -67,7 +67,7 @@ export default function ForgotPasswordModal({
         ],
       });
     } catch (error: any) {
-      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'sending reset code'), icon: 'error' });
+      showAlert({ title: 'Error', message: getSafeErrorMessage(error, 'sending reset email'), icon: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +100,7 @@ export default function ForgotPasswordModal({
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Instructions */}
             <Text style={[styles.instructions, { color: placeholderColor }]}>
-              Enter your email address and we'll send you a code to reset your
+              Enter your email address and we'll send you a link to reset your
               password.
             </Text>
 
@@ -131,7 +131,7 @@ export default function ForgotPasswordModal({
               {isSubmitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Send Reset Code</Text>
+                <Text style={styles.submitButtonText}>Send Reset Link</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
