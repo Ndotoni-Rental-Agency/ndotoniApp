@@ -26,7 +26,7 @@
     },
     "production": {
       "extends": "base",
-      "autoIncrement": true,
+      "autoIncrement": "version",
       "android": {
         "buildType": "app-bundle"
       },
