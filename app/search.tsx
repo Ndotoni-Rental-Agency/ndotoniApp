@@ -2,6 +2,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import FilterModal, { FilterOptions } from '@/components/search/FilterModal';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useHiddenProperties } from '@/hooks/useHiddenProperties';
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getRegions, searchShortTermProperties } from '@/lib/graphql/queries';
 import { formatDateShort, toTitleCase } from '@/lib/utils/common';
@@ -19,7 +20,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function SearchScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const { width: SCREEN_W } = useWindowDimensions();
+  const { numColumns, cardWidth: CARD_WIDTH } = useResponsiveGrid({ horizontalPadding: 40 });
   const { hiddenIds } = useHiddenProperties();
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -229,11 +229,11 @@ export default function SearchScreen() {
     ? `${formatDateShort(checkInDate)} – ${formatDateShort(checkOutDate)}`
     : 'Any dates';
 
-  const IMG_H = SCREEN_W - 40; // Full-width square-ish images
+  const IMG_H = CARD_WIDTH;
 
   const renderCard = ({ item: property }: { item: any }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { width: CARD_WIDTH }]}
       activeOpacity={0.95}
       onPress={() => router.push(`/short-property/${property.propertyId}`)}
     >
@@ -365,9 +365,12 @@ export default function SearchScreen() {
         </View>
       ) : (
         <FlatList
+          key={`search-grid-${numColumns}`}
           data={filteredProperties}
           keyExtractor={(item) => item.propertyId}
           renderItem={renderCard}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.row : undefined}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
@@ -458,6 +461,7 @@ const styles = StyleSheet.create({
 
   // List
   list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  row: { justifyContent: 'space-between' },
   card: { marginBottom: 28 },
   cardImg: { borderRadius: 20, overflow: 'hidden', backgroundColor: '#f0f0f0' },
   cardFav: {

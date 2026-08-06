@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { getShortTermProperty } from '@/lib/graphql/queries';
@@ -15,7 +16,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,7 +45,7 @@ interface FavoriteProperty {
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const { width: W } = useWindowDimensions();
+  const { width: W, numColumns, cardWidth: CARD_WIDTH } = useResponsiveGrid();
   const { isAuthenticated } = useAuth();
   const { toggleFavorite } = useFavorites();
 
@@ -142,7 +142,6 @@ export default function FavoritesScreen() {
   const featured = properties[0];
   const rest = properties.slice(1);
 
-  const CARD_WIDTH = (W - 48) / 2;
   const IMG_HEIGHT = CARD_WIDTH * 1.15;
 
   const renderFeatured = () => {
@@ -153,7 +152,7 @@ export default function FavoritesScreen() {
         activeOpacity={0.9}
         onPress={() => router.push(`/short-property/${featured.propertyId}`)}
       >
-        <View style={[styles.featuredImgWrap, { height: W * 0.55 }]}>
+        <View style={[styles.featuredImgWrap, { height: Math.min(W * 0.55, 420) }]}>
           <Image
             source={{ uri: featured.thumbnail || undefined }}
             style={styles.fill}
@@ -315,10 +314,11 @@ export default function FavoritesScreen() {
       ) : (
         /* Favorites list */
         <FlatList
+          key={`favorites-grid-${numColumns}`}
           data={rest}
           keyExtractor={(item) => item.propertyId}
           renderItem={renderCard}
-          numColumns={2}
+          numColumns={numColumns}
           columnWrapperStyle={rest.length > 0 ? styles.row : undefined}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -5,6 +5,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCategorizedProperties } from '@/hooks/useCategorizedProperties';
 import { useHiddenProperties } from '@/hooks/useHiddenProperties';
 import { RentalType } from '@/hooks/useRentalType';
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +19,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,7 +35,7 @@ const CATEGORIES = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { width: W } = useWindowDimensions();
+  const { width: W, numColumns, cardWidth: COMPACT_CARD_WIDTH } = useResponsiveGrid({ horizontalPadding: 32, columnGap: 12 });
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   const today = new Date();
@@ -83,7 +83,7 @@ export default function HomeScreen() {
 
   const renderWideCard = useCallback((p: any) => (
     <TouchableOpacity style={styles.wideCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
-      <View style={[styles.wideImgWrap, { height: W * 0.55 }]}>
+      <View style={[styles.wideImgWrap, { height: Math.min(W * 0.55, 380) }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
         <FavoriteButton propertyId={p.propertyId} size={20} style={styles.heart} />
         {p.instantBookEnabled && (
@@ -112,7 +112,7 @@ export default function HomeScreen() {
 
   const renderCompactCard = useCallback((p: any) => (
     <TouchableOpacity style={styles.compactCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
-      <View style={[styles.compactImgWrap, { height: (W - 44) / 2 * 1.1 }]}>
+      <View style={[styles.compactImgWrap, { height: COMPACT_CARD_WIDTH * 1.1 }]}>
         <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
         <FavoriteButton propertyId={p.propertyId} size={16} style={styles.heartSmall} />
         {p.instantBookEnabled && (
@@ -131,29 +131,40 @@ export default function HomeScreen() {
         </Text>
       </View>
     </TouchableOpacity>
-  ), [W, text, subtle, router]);
+  ), [COMPACT_CARD_WIDTH, text, subtle, router]);
 
-  // Build a varied layout: pairs of small cards + full-width cards
+  // Build a varied layout: rows of `numColumns` compact cards, with a
+  // full-width tall card breaking up the grid every numColumns+1 items —
+  // on a phone (numColumns=2) this is exactly the old fixed 2-then-wide
+  // pattern; on a tablet the compact rows widen to 3-4 cards instead.
   const renderFeedItem = useCallback(({ item, index }: { item: any; index: number }) => {
-    // Pattern: every 3rd item (0-indexed: 2, 5, 8...) is full-width tall
-    // Others come in pairs (rendered together from even index)
-    const patternPos = index % 3;
+    const patternLength = numColumns + 1;
+    const patternPos = index % patternLength;
 
-    if (patternPos === 2) {
+    if (patternPos === numColumns) {
       // Full-width tall card
       return renderWideCard(item);
     }
-    // Pair cards — only render from even positions in the pair
-    if (patternPos === 1) return null; // handled by patternPos === 0
-    // patternPos === 0: render a row of 2 compact cards
-    const nextItem = rest[index + 1];
+    // Only the first position in a row renders — it pulls in the rest of
+    // the row itself, the other positions are skipped here.
+    if (patternPos !== 0) return null;
+
+    const rowItems = [item];
+    for (let i = 1; i < numColumns; i++) {
+      const next = rest[index + i];
+      if (next) rowItems.push(next);
+    }
     return (
       <View style={styles.pairRow}>
-        {renderCompactCard(item)}
-        {nextItem ? renderCompactCard(nextItem) : <View style={styles.pairHalf} />}
+        {rowItems.map((p) => (
+          <React.Fragment key={p.propertyId}>{renderCompactCard(p)}</React.Fragment>
+        ))}
+        {Array.from({ length: numColumns - rowItems.length }).map((_, i) => (
+          <View key={`pad-${i}`} style={styles.pairHalf} />
+        ))}
       </View>
     );
-  }, [rest, renderWideCard, renderCompactCard]);
+  }, [rest, numColumns, renderWideCard, renderCompactCard]);
 
   // Header component with categories
   const ListHeader = () => (
@@ -165,7 +176,7 @@ export default function HomeScreen() {
           activeOpacity={0.9}
           onPress={() => router.push(`/short-property/${featured.propertyId}`)}
         >
-          <Image source={{ uri: featured.thumbnail || undefined }} style={[styles.fill, { height: W * 0.85 }]} contentFit="cover" transition={300} />
+          <Image source={{ uri: featured.thumbnail || undefined }} style={[styles.fill, { height: Math.min(W * 0.85, 520) }]} contentFit="cover" transition={300} />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroGradient} />
           <FavoriteButton propertyId={featured.propertyId} size={22} style={styles.heroHeart} />
           <View style={styles.heroInfo}>
