@@ -35,7 +35,7 @@ const CATEGORIES = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { width: W, numColumns, cardWidth: COMPACT_CARD_WIDTH } = useResponsiveGrid({ horizontalPadding: 32, columnGap: 12 });
+  const { width: W, isTablet, numColumns, cardWidth: COMPACT_CARD_WIDTH } = useResponsiveGrid({ horizontalPadding: 32, columnGap: 12 });
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   const today = new Date();
@@ -203,7 +203,7 @@ export default function HomeScreen() {
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat.id}
-              style={styles.catCard}
+              style={[styles.catCard, isTablet && styles.catCardTablet]}
               activeOpacity={0.85}
               onPress={() => router.push({ pathname: '/search', params: { category: cat.param } })}
             >
@@ -311,6 +311,7 @@ const styles = StyleSheet.create({
   catTitle: { fontSize: 19, fontWeight: '700', marginBottom: 14, paddingHorizontal: 20, letterSpacing: -0.3 },
   catScroll: { paddingHorizontal: 16 },
   catCard: { width: 130, height: 160, borderRadius: 20, overflow: 'hidden', marginRight: 10, position: 'relative' },
+  catCardTablet: { width: 176, height: 220, marginRight: 14 },
   catImg: { width: '100%', height: '100%' },
   catGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%' },
   catIconBadge: {
