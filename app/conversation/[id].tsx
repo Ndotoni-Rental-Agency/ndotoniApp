@@ -242,7 +242,7 @@ export default function ConversationScreen() {
   });
 
   const handleConversationRead = useCallback((event: SubscriptionReadEvent) => {
-    applyConversationRead({ ...event, __typename: 'ConversationReadEvent' });
+    applyConversationRead(event);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useConversationReadSubscription({

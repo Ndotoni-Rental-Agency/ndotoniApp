@@ -921,6 +921,9 @@ export type Conversation = {
   propertyTitle: string,
   unreadCount: number,
   updatedAt: string,
+  // Only populated on the markAsRead response / onConversationRead subscription push.
+  readByUserId?: string | null,
+  readAt?: string | null,
 };
 
 export type SubscriptionPublishResponse = {
@@ -1090,13 +1093,6 @@ export type TypingIndicatorEvent = {
   conversationId: string,
   userId: string,
   userName: string,
-};
-
-export type ConversationReadEvent = {
-  __typename: "ConversationReadEvent",
-  conversationId: string,
-  readByUserId: string,
-  readAt: string,
 };
 
 export type AuthResponse = {
@@ -9227,10 +9223,10 @@ export type OnConversationReadSubscriptionVariables = {
 
 export type OnConversationReadSubscription = {
   onConversationRead?:  {
-    __typename: "ConversationReadEvent",
-    conversationId: string,
-    readByUserId: string,
-    readAt: string,
+    __typename: "Conversation",
+    id: string,
+    readByUserId?: string | null,
+    readAt?: string | null,
   } | null,
 };
 

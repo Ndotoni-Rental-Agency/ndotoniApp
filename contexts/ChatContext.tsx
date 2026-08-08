@@ -16,7 +16,16 @@ import {
   toggleMessageReaction as toggleMessageReactionMutation,
   sendTypingIndicator as sendTypingIndicatorMutation,
 } from '@/lib/graphql/mutations';
-import { TypingIndicatorEvent, ConversationReadEvent } from '@/lib/API';
+import { TypingIndicatorEvent } from '@/lib/API';
+
+// onConversationRead reuses the Conversation type (AppSync requires a subscription's
+// output type to match the mutation it's @aws_subscribe'd to — this one is bound to
+// markAsRead, which returns Conversation). Only these three fields are populated.
+export interface ConversationReadEvent {
+  id: string;
+  readByUserId?: string | null;
+  readAt?: string | null;
+}
 
 // Lazy-load expo-notifications to avoid bundler crash in Expo Go
 let Notifications: typeof import('expo-notifications') | null = null;
@@ -361,12 +370,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // read, but only when the read happened on the OTHER side — us marking our own
   // conversation as read doesn't affect our own sent messages' tick status.
   const applyConversationRead = (event: ConversationReadEvent): void => {
-    if (event.readByUserId === myUserIdRef.current) return;
+    if (!event.readByUserId || !event.readAt || event.readByUserId === myUserIdRef.current) return;
+    const readAt = event.readAt;
 
     setMessages(prev =>
       prev.map(m =>
-        m.conversationId === event.conversationId && m.isMine && m.timestamp <= event.readAt
-          ? { ...m, readAt: event.readAt }
+        m.conversationId === event.id && m.isMine && m.timestamp <= readAt
+          ? { ...m, readAt }
           : m
       )
     );

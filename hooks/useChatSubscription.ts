@@ -40,9 +40,9 @@ export interface SubscriptionTypingEvent {
 }
 
 export interface SubscriptionReadEvent {
-  conversationId: string;
-  readByUserId: string;
-  readAt: string;
+  id: string;
+  readByUserId?: string | null;
+  readAt?: string | null;
 }
 
 /**

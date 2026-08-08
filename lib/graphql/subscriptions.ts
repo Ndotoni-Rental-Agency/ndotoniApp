@@ -81,7 +81,7 @@ export const onTypingIndicator = /* GraphQL */ `subscription OnTypingIndicator($
 >;
 export const onConversationRead = /* GraphQL */ `subscription OnConversationRead($conversationId: String!) {
   onConversationRead(conversationId: $conversationId) {
-    conversationId
+    id
     readByUserId
     readAt
     __typename
