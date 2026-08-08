@@ -104,10 +104,14 @@ export default function ConversationScreen() {
 
   // Real-time subscription for new messages
   const handleNewMessage = useCallback((message: SubscriptionMessage) => {
-    // Add the message to the chat context (deduplication by ID handles messages we sent ourselves)
+    // Add the message to the chat context (deduplication by ID handles messages we sent ourselves).
+    // senderId is passed through so the context can compute isMine itself against the signed-in
+    // user's real id — the subscription connects with apiKey auth, which has no identity for
+    // AppSync to compute isMine against, so message.isMine here can't be trusted on its own.
     addMessageFromSubscription({
       id: message.id,
       conversationId: message.conversationId,
+      senderId: message.senderId,
       senderName: message.senderName,
       content: message.content,
       timestamp: message.timestamp,

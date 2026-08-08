@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { GraphQLClient } from '@/lib/graphql-client';
+import HybridAuthService from '@/lib/auth/hybrid-auth-service';
 import { useAuth } from './AuthContext';
 import { Conversation, ChatMessage } from '@/lib/API';
 import { 
@@ -74,6 +75,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [sendingMessage, setSendingMessage] = useState(false);
   
   const sendingRef = useRef(false);
+
+  // The signed-in user's real Cognito sub, fetched once and cached here so incoming
+  // subscription messages can compute "is this mine" locally — the chat subscription
+  // connects with apiKey auth (see useChatSubscription.ts), which has no identity for
+  // AppSync to compute isMine against, so the server-provided value can't be trusted
+  // for that channel.
+  const myUserIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!user) {
+      myUserIdRef.current = undefined;
+      return;
+    }
+    HybridAuthService.getUserId().then(id => { myUserIdRef.current = id; });
+  }, [user]);
 
   // Load conversations
   const loadConversations = async (): Promise<Conversation[]> => {
@@ -158,9 +173,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       );
 
       const newMessage = data.sendMessage;
-      
-      // Add message to local state
-      setMessages(prev => [...prev, newMessage]);
+
+      // Add message to local state — unless the subscription echo already beat us here
+      setMessages(prev => prev.some(m => m.id === newMessage.id) ? prev : [...prev, newMessage]);
       
       // Update conversation's last message
       setConversations(prev =>
@@ -279,12 +294,23 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Add a message received from a real-time subscription
   const addMessageFromSubscription = (message: ChatMessage): void => {
-    // Avoid duplicates (e.g. if the same message arrives via both subscription and polling)
+    // The subscription connects with apiKey auth, so its server-computed isMine can't be
+    // trusted (no identity to compute it against). Recompute from senderId against the
+    // real signed-in user id when we have both; otherwise fall back to whatever the
+    // server sent (e.g. the brief window before myUserIdRef has loaded).
+    const resolvedIsMine =
+      message.senderId && myUserIdRef.current
+        ? message.senderId === myUserIdRef.current
+        : message.isMine;
+    const resolvedMessage = { ...message, isMine: resolvedIsMine };
+
+    // Avoid duplicates (e.g. if the same message arrives via both subscription and the
+    // sendMessage mutation response)
     setMessages(prev => {
-      if (prev.some(m => m.id === message.id)) {
+      if (prev.some(m => m.id === resolvedMessage.id)) {
         return prev;
       }
-      return [...prev, message];
+      return [...prev, resolvedMessage];
     });
 
     // Update the conversation's last message in the list

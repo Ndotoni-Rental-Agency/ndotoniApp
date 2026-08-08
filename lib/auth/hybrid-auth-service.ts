@@ -271,6 +271,28 @@ export class HybridAuthService {
   static getCurrentAuthMethod(): AuthMethod {
     return this.currentAuthMethod;
   }
+
+  /**
+   * Get the signed-in user's ID (Cognito sub) from whichever auth method is active.
+   * For client-side identity comparisons (e.g. chat "is this my message") that
+   * shouldn't depend on AppSync's per-connection identity resolution — that's
+   * only populated for Cognito-authenticated connections, not apiKey ones.
+   */
+  static async getUserId(): Promise<string | undefined> {
+    // Try OIDC first
+    const oidcUser = await oidcGetCurrentUser();
+    if (oidcUser?.profile?.sub) {
+      return oidcUser.profile.sub;
+    }
+
+    // Try Amplify
+    try {
+      const currentUser = await amplifyGetCurrentUser();
+      return currentUser.userId;
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 export default HybridAuthService;
