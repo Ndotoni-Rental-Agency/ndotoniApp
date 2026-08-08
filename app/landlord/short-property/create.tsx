@@ -10,10 +10,10 @@ import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
-import { createShortTermPropertyDraft } from '@/lib/graphql/mutations';
+import { createShortTermPropertyDraft, submitContactInquiry } from '@/lib/graphql/mutations';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -67,6 +67,28 @@ export default function CreatePropertyScreen() {
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Let the team know a host started a listing, so they can follow up if it's abandoned.
+  const hasNotifiedStartRef = useRef(false);
+  useEffect(() => {
+    if (hasNotifiedStartRef.current) return;
+    hasNotifiedStartRef.current = true;
+
+    const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Ndotoni host';
+    const locationLine = form.region ? `\nLocation: ${[form.region, form.district].filter(Boolean).join(', ')}` : '';
+
+    GraphQLClient.executePublic(submitContactInquiry, {
+      input: {
+        inquiryType: 'PROPERTY',
+        subject: 'New listing started (App)',
+        name,
+        email: user?.email || 'unknown@ndotoni.app',
+        phone: user?.phoneNumber || undefined,
+        message: `${name} just started creating a new short-term listing from the ndotoniApp mobile app.${locationLine}`,
+      },
+    }).catch(err => console.error('[CreateListing] Failed to notify listing started:', err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateField = (key: string, val: any) => {
     setForm(f => ({ ...f, [key]: val }));
