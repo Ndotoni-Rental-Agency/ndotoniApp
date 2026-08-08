@@ -37,27 +37,6 @@ interface ChatInitializationData {
   propertyId: string;
 }
 
-/**
- * Insert or merge a message into a list, deduped by id.
- *
- * The chat subscription connects with apiKey auth (see useChatSubscription.ts),
- * so AppSync has no identity to compute `isMine` against — it always comes back
- * false on that channel, including for the sender's own message. The sendMessage
- * mutation response, by contrast, is always correctly `isMine: true` for our own
- * sends. Both paths can deliver the same message (by id): OR-ing `isMine` on
- * merge means whichever arrives first, the message ends up correctly flagged —
- * instead of a wrongly-flagged duplicate sitting in state until the next full
- * reload replaces it.
- */
-function upsertMessage(prev: ChatMessage[], incoming: ChatMessage): ChatMessage[] {
-  const idx = prev.findIndex(m => m.id === incoming.id);
-  if (idx === -1) return [...prev, incoming];
-  const existing = prev[idx];
-  const next = [...prev];
-  next[idx] = { ...existing, ...incoming, isMine: existing.isMine || incoming.isMine };
-  return next;
-}
-
 interface ChatContextType {
   // State
   conversations: Conversation[];
@@ -179,9 +158,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       );
 
       const newMessage = data.sendMessage;
-
-      // Add message to local state (or merge with the subscription's copy, if it beat us here)
-      setMessages(prev => upsertMessage(prev, newMessage));
+      
+      // Add message to local state
+      setMessages(prev => [...prev, newMessage]);
       
       // Update conversation's last message
       setConversations(prev =>
@@ -300,8 +279,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Add a message received from a real-time subscription
   const addMessageFromSubscription = (message: ChatMessage): void => {
-    // Merge with any existing copy (e.g. our own just-sent message beat the subscription here)
-    setMessages(prev => upsertMessage(prev, message));
+    // Avoid duplicates (e.g. if the same message arrives via both subscription and polling)
+    setMessages(prev => {
+      if (prev.some(m => m.id === message.id)) {
+        return prev;
+      }
+      return [...prev, message];
+    });
 
     // Update the conversation's last message in the list
     setConversations(prev =>
