@@ -2181,12 +2181,59 @@ export const sendMessage = /* GraphQL */ `mutation SendMessage($input: SendMessa
     senderId
     senderName
     timestamp
+    replyToMessageId
+    replyToContent
+    replyToSenderName
+    reactions {
+      emoji
+      userIds
+      __typename
+    }
+    readAt
     __typename
   }
 }
 ` as GeneratedMutation<
   APITypes.SendMessageMutationVariables,
   APITypes.SendMessageMutation
+>;
+export const toggleMessageReaction = /* GraphQL */ `mutation ToggleMessageReaction($messageId: String!, $emoji: String!) {
+  toggleMessageReaction(messageId: $messageId, emoji: $emoji) {
+    content
+    conversationId
+    id
+    isMine
+    isRead
+    senderId
+    senderName
+    timestamp
+    replyToMessageId
+    replyToContent
+    replyToSenderName
+    reactions {
+      emoji
+      userIds
+      __typename
+    }
+    readAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.ToggleMessageReactionMutationVariables,
+  APITypes.ToggleMessageReactionMutation
+>;
+export const sendTypingIndicator = /* GraphQL */ `mutation SendTypingIndicator($conversationId: String!) {
+  sendTypingIndicator(conversationId: $conversationId) {
+    conversationId
+    userId
+    userName
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.SendTypingIndicatorMutationVariables,
+  APITypes.SendTypingIndicatorMutation
 >;
 export const sendWhatsAppMessage = /* GraphQL */ `mutation SendWhatsAppMessage($message: String!, $phone: String!) {
   sendWhatsAppMessage(message: $message, phone: $phone) {

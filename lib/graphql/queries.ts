@@ -670,6 +670,15 @@ export const getConversationMessages = /* GraphQL */ `query GetConversationMessa
     senderId
     senderName
     timestamp
+    replyToMessageId
+    replyToContent
+    replyToSenderName
+    reactions {
+      emoji
+      userIds
+      __typename
+    }
+    readAt
     __typename
   }
 }

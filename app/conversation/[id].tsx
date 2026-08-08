@@ -2,7 +2,15 @@ import { useAlert } from '@/contexts/AlertContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChatDeletion } from '@/hooks/useChatDeletion';
-import { useChatSubscription, SubscriptionMessage } from '@/hooks/useChatSubscription';
+import {
+  useChatSubscription,
+  useMessageUpdatedSubscription,
+  useTypingIndicatorSubscription,
+  useConversationReadSubscription,
+  SubscriptionMessage,
+  SubscriptionTypingEvent,
+  SubscriptionReadEvent,
+} from '@/hooks/useChatSubscription';
 import { ChatMessage } from '@/lib/API';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { checkConversationBlockStatus } from '@/lib/graphql/queries';
@@ -12,13 +20,14 @@ import ReportModal from '@/components/moderation/ReportModal';
 import BlockUserModal from '@/components/moderation/BlockUserModal';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     Linking,
+    Modal,
     Platform,
     StyleSheet,
     Text,
@@ -27,6 +36,51 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+type ListItem =
+  | { type: 'date'; id: string; label: string }
+  | { type: 'message'; id: string; message: ChatMessage; showSender: boolean };
+
+function formatDateLabel(timestamp: string): string {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+  if (sameDay(date, today)) return 'Today';
+  if (sameDay(date, yesterday)) return 'Yesterday';
+
+  const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
+  if (date.getFullYear() !== today.getFullYear()) options.year = 'numeric';
+  return date.toLocaleDateString('en-US', options);
+}
+
+function toReactions(reactions?: Array<{ emoji: string; userIds: string[] }> | null): ChatMessage['reactions'] {
+  return reactions?.map(r => ({ ...r, __typename: 'MessageReaction' as const }));
+}
+
+function buildListItems(messages: ChatMessage[]): ListItem[] {
+  const items: ListItem[] = [];
+  let lastDateKey = '';
+  let lastSenderId: string | null | undefined = undefined;
+
+  messages.forEach((message) => {
+    const dateKey = new Date(message.timestamp).toDateString();
+    if (dateKey !== lastDateKey) {
+      items.push({ type: 'date', id: `date-${dateKey}`, label: formatDateLabel(message.timestamp) });
+      lastDateKey = dateKey;
+      lastSenderId = undefined;
+    }
+    const showSender = !message.isMine && message.senderId !== lastSenderId;
+    items.push({ type: 'message', id: message.id, message, showSender });
+    lastSenderId = message.senderId;
+  });
+
+  return items;
+}
 
 export default function ConversationScreen() {
   const { id, draft } = useLocalSearchParams<{ id: string; draft?: string }>();
@@ -38,7 +92,7 @@ export default function ConversationScreen() {
   const borderColor = useThemeColor({}, 'border');
   const secondaryText = useThemeColor({}, 'textSecondary');
   const myMessageBg = useThemeColor({ light: '#3b82f6', dark: '#2563eb' }, 'tint');
-  const theirMessageBg = useThemeColor({}, 'border');
+  const theirMessageBg = useThemeColor({ light: '#f0f1f3', dark: '#26282c' }, 'card');
 
   const {
     messages,
@@ -50,6 +104,12 @@ export default function ConversationScreen() {
     conversations,
     loadConversations,
     addMessageFromSubscription,
+    applyMessageUpdate,
+    applyConversationRead,
+    typingUser,
+    setTypingUser,
+    toggleReaction,
+    sendTypingIndicator,
   } = useChat();
 
   const { deleteMessage: deleteChatMessage } = useChatDeletion();
@@ -62,6 +122,9 @@ export default function ConversationScreen() {
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [hasBlockedOther, setHasBlockedOther] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [actionSheetFor, setActionSheetFor] = useState<ChatMessage | null>(null);
+  const [reactionPickerFor, setReactionPickerFor] = useState<ChatMessage | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const draftApplied = useRef(false);
 
@@ -76,6 +139,15 @@ export default function ConversationScreen() {
   // Decode the conversation ID from the URL parameter
   const decodedId = id ? decodeURIComponent(id as string) : '';
   const conversation = conversations.find(c => c.id === decodedId);
+
+  const listItems = useMemo(() => buildListItems(messages), [messages]);
+  const messageIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    listItems.forEach((item, index) => {
+      if (item.type === 'message') map.set(item.id, index);
+    });
+    return map;
+  }, [listItems]);
 
   // Check block status when conversation loads
   useEffect(() => {
@@ -117,9 +189,16 @@ export default function ConversationScreen() {
       timestamp: message.timestamp,
       isRead: message.isRead,
       isMine: message.isMine,
+      replyToMessageId: message.replyToMessageId,
+      replyToContent: message.replyToContent,
+      replyToSenderName: message.replyToSenderName,
+      reactions: toReactions(message.reactions),
+      readAt: message.readAt,
       __typename: 'ChatMessage',
     });
-  }, []);
+    // A new message from the other party means they're done typing
+    setTypingUser(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useChatSubscription({
     conversationId: decodedId || null,
@@ -127,27 +206,60 @@ export default function ConversationScreen() {
     enabled: !!decodedId,
   });
 
+  const handleMessageUpdated = useCallback((message: SubscriptionMessage) => {
+    applyMessageUpdate({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      content: message.content,
+      timestamp: message.timestamp,
+      isRead: message.isRead,
+      isMine: message.isMine,
+      replyToMessageId: message.replyToMessageId,
+      replyToContent: message.replyToContent,
+      replyToSenderName: message.replyToSenderName,
+      reactions: toReactions(message.reactions),
+      readAt: message.readAt,
+      __typename: 'ChatMessage',
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useMessageUpdatedSubscription({
+    conversationId: decodedId || null,
+    onMessageUpdated: handleMessageUpdated,
+    enabled: !!decodedId,
+  });
+
+  const handleTypingReceived = useCallback((event: SubscriptionTypingEvent) => {
+    setTypingUser({ ...event, __typename: 'TypingIndicatorEvent' });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useTypingIndicatorSubscription({
+    conversationId: decodedId || null,
+    onTypingReceived: handleTypingReceived,
+    enabled: !!decodedId,
+  });
+
+  const handleConversationRead = useCallback((event: SubscriptionReadEvent) => {
+    applyConversationRead({ ...event, __typename: 'ConversationReadEvent' });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useConversationReadSubscription({
+    conversationId: decodedId || null,
+    onConversationRead: handleConversationRead,
+    enabled: !!decodedId,
+  });
+
   useEffect(() => {
     if (id) {
-      // Decode the conversation ID (it was URL-encoded to handle # character)
-      console.log('[Conversation] Raw ID from params:', {
-        id,
-        idType: typeof id,
-        isArray: Array.isArray(id),
-        idValue: JSON.stringify(id)
-      });
-      
       const decodedId = decodeURIComponent(id as string);
-      console.log('[Conversation] Loading conversation:', {
-        encodedId: id,
-        decodedId,
-        hasHash: decodedId.includes('#'),
-        decodedParts: decodedId.split('#')
-      });
       // Always try to load messages - the backend will handle authorization
       loadMessages(decodedId);
       markConversationAsRead(decodedId);
     }
+    // Clear any stale typing indicator when switching conversations
+    setTypingUser(null);
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -230,14 +342,23 @@ export default function ConversationScreen() {
     });
   };
 
+  const handleTextChange = (text: string) => {
+    setMessageText(text);
+    if (text.trim() && decodedId) {
+      sendTypingIndicator(decodedId);
+    }
+  };
+
   const handleSend = async () => {
     if (!messageText.trim() || !decodedId) return;
 
     const text = messageText.trim();
+    const replyToMessageId = replyingTo?.id;
     setMessageText('');
+    setReplyingTo(null);
 
     try {
-      await sendMessage(decodedId, text);
+      await sendMessage(decodedId, text, replyToMessageId);
     } catch (error: any) {
       console.error('Error sending message:', error);
       showAlert({ title: 'Error', message: error?.message || 'Something went wrong. Please try again.', icon: 'error' });
@@ -258,18 +379,18 @@ export default function ConversationScreen() {
           style: 'destructive',
           onPress: async () => {
             // Delete all selected messages
-            const deletePromises = Array.from(selectedMessages).map(id => 
+            const deletePromises = Array.from(selectedMessages).map(id =>
               deleteChatMessage(id)
             );
-            
+
             await Promise.all(deletePromises);
-            
+
             // Reload messages and conversations list
             if (decodedId) {
               await loadMessages(decodedId);
               await loadConversations(); // Update the conversations list
             }
-            
+
             setSelectionMode(false);
             setSelectedMessages(new Set());
           },
@@ -286,7 +407,7 @@ export default function ConversationScreen() {
       newSelection.add(messageId);
     }
     setSelectedMessages(newSelection);
-    
+
     // Exit selection mode if no messages selected
     if (newSelection.size === 0) {
       setSelectionMode(false);
@@ -300,11 +421,26 @@ export default function ConversationScreen() {
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
+  };
+
+  const scrollToMessage = (messageId: string) => {
+    const index = messageIndexById.get(messageId);
+    if (index === undefined) return;
+    try {
+      flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.4 });
+    } catch {
+      // Item not measured yet — ignore, best-effort feature
+    }
+  };
+
+  const openActionSheet = (message: ChatMessage) => {
+    if (selectionMode) return;
+    setActionSheetFor(message);
   };
 
   /**
@@ -343,7 +479,56 @@ export default function ConversationScreen() {
     });
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const renderReplyPreview = (item: ChatMessage, isMyMessage: boolean) => {
+    if (!item.replyToContent) return null;
+    return (
+      <TouchableOpacity
+        onPress={() => item.replyToMessageId && scrollToMessage(item.replyToMessageId)}
+        activeOpacity={0.7}
+        style={[
+          styles.replyPreview,
+          { borderLeftColor: isMyMessage ? 'rgba(255,255,255,0.7)' : tintColor },
+          { backgroundColor: isMyMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)' },
+        ]}
+      >
+        <Text
+          style={[styles.replyPreviewSender, { color: isMyMessage ? 'rgba(255,255,255,0.9)' : tintColor }]}
+          numberOfLines={1}
+        >
+          {item.replyToSenderName}
+        </Text>
+        <Text
+          style={[styles.replyPreviewContent, { color: isMyMessage ? 'rgba(255,255,255,0.75)' : secondaryText }]}
+          numberOfLines={1}
+        >
+          {item.replyToContent}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderReactions = (item: ChatMessage) => {
+    if (!item.reactions || item.reactions.length === 0) return null;
+    return (
+      <View style={styles.reactionsRow}>
+        {item.reactions.map(r => (
+          <TouchableOpacity
+            key={r.emoji}
+            onPress={() => toggleReaction(item.id, r.emoji)}
+            style={[styles.reactionPill, { backgroundColor: cardBg, borderColor }]}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+            {r.userIds.length > 1 && (
+              <Text style={[styles.reactionCount, { color: secondaryText }]}>{r.userIds.length}</Text>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderMessage = (item: ChatMessage, showSender: boolean) => {
     const isMyMessage = item.isMine;
     const isSelected = selectedMessages.has(item.id);
     const showCheckbox = selectionMode;
@@ -361,12 +546,7 @@ export default function ConversationScreen() {
               toggleMessageSelection(item.id);
             }
           }}
-          onLongPress={() => {
-            if (!selectionMode) {
-              setSelectionMode(true);
-              setSelectedMessages(new Set([item.id]));
-            }
-          }}
+          onLongPress={() => openActionSheet(item)}
           activeOpacity={0.7}
           style={[
             styles.messageContainer,
@@ -379,7 +559,7 @@ export default function ConversationScreen() {
               <View style={styles.checkboxContainer}>
                 <View style={[
                   styles.checkbox,
-                  { 
+                  {
                     borderColor: isSelected ? tintColor : '#d1d5db',
                     backgroundColor: isSelected ? tintColor : 'transparent',
                   }
@@ -391,52 +571,69 @@ export default function ConversationScreen() {
               </View>
             )}
 
-            <View
-              style={[
-                styles.messageBubble,
-                {
-                  backgroundColor: isMyMessage ? myMessageBg : theirMessageBg,
-                },
-                isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
-              ]}
-            >
-              {!isMyMessage && (
-                <Text style={[styles.senderName, { color: tintColor }]}>
+            <View style={{ maxWidth: '100%' }}>
+              {showSender && !isMyMessage && (
+                <Text style={[styles.senderNameAbove, { color: secondaryText }]}>
                   {item.senderName}
                 </Text>
               )}
-              <Text
+              <View
                 style={[
-                  styles.messageText,
-                  { color: isMyMessage ? '#fff' : textColor },
+                  styles.messageBubble,
+                  { backgroundColor: isMyMessage ? myMessageBg : theirMessageBg },
+                  isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
                 ]}
               >
-                {renderMessageContent(item.content, isMyMessage)}
-              </Text>
-              <View style={styles.messageFooter}>
+                {renderReplyPreview(item, isMyMessage)}
                 <Text
                   style={[
-                    styles.messageTime,
-                    { color: isMyMessage ? 'rgba(255,255,255,0.8)' : secondaryText },
+                    styles.messageText,
+                    { color: isMyMessage ? '#fff' : textColor },
                   ]}
                 >
-                  {formatTime(item.timestamp)}
+                  {renderMessageContent(item.content, isMyMessage)}
                 </Text>
-                {isMyMessage && (
-                  <Ionicons 
-                    name="checkmark-done" 
-                    size={14} 
-                    color="rgba(255,255,255,0.8)" 
-                    style={styles.readIcon}
-                  />
-                )}
+                <View style={styles.messageFooter}>
+                  <Text
+                    style={[
+                      styles.messageTime,
+                      { color: isMyMessage ? 'rgba(255,255,255,0.8)' : secondaryText },
+                    ]}
+                  >
+                    {formatTime(item.timestamp)}
+                  </Text>
+                  {isMyMessage && (
+                    <Ionicons
+                      name="checkmark-done"
+                      size={14}
+                      color={item.readAt ? '#7dd3fc' : 'rgba(255,255,255,0.8)'}
+                      style={styles.readIcon}
+                    />
+                  )}
+                </View>
               </View>
+              {renderReactions(item)}
             </View>
           </View>
         </TouchableOpacity>
       </View>
     );
   };
+
+  const renderListItem = ({ item }: { item: ListItem }) => {
+    if (item.type === 'date') {
+      return (
+        <View style={styles.dateSeparatorRow}>
+          <View style={[styles.dateSeparatorPill, { backgroundColor: cardBg }]}>
+            <Text style={[styles.dateSeparatorText, { color: secondaryText }]}>{item.label}</Text>
+          </View>
+        </View>
+      );
+    }
+    return renderMessage(item.message, item.showSender);
+  };
+
+  const isMyMessageInActionSheet = actionSheetFor?.isMine;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
@@ -452,15 +649,15 @@ export default function ConversationScreen() {
                 {selectedMessages.size} Selected
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleDeleteSelectedMessages}
               disabled={selectedMessages.size === 0}
               style={styles.deleteButton}
             >
-              <Ionicons 
-                name="trash" 
-                size={24} 
-                color={selectedMessages.size > 0 ? '#ff3b30' : secondaryText} 
+              <Ionicons
+                name="trash"
+                size={24}
+                color={selectedMessages.size > 0 ? '#ff3b30' : secondaryText}
               />
             </TouchableOpacity>
           </>
@@ -473,11 +670,9 @@ export default function ConversationScreen() {
               <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>
                 {conversation?.otherPartyName || 'Chat'}
               </Text>
-              {conversation?.propertyTitle && (
-                <Text style={[styles.headerSubtitle, { color: secondaryText }]} numberOfLines={1}>
-                  {conversation.propertyTitle}
-                </Text>
-              )}
+              <Text style={[styles.headerSubtitle, { color: secondaryText }]} numberOfLines={1}>
+                {typingUser ? 'typing…' : conversation?.propertyTitle || ''}
+              </Text>
             </View>
             <TouchableOpacity
               onPress={handleShowModerationMenu}
@@ -504,11 +699,16 @@ export default function ConversationScreen() {
       ) : (
         <FlatList
           ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
+          data={listItems}
+          renderItem={renderListItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onScrollToIndexFailed={(info) => {
+            setTimeout(() => {
+              flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+            }, 50);
+          }}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="chatbubbles-outline" size={64} color={secondaryText} />
@@ -539,41 +739,171 @@ export default function ConversationScreen() {
             )}
           </View>
         ) : (
-        <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
-          <View style={[styles.inputWrapper, { backgroundColor, borderColor }]}>
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              value={messageText}
-              onChangeText={setMessageText}
-              placeholder="Type a message..."
-              placeholderTextColor={secondaryText}
-              multiline
-              maxLength={1000}
-            />
-            {messageText.trim().length > 0 && (
-              <Text style={[styles.charCount, { color: secondaryText }]}>
-                {messageText.length}/1000
-              </Text>
-            )}
+        <View>
+          {replyingTo && (
+            <View style={[styles.replyBar, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
+              <View style={[styles.replyBarAccent, { backgroundColor: tintColor }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.replyBarSender, { color: tintColor }]} numberOfLines={1}>
+                  Replying to {replyingTo.isMine ? 'yourself' : replyingTo.senderName}
+                </Text>
+                <Text style={[styles.replyBarContent, { color: secondaryText }]} numberOfLines={1}>
+                  {replyingTo.content}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={20} color={secondaryText} />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
+            <View style={[styles.inputWrapper, { backgroundColor, borderColor }]}>
+              <TextInput
+                style={[styles.input, { color: textColor }]}
+                value={messageText}
+                onChangeText={handleTextChange}
+                placeholder="Type a message..."
+                placeholderTextColor={secondaryText}
+                multiline
+                maxLength={1000}
+              />
+              {messageText.trim().length > 0 && (
+                <Text style={[styles.charCount, { color: secondaryText }]}>
+                  {messageText.length}/1000
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={!messageText.trim() || sendingMessage}
+              style={[
+                styles.sendButton,
+                { backgroundColor: tintColor },
+                (!messageText.trim() || sendingMessage) && styles.sendButtonDisabled,
+              ]}
+            >
+              {sendingMessage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="send" size={22} color="#fff" />
+              )}
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!messageText.trim() || sendingMessage}
-            style={[
-              styles.sendButton,
-              { backgroundColor: tintColor },
-              (!messageText.trim() || sendingMessage) && styles.sendButtonDisabled,
-            ]}
-          >
-            {sendingMessage ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="send" size={22} color="#fff" />
-            )}
-          </TouchableOpacity>
         </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* Message action sheet — long-press on a bubble */}
+      <Modal
+        visible={!!actionSheetFor}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActionSheetFor(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setActionSheetFor(null)}
+        >
+          <View style={[styles.actionSheet, { backgroundColor: cardBg }]}>
+            <View style={styles.quickReactionsRow}>
+              {QUICK_REACTIONS.map(emoji => (
+                <TouchableOpacity
+                  key={emoji}
+                  style={styles.quickReactionButton}
+                  onPress={() => {
+                    if (actionSheetFor) toggleReaction(actionSheetFor.id, emoji);
+                    setActionSheetFor(null);
+                  }}
+                >
+                  <Text style={styles.quickReactionEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.quickReactionButton}
+                onPress={() => {
+                  setReactionPickerFor(actionSheetFor);
+                  setActionSheetFor(null);
+                }}
+              >
+                <Ionicons name="add-circle-outline" size={26} color={secondaryText} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.actionSheetItem}
+              onPress={() => {
+                setReplyingTo(actionSheetFor);
+                setActionSheetFor(null);
+              }}
+            >
+              <Ionicons name="arrow-undo-outline" size={20} color={textColor} />
+              <Text style={[styles.actionSheetItemText, { color: textColor }]}>Reply</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionSheetItem}
+              onPress={() => {
+                setSelectionMode(true);
+                if (actionSheetFor) setSelectedMessages(new Set([actionSheetFor.id]));
+                setActionSheetFor(null);
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color={textColor} />
+              <Text style={[styles.actionSheetItemText, { color: textColor }]}>Select</Text>
+            </TouchableOpacity>
+
+            {isMyMessageInActionSheet && (
+              <TouchableOpacity
+                style={styles.actionSheetItem}
+                onPress={() => {
+                  const target = actionSheetFor;
+                  setActionSheetFor(null);
+                  if (target) {
+                    setSelectedMessages(new Set([target.id]));
+                    handleDeleteSelectedMessages();
+                  }
+                }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                <Text style={[styles.actionSheetItemText, { color: '#ef4444' }]}>Delete</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Full emoji picker — "+" from the quick reactions row */}
+      <Modal
+        visible={!!reactionPickerFor}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReactionPickerFor(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setReactionPickerFor(null)}
+        >
+          <View style={[styles.emojiPickerSheet, { backgroundColor: cardBg }]}>
+            <Text style={[styles.emojiPickerTitle, { color: textColor }]}>React with</Text>
+            <View style={styles.emojiGrid}>
+              {['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥', '👏', '😍', '😢', '😡'].map((emoji, index) => (
+                <TouchableOpacity
+                  key={`${emoji}-${index}`}
+                  style={styles.emojiGridButton}
+                  onPress={() => {
+                    if (reactionPickerFor) toggleReaction(reactionPickerFor.id, emoji);
+                    setReactionPickerFor(null);
+                  }}
+                >
+                  <Text style={styles.quickReactionEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Report User Modal */}
       <ReportModal
@@ -640,9 +970,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     flexGrow: 1,
   },
+  dateSeparatorRow: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dateSeparatorPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  dateSeparatorText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   messageWrapper: {
-    marginBottom: 16,
-    maxWidth: '75%',
+    marginBottom: 6,
+    maxWidth: '80%',
   },
   myMessageWrapper: {
     alignSelf: 'flex-end',
@@ -661,11 +1004,8 @@ const styles = StyleSheet.create({
   },
   messageRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 10,
-  },
-  messageRowNoCheckbox: {
-    flexDirection: 'column',
   },
   checkboxContainer: {
     justifyContent: 'center',
@@ -679,26 +1019,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  messageBubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  myMessageBubble: {
-    borderBottomRightRadius: 4,
-  },
-  theirMessageBubble: {
-    borderBottomLeftRadius: 4,
-  },
-  senderName: {
+  senderNameAbove: {
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
+    marginLeft: 14,
+  },
+  messageBubble: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  myMessageBubble: {
+    borderBottomRightRadius: 5,
+  },
+  theirMessageBubble: {
+    borderBottomLeftRadius: 5,
+  },
+  replyPreview: {
+    borderLeftWidth: 3,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    marginBottom: 6,
+  },
+  replyPreviewSender: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  replyPreviewContent: {
+    fontSize: 12,
+    marginTop: 1,
   },
   messageText: {
     fontSize: 15,
@@ -707,7 +1063,8 @@ const styles = StyleSheet.create({
   messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    justifyContent: 'flex-end',
+    marginTop: 4,
     gap: 4,
   },
   messageTime: {
@@ -715,6 +1072,29 @@ const styles = StyleSheet.create({
   },
   readIcon: {
     marginLeft: 2,
+  },
+  reactionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 5,
+    paddingHorizontal: 4,
+  },
+  reactionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  reactionEmoji: {
+    fontSize: 13,
+  },
+  reactionCount: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   emptyState: {
     flex: 1,
@@ -726,6 +1106,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 16,
     textAlign: 'center',
+  },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    gap: 10,
+  },
+  replyBarAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+  },
+  replyBarSender: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  replyBarContent: {
+    fontSize: 13,
+    marginTop: 1,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -796,5 +1197,69 @@ const styles = StyleSheet.create({
   unblockButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  actionSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
+  quickReactionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    marginBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(128,128,128,0.2)',
+  },
+  quickReactionButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickReactionEmoji: {
+    fontSize: 26,
+  },
+  actionSheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+  },
+  actionSheetItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emojiPickerSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  emojiPickerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  emojiGridButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 24,
   },
 });

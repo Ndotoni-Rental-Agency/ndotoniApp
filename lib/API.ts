@@ -1059,6 +1059,13 @@ export type SendCheckInInstructionsResponse = {
 export type SendMessageInput = {
   content: string,
   conversationId: string,
+  replyToMessageId?: string | null,
+};
+
+export type MessageReaction = {
+  __typename: "MessageReaction",
+  emoji: string,
+  userIds: Array<string>,
 };
 
 export type ChatMessage = {
@@ -1071,6 +1078,25 @@ export type ChatMessage = {
   senderId?: string | null,
   senderName: string,
   timestamp: string,
+  replyToMessageId?: string | null,
+  replyToContent?: string | null,
+  replyToSenderName?: string | null,
+  reactions?: Array<MessageReaction> | null,
+  readAt?: string | null,
+};
+
+export type TypingIndicatorEvent = {
+  __typename: "TypingIndicatorEvent",
+  conversationId: string,
+  userId: string,
+  userName: string,
+};
+
+export type ConversationReadEvent = {
+  __typename: "ConversationReadEvent",
+  conversationId: string,
+  readByUserId: string,
+  readAt: string,
 };
 
 export type AuthResponse = {
@@ -4178,6 +4204,56 @@ export type SendMessageMutation = {
     senderId?: string | null,
     senderName: string,
     timestamp: string,
+    replyToMessageId?: string | null,
+    replyToContent?: string | null,
+    replyToSenderName?: string | null,
+    reactions?:  Array< {
+      __typename: "MessageReaction",
+      emoji: string,
+      userIds: Array<string>,
+    } > | null,
+    readAt?: string | null,
+  },
+};
+
+export type ToggleMessageReactionMutationVariables = {
+  messageId: string,
+  emoji: string,
+};
+
+export type ToggleMessageReactionMutation = {
+  toggleMessageReaction:  {
+    __typename: "ChatMessage",
+    content: string,
+    conversationId: string,
+    id: string,
+    isMine: boolean,
+    isRead: boolean,
+    senderId?: string | null,
+    senderName: string,
+    timestamp: string,
+    replyToMessageId?: string | null,
+    replyToContent?: string | null,
+    replyToSenderName?: string | null,
+    reactions?:  Array< {
+      __typename: "MessageReaction",
+      emoji: string,
+      userIds: Array<string>,
+    } > | null,
+    readAt?: string | null,
+  },
+};
+
+export type SendTypingIndicatorMutationVariables = {
+  conversationId: string,
+};
+
+export type SendTypingIndicatorMutation = {
+  sendTypingIndicator:  {
+    __typename: "TypingIndicatorEvent",
+    conversationId: string,
+    userId: string,
+    userName: string,
   },
 };
 
@@ -5682,6 +5758,15 @@ export type GetConversationMessagesQuery = {
     senderId?: string | null,
     senderName: string,
     timestamp: string,
+    replyToMessageId?: string | null,
+    replyToContent?: string | null,
+    replyToSenderName?: string | null,
+    reactions?:  Array< {
+      __typename: "MessageReaction",
+      emoji: string,
+      userIds: Array<string>,
+    } > | null,
+    readAt?: string | null,
   } >,
 };
 
@@ -9084,6 +9169,68 @@ export type OnNewMessageSubscription = {
     senderId?: string | null,
     senderName: string,
     timestamp: string,
+    replyToMessageId?: string | null,
+    replyToContent?: string | null,
+    replyToSenderName?: string | null,
+    reactions?:  Array< {
+      __typename: "MessageReaction",
+      emoji: string,
+      userIds: Array<string>,
+    } > | null,
+    readAt?: string | null,
+  } | null,
+};
+
+export type OnMessageUpdatedSubscriptionVariables = {
+  conversationId: string,
+};
+
+export type OnMessageUpdatedSubscription = {
+  onMessageUpdated?:  {
+    __typename: "ChatMessage",
+    content: string,
+    conversationId: string,
+    id: string,
+    isMine: boolean,
+    isRead: boolean,
+    senderId?: string | null,
+    senderName: string,
+    timestamp: string,
+    replyToMessageId?: string | null,
+    replyToContent?: string | null,
+    replyToSenderName?: string | null,
+    reactions?:  Array< {
+      __typename: "MessageReaction",
+      emoji: string,
+      userIds: Array<string>,
+    } > | null,
+    readAt?: string | null,
+  } | null,
+};
+
+export type OnTypingIndicatorSubscriptionVariables = {
+  conversationId: string,
+};
+
+export type OnTypingIndicatorSubscription = {
+  onTypingIndicator?:  {
+    __typename: "TypingIndicatorEvent",
+    conversationId: string,
+    userId: string,
+    userName: string,
+  } | null,
+};
+
+export type OnConversationReadSubscriptionVariables = {
+  conversationId: string,
+};
+
+export type OnConversationReadSubscription = {
+  onConversationRead?:  {
+    __typename: "ConversationReadEvent",
+    conversationId: string,
+    readByUserId: string,
+    readAt: string,
   } | null,
 };
 

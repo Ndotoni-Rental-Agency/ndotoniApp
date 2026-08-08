@@ -1,14 +1,16 @@
 /**
- * useChatSubscription
+ * Chat real-time subscriptions
  *
- * Subscribes to real-time messages for a given conversation via AppSync WebSocket.
- * Uses Amplify's generateClient().graphql() which handles the WebSocket protocol.
- * Auth mode: apiKey (subscription has @aws_api_key, avoids OIDC/Amplify auth complexity).
+ * Subscribes to conversation events via AppSync WebSocket, using Amplify's
+ * generateClient().graphql(). Auth mode: apiKey (these subscriptions have
+ * @aws_api_key, avoiding OIDC/Amplify auth complexity — see ChatContext.tsx
+ * for how isMine/senderId-dependent fields get resolved client-side instead
+ * of trusted from the server on this connection).
  */
 
 import { useEffect, useRef } from 'react';
 import { generateClient } from 'aws-amplify/api';
-import { onNewMessage } from '@/lib/graphql/subscriptions';
+import { onNewMessage, onMessageUpdated, onTypingIndicator, onConversationRead } from '@/lib/graphql/subscriptions';
 
 // Ensure Amplify is configured before using the client
 import '@/lib/amplify';
@@ -24,44 +26,51 @@ export interface SubscriptionMessage {
   isRead: boolean;
   isMine: boolean;
   senderId?: string | null;
+  replyToMessageId?: string | null;
+  replyToContent?: string | null;
+  replyToSenderName?: string | null;
+  reactions?: Array<{ emoji: string; userIds: string[] }> | null;
+  readAt?: string | null;
 }
 
-interface UseChatSubscriptionOptions {
-  /** The conversation ID to subscribe to */
-  conversationId: string | null;
-  /** Called when a new message arrives via subscription */
-  onMessageReceived: (message: SubscriptionMessage) => void;
-  /** Whether the subscription should be active */
-  enabled?: boolean;
+export interface SubscriptionTypingEvent {
+  conversationId: string;
+  userId: string;
+  userName: string;
+}
+
+export interface SubscriptionReadEvent {
+  conversationId: string;
+  readByUserId: string;
+  readAt: string;
 }
 
 /**
- * Hook that subscribes to real-time messages for a conversation.
- * Automatically connects/disconnects based on conversationId and enabled state.
+ * Generic subscribe-while-mounted helper shared by all conversation-scoped
+ * chat subscriptions below. Re-subscribes when conversationId/enabled change,
+ * always cleans up the previous subscription first.
  */
-export function useChatSubscription({
-  conversationId,
-  onMessageReceived,
-  enabled = true,
-}: UseChatSubscriptionOptions) {
+function useConversationSubscription<T>(
+  query: string,
+  resultKey: string,
+  conversationId: string | null,
+  onEvent: (event: T) => void,
+  enabled: boolean,
+  logLabel: string
+) {
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
-  const onMessageReceivedRef = useRef(onMessageReceived);
+  const onEventRef = useRef(onEvent);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep the callback ref current without re-subscribing
   useEffect(() => {
-    onMessageReceivedRef.current = onMessageReceived;
-  }, [onMessageReceived]);
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
-  // Main subscription effect — only depends on conversationId and enabled
   useEffect(() => {
-    // Clear any pending reconnect timer
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
-
-    // Clean up previous subscription
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe();
       subscriptionRef.current = null;
@@ -71,54 +80,97 @@ export function useChatSubscription({
       return;
     }
 
-    console.log('[ChatSubscription] Subscribing to conversation:', conversationId);
-
     try {
+      // client.graphql()'s overload resolution to the Observable-returning subscription
+      // variant depends on the branded GeneratedSubscription<I, O> type of `query`, which
+      // this generic helper erases to `string` — cast to keep that resolution explicit.
       const observable = client.graphql({
-        query: onNewMessage,
+        query,
         variables: { conversationId },
         authMode: 'apiKey',
-      });
+      }) as { subscribe: (handlers: { next: (value: any) => void; error: (error: any) => void }) => { unsubscribe: () => void } };
 
       const sub = observable.subscribe({
         next: ({ data }: any) => {
-          const message = data?.onNewMessage;
-          if (message) {
-            console.log('[ChatSubscription] New message received:', {
-              id: message.id,
-              senderName: message.senderName,
-              isMine: message.isMine,
-              contentPreview: message.content?.substring(0, 30),
-            });
-            onMessageReceivedRef.current(message as SubscriptionMessage);
+          const event = data?.[resultKey];
+          if (event) {
+            onEventRef.current(event as T);
           }
         },
         error: (error: any) => {
-          console.error('[ChatSubscription] Subscription error:', error);
-          // Attempt to reconnect after a delay (only if still mounted)
+          console.error(`[${logLabel}] Subscription error:`, error);
           reconnectTimerRef.current = setTimeout(() => {
-            console.log('[ChatSubscription] Would reconnect, but letting effect re-run handle it');
+            console.log(`[${logLabel}] Would reconnect, but letting effect re-run handle it`);
           }, 5000);
         },
       });
 
       subscriptionRef.current = sub;
-      console.log('[ChatSubscription] Successfully subscribed');
     } catch (error) {
-      console.error('[ChatSubscription] Failed to create subscription:', error);
+      console.error(`[${logLabel}] Failed to create subscription:`, error);
     }
 
-    // Cleanup on unmount or dependency change
     return () => {
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
       }
       if (subscriptionRef.current) {
-        console.log('[ChatSubscription] Unsubscribing from conversation:', conversationId);
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
     };
-  }, [conversationId, enabled]);
+  }, [query, resultKey, conversationId, enabled, logLabel]);
+}
+
+interface UseChatSubscriptionOptions {
+  conversationId: string | null;
+  onMessageReceived: (message: SubscriptionMessage) => void;
+  enabled?: boolean;
+}
+
+/** New messages arriving in a conversation. */
+export function useChatSubscription({ conversationId, onMessageReceived, enabled = true }: UseChatSubscriptionOptions) {
+  useConversationSubscription<SubscriptionMessage>(
+    onNewMessage, 'onNewMessage', conversationId, onMessageReceived, enabled, 'ChatSubscription'
+  );
+}
+
+interface UseMessageUpdatedSubscriptionOptions {
+  conversationId: string | null;
+  onMessageUpdated: (message: SubscriptionMessage) => void;
+  enabled?: boolean;
+}
+
+/** Updates to an existing message — currently just reactions. */
+export function useMessageUpdatedSubscription({ conversationId, onMessageUpdated: onEvent, enabled = true }: UseMessageUpdatedSubscriptionOptions) {
+  useConversationSubscription<SubscriptionMessage>(
+    onMessageUpdated, 'onMessageUpdated', conversationId, onEvent, enabled, 'MessageUpdatedSubscription'
+  );
+}
+
+interface UseTypingIndicatorSubscriptionOptions {
+  conversationId: string | null;
+  onTypingReceived: (event: SubscriptionTypingEvent) => void;
+  enabled?: boolean;
+}
+
+/** Live "X is typing" events. Ephemeral — not persisted anywhere. */
+export function useTypingIndicatorSubscription({ conversationId, onTypingReceived, enabled = true }: UseTypingIndicatorSubscriptionOptions) {
+  useConversationSubscription<SubscriptionTypingEvent>(
+    onTypingIndicator, 'onTypingIndicator', conversationId, onTypingReceived, enabled, 'TypingIndicatorSubscription'
+  );
+}
+
+interface UseConversationReadSubscriptionOptions {
+  conversationId: string | null;
+  onConversationRead: (event: SubscriptionReadEvent) => void;
+  enabled?: boolean;
+}
+
+/** Fires when the other participant reads the conversation, to live-update read ticks. */
+export function useConversationReadSubscription({ conversationId, onConversationRead: onEvent, enabled = true }: UseConversationReadSubscriptionOptions) {
+  useConversationSubscription<SubscriptionReadEvent>(
+    onConversationRead, 'onConversationRead', conversationId, onEvent, enabled, 'ConversationReadSubscription'
+  );
 }

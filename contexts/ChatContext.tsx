@@ -12,8 +12,11 @@ import {
 import {
   sendMessage as sendMessageMutation,
   markAsRead,
-  initializePropertyChat
+  initializePropertyChat,
+  toggleMessageReaction as toggleMessageReactionMutation,
+  sendTypingIndicator as sendTypingIndicatorMutation,
 } from '@/lib/graphql/mutations';
+import { TypingIndicatorEvent, ConversationReadEvent } from '@/lib/API';
 
 // Lazy-load expo-notifications to avoid bundler crash in Expo Go
 let Notifications: typeof import('expo-notifications') | null = null;
@@ -38,6 +41,11 @@ interface ChatInitializationData {
   propertyId: string;
 }
 
+export interface TypingUser {
+  userId: string;
+  userName: string;
+}
+
 interface ChatContextType {
   // State
   conversations: Conversation[];
@@ -47,17 +55,23 @@ interface ChatContextType {
   loadingConversations: boolean;
   loadingMessages: boolean;
   sendingMessage: boolean;
+  typingUser: TypingUser | null;
 
   // Actions
   loadConversations: () => Promise<Conversation[]>;
   loadMessages: (conversationId: string) => Promise<void>;
-  sendMessage: (conversationId: string, content: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, replyToMessageId?: string) => Promise<void>;
   initializeChat: (propertyId: string) => Promise<ChatInitializationData>;
   markConversationAsRead: (conversationId: string) => Promise<void>;
   refreshUnreadCount: () => Promise<void>;
   clearMessages: () => void;
   selectConversation: (conversation: Conversation | null) => void;
   addMessageFromSubscription: (message: ChatMessage) => void;
+  applyMessageUpdate: (message: ChatMessage) => void;
+  applyConversationRead: (event: ConversationReadEvent) => void;
+  setTypingUser: (event: TypingIndicatorEvent | null) => void;
+  toggleReaction: (messageId: string, emoji: string) => Promise<void>;
+  sendTypingIndicator: (conversationId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -73,8 +87,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  
+  const [typingUser, setTypingUserState] = useState<TypingUser | null>(null);
+
   const sendingRef = useRef(false);
+  const typingClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingSendThrottleRef = useRef(0);
 
   // The signed-in user's real Cognito sub, fetched once and cached here so incoming
   // subscription messages can compute "is this mine" locally — the chat subscription
@@ -156,7 +173,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Send a message
-  const sendMessage = async (conversationId: string, content: string): Promise<void> => {
+  const sendMessage = async (conversationId: string, content: string, replyToMessageId?: string): Promise<void> => {
     if (sendingRef.current) {
       return;
     }
@@ -168,7 +185,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const data = await GraphQLClient.executeAuthenticated<{ sendMessage: ChatMessage }>(
         sendMessageMutation,
         {
-          input: { conversationId, content }
+          input: { conversationId, content, replyToMessageId }
         }
       );
 
@@ -328,6 +345,79 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  // Apply an update to an existing message (currently: reactions) — find-and-replace
+  // rather than append, since this is never a brand-new message.
+  const applyMessageUpdate = (message: ChatMessage): void => {
+    const resolvedIsMine =
+      message.senderId && myUserIdRef.current
+        ? message.senderId === myUserIdRef.current
+        : message.isMine;
+    const resolvedMessage = { ...message, isMine: resolvedIsMine };
+
+    setMessages(prev => prev.map(m => (m.id === resolvedMessage.id ? resolvedMessage : m)));
+  };
+
+  // Apply a live read-receipt update: mark our own sent messages up to readAt as
+  // read, but only when the read happened on the OTHER side — us marking our own
+  // conversation as read doesn't affect our own sent messages' tick status.
+  const applyConversationRead = (event: ConversationReadEvent): void => {
+    if (event.readByUserId === myUserIdRef.current) return;
+
+    setMessages(prev =>
+      prev.map(m =>
+        m.conversationId === event.conversationId && m.isMine && m.timestamp <= event.readAt
+          ? { ...m, readAt: event.readAt }
+          : m
+      )
+    );
+  };
+
+  // Show/clear the live typing indicator. Ignores our own echo and auto-clears
+  // a few seconds after the last event, since there's no explicit "stopped typing"
+  // signal — the sender just stops re-broadcasting.
+  const setTypingUser = (event: TypingIndicatorEvent | null): void => {
+    if (typingClearTimerRef.current) {
+      clearTimeout(typingClearTimerRef.current);
+      typingClearTimerRef.current = null;
+    }
+
+    if (!event || event.userId === myUserIdRef.current) {
+      setTypingUserState(null);
+      return;
+    }
+
+    setTypingUserState({ userId: event.userId, userName: event.userName });
+    typingClearTimerRef.current = setTimeout(() => setTypingUserState(null), 4000);
+  };
+
+  // Toggle the current user's reaction on a message. Optimistic-ish: we don't
+  // pre-apply locally, the onMessageUpdated echo (or the mutation response here)
+  // updates state — simpler and avoids a second place that can drift from the
+  // server's actual reaction list.
+  const toggleReaction = async (messageId: string, emoji: string): Promise<void> => {
+    try {
+      const data = await GraphQLClient.executeAuthenticated<{ toggleMessageReaction: ChatMessage }>(
+        toggleMessageReactionMutation,
+        { messageId, emoji }
+      );
+      applyMessageUpdate(data.toggleMessageReaction);
+    } catch (error) {
+      console.error('[ChatContext] Error toggling reaction:', error);
+    }
+  };
+
+  // Broadcast a typing event. Fire-and-forget, throttled so rapid keystrokes
+  // don't spam a mutation call per character.
+  const sendTypingIndicator = (conversationId: string): void => {
+    const now = Date.now();
+    if (now - typingSendThrottleRef.current < 3000) return;
+    typingSendThrottleRef.current = now;
+
+    GraphQLClient.executeAuthenticated(sendTypingIndicatorMutation, { conversationId }).catch(() => {
+      // Non-critical — a missed typing event just means the other side doesn't see it this time
+    });
+  };
+
   // Keep the OS app icon badge in sync with the real unread count.
   // The backend sends a hardcoded badge value with every push, which iOS/Android
   // then applies verbatim and never clears on its own — so we own the source of
@@ -410,6 +500,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     loadingConversations,
     loadingMessages,
     sendingMessage,
+    typingUser,
 
     // Actions
     loadConversations,
@@ -421,6 +512,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     clearMessages,
     selectConversation,
     addMessageFromSubscription,
+    applyMessageUpdate,
+    applyConversationRead,
+    setTypingUser,
+    toggleReaction,
+    sendTypingIndicator,
   };
 
   return (

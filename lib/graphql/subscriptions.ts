@@ -25,12 +25,71 @@ export const onNewMessage = /* GraphQL */ `subscription OnNewMessage($conversati
     senderId
     senderName
     timestamp
+    replyToMessageId
+    replyToContent
+    replyToSenderName
+    reactions {
+      emoji
+      userIds
+      __typename
+    }
+    readAt
     __typename
   }
 }
 ` as GeneratedSubscription<
   APITypes.OnNewMessageSubscriptionVariables,
   APITypes.OnNewMessageSubscription
+>;
+export const onMessageUpdated = /* GraphQL */ `subscription OnMessageUpdated($conversationId: String!) {
+  onMessageUpdated(conversationId: $conversationId) {
+    content
+    conversationId
+    id
+    isMine
+    isRead
+    senderId
+    senderName
+    timestamp
+    replyToMessageId
+    replyToContent
+    replyToSenderName
+    reactions {
+      emoji
+      userIds
+      __typename
+    }
+    readAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnMessageUpdatedSubscriptionVariables,
+  APITypes.OnMessageUpdatedSubscription
+>;
+export const onTypingIndicator = /* GraphQL */ `subscription OnTypingIndicator($conversationId: String!) {
+  onTypingIndicator(conversationId: $conversationId) {
+    conversationId
+    userId
+    userName
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnTypingIndicatorSubscriptionVariables,
+  APITypes.OnTypingIndicatorSubscription
+>;
+export const onConversationRead = /* GraphQL */ `subscription OnConversationRead($conversationId: String!) {
+  onConversationRead(conversationId: $conversationId) {
+    conversationId
+    readByUserId
+    readAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnConversationReadSubscriptionVariables,
+  APITypes.OnConversationReadSubscription
 >;
 export const onNewPropertyInRegion = /* GraphQL */ `subscription OnNewPropertyInRegion($region: String!) {
   onNewPropertyInRegion(region: $region) {
