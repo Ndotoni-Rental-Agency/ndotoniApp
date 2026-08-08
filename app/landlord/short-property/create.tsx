@@ -69,13 +69,22 @@ export default function CreatePropertyScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Let the team know a host started a listing, so they can follow up if it's abandoned.
+  // Fires on the last step (just before Publish) so the notification carries the actual
+  // property details — type, location, pricing, photos — instead of an empty shell.
   const hasNotifiedStartRef = useRef(false);
   useEffect(() => {
-    if (hasNotifiedStartRef.current) return;
+    if (step !== TOTAL_STEPS || hasNotifiedStartRef.current) return;
     hasNotifiedStartRef.current = true;
 
     const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Ndotoni host';
-    const locationLine = form.region ? `\nLocation: ${[form.region, form.district].filter(Boolean).join(', ')}` : '';
+    const details = [
+      form.propertyType ? `Type: ${form.propertyType}` : null,
+      form.stayCategories.length ? `Categories: ${form.stayCategories.join(', ')}` : null,
+      form.region ? `Location: ${[form.region, form.district].filter(Boolean).join(', ')}` : null,
+      form.nightlyRate ? `Rate: ${form.nightlyRate} ${form.currency}/night` : null,
+      `Guests: ${form.maxGuests} · Bedrooms: ${form.bedrooms} · Bathrooms: ${form.bathrooms}`,
+      (form.images.length || form.videos.length) ? `Media: ${form.images.length} photo(s), ${form.videos.length} video(s)` : null,
+    ].filter(Boolean).join('\n');
 
     GraphQLClient.executePublic(submitContactInquiry, {
       input: {
@@ -84,11 +93,11 @@ export default function CreatePropertyScreen() {
         name,
         email: user?.email || 'unknown@ndotoni.app',
         phone: user?.phoneNumber || undefined,
-        message: `${name} just started creating a new short-term listing from the ndotoniApp mobile app.${locationLine}`,
+        message: `${name} is almost done creating a new short-term listing from the ndotoniApp mobile app.\n\n${details}`,
       },
     }).catch(err => console.error('[CreateListing] Failed to notify listing started:', err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [step]);
 
   const updateField = (key: string, val: any) => {
     setForm(f => ({ ...f, [key]: val }));
