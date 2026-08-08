@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { GraphQLClient } from '@/lib/graphql-client';
 import { createShortTermPropertyDraft, submitContactInquiry } from '@/lib/graphql/mutations';
+import { validateInternationalPhone } from '@/lib/utils/phoneValidation';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -69,22 +70,31 @@ export default function CreatePropertyScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Let the team know a host started a listing, so they can follow up if it's abandoned.
-  // Fires on the last step (just before Publish) so the notification carries the actual
-  // property details — type, location, pricing, photos — instead of an empty shell.
+  // Fires the moment there's a real way to reach them — a valid phone on file — or, failing
+  // that, when they leave the screen, so we still hear about a drop-off even without contact
+  // info. Guarded so only one of the two ever actually sends. formRef exists because the exit
+  // path fires from a cleanup function, whose closure would otherwise see stale (mount-time)
+  // form values instead of what was on screen right before they left.
   const hasNotifiedStartRef = useRef(false);
-  useEffect(() => {
-    if (step !== TOTAL_STEPS || hasNotifiedStartRef.current) return;
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
+
+  function notifyListingStarted(reason: 'phone' | 'exit') {
+    if (hasNotifiedStartRef.current) return;
     hasNotifiedStartRef.current = true;
 
+    const f = formRef.current;
     const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Ndotoni host';
     const details = [
-      form.propertyType ? `Type: ${form.propertyType}` : null,
-      form.stayCategories.length ? `Categories: ${form.stayCategories.join(', ')}` : null,
-      form.region ? `Location: ${[form.region, form.district].filter(Boolean).join(', ')}` : null,
-      form.nightlyRate ? `Rate: ${form.nightlyRate} ${form.currency}/night` : null,
-      `Guests: ${form.maxGuests} · Bedrooms: ${form.bedrooms} · Bathrooms: ${form.bathrooms}`,
-      (form.images.length || form.videos.length) ? `Media: ${form.images.length} photo(s), ${form.videos.length} video(s)` : null,
+      f.propertyType ? `Type: ${f.propertyType}` : null,
+      f.stayCategories.length ? `Categories: ${f.stayCategories.join(', ')}` : null,
+      f.region ? `Location: ${[f.region, f.district].filter(Boolean).join(', ')}` : null,
+      f.nightlyRate ? `Rate: ${f.nightlyRate} ${f.currency}/night` : null,
+      `Guests: ${f.maxGuests} · Bedrooms: ${f.bedrooms} · Bathrooms: ${f.bathrooms}`,
+      f.images.length ? `Photos:\n${f.images.join('\n')}` : null,
+      f.videos.length ? `Videos:\n${f.videos.join('\n')}` : null,
     ].filter(Boolean).join('\n');
+    const action = reason === 'phone' ? 'has a phone number on file while' : 'left the screen while';
 
     GraphQLClient.executePublic(submitContactInquiry, {
       input: {
@@ -93,11 +103,25 @@ export default function CreatePropertyScreen() {
         name,
         email: user?.email || 'unknown@ndotoni.app',
         phone: user?.phoneNumber || undefined,
-        message: `${name} is almost done creating a new short-term listing from the ndotoniApp mobile app.\n\n${details}`,
+        message: `${name} ${action} creating a new short-term listing from the ndotoniApp mobile app.\n\n${details}`,
       },
     }).catch(err => console.error('[CreateListing] Failed to notify listing started:', err));
+  }
+
+  // Fire immediately since the host's phone is already on file (they're authenticated to
+  // reach this screen at all).
+  useEffect(() => {
+    if (user?.phoneNumber && validateInternationalPhone(user.phoneNumber)) {
+      notifyListingStarted('phone');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [user?.phoneNumber]);
+
+  // Otherwise (no valid phone on file — rare), fall back to firing on exit.
+  useEffect(() => {
+    return () => notifyListingStarted('exit');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateField = (key: string, val: any) => {
     setForm(f => ({ ...f, [key]: val }));
