@@ -769,21 +769,16 @@ export default function ConversationScreen() {
             </View>
           )}
           <View style={[styles.inputContainer, { backgroundColor: cardBg, borderTopColor: borderColor }]}>
-            <View style={[styles.inputWrapper, { backgroundColor, borderColor }]}>
+            <View style={[styles.inputWrapper, { backgroundColor: theirMessageBg }]}>
               <TextInput
                 style={[styles.input, { color: textColor }]}
                 value={messageText}
                 onChangeText={handleTextChange}
-                placeholder="Type a message..."
+                placeholder="Message"
                 placeholderTextColor={secondaryText}
                 multiline
                 maxLength={1000}
               />
-              {messageText.trim().length > 0 && (
-                <Text style={[styles.charCount, { color: secondaryText }]}>
-                  {messageText.length}/1000
-                </Text>
-              )}
             </View>
             <TouchableOpacity
               onPress={handleSend}
@@ -797,7 +792,7 @@ export default function ConversationScreen() {
               {sendingMessage ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="send" size={22} color="#fff" />
+                <Ionicons name="arrow-up" size={22} color="#fff" />
               )}
             </TouchableOpacity>
           </View>
@@ -1143,48 +1138,35 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
   },
   inputWrapper: {
     flex: 1,
     maxHeight: 120,
-    borderRadius: 24,
-    borderWidth: 2,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    marginRight: 12,
+    minHeight: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
   },
   input: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 21,
     padding: 0,
-  },
-  charCount: {
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'right',
+    maxHeight: 100,
   },
   sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   blockedBanner: {
     flexDirection: 'row',
