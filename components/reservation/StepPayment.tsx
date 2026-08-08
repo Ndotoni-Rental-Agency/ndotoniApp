@@ -87,6 +87,11 @@ export default function StepPayment({
           {phoneInvalid && (
             <Text style={styles.phoneError}>That doesn't look like a valid Tanzanian number</Text>
           )}
+          {currency.toUpperCase() !== 'TZS' && (
+            <Text style={[styles.currencyNote, { color: subtle }]}>
+              Mobile money charges in Tanzanian Shillings — your phone will prompt you for the TZS equivalent at the current exchange rate.
+            </Text>
+          )}
           <TouchableOpacity style={styles.switchMethod} onPress={() => onPaymentMethodChange(null)}>
             <Text style={[styles.switchMethodText, { color: tint }]}>← Use a different method</Text>
           </TouchableOpacity>
@@ -124,6 +129,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
   phoneInput: { fontSize: 20, fontWeight: '600', letterSpacing: 1 },
   phoneError: { color: '#ef4444', fontSize: 12, marginTop: 6 },
+  currencyNote: { fontSize: 12, marginTop: 10, lineHeight: 17 },
   switchMethod: { marginTop: 16, alignItems: 'center' },
   switchMethodText: { fontSize: 14, fontWeight: '600' },
   cardInfo: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 14, borderWidth: 1, alignItems: 'center' },
