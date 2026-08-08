@@ -126,6 +126,11 @@ export default function ConversationScreen() {
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [actionSheetFor, setActionSheetFor] = useState<ChatMessage | null>(null);
   const [reactionPickerFor, setReactionPickerFor] = useState<ChatMessage | null>(null);
+  // Measured rather than guessed: KeyboardAvoidingView's keyboardVerticalOffset needs the
+  // real on-screen height of whatever sits above it (our custom header lives outside it,
+  // since SafeAreaView already handles the top inset). A hardcoded guess here was leaving
+  // a gap between the input and the keyboard whenever the guess didn't match reality.
+  const [headerHeight, setHeaderHeight] = useState(60);
   const flatListRef = useRef<FlatList>(null);
   const draftApplied = useRef(false);
 
@@ -648,7 +653,10 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: borderColor }]}>
+      <View
+        style={[styles.header, { borderBottomColor: borderColor }]}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
         {selectionMode ? (
           <>
             <TouchableOpacity onPress={exitSelectionMode} style={styles.backButton}>
@@ -699,8 +707,8 @@ export default function ConversationScreen() {
       {/* Messages List */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 30}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={headerHeight}
       >
       {loadingMessages ? (
         <View style={[styles.loadingContainer, { backgroundColor: chatAreaBg }]}>
