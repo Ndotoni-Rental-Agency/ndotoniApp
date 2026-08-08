@@ -93,6 +93,7 @@ export default function ConversationScreen() {
   const secondaryText = useThemeColor({}, 'textSecondary');
   const myMessageBg = useThemeColor({ light: '#3b82f6', dark: '#2563eb' }, 'tint');
   const theirMessageBg = useThemeColor({ light: '#f0f1f3', dark: '#26282c' }, 'card');
+  const chatAreaBg = useThemeColor({ light: '#f7f5f2' }, 'background');
 
   const {
     messages,
@@ -148,6 +149,15 @@ export default function ConversationScreen() {
     });
     return map;
   }, [listItems]);
+  // FlatList sticks these indices to the top while their section scrolls by —
+  // the date pill behaves like WhatsApp's sticky day headers.
+  const stickyDateIndices = useMemo(
+    () => listItems.reduce<number[]>((acc, item, index) => {
+      if (item.type === 'date') acc.push(index);
+      return acc;
+    }, []),
+    [listItems]
+  );
 
   // Check block status when conversation loads
   useEffect(() => {
@@ -693,15 +703,17 @@ export default function ConversationScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 30}
       >
       {loadingMessages ? (
-        <View style={styles.loadingContainer}>
+        <View style={[styles.loadingContainer, { backgroundColor: chatAreaBg }]}>
           <BrandLoader />
         </View>
       ) : (
         <FlatList
           ref={flatListRef}
+          style={{ backgroundColor: chatAreaBg }}
           data={listItems}
           renderItem={renderListItem}
           keyExtractor={(item) => item.id}
+          stickyHeaderIndices={stickyDateIndices}
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           onScrollToIndexFailed={(info) => {
