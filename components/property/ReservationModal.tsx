@@ -36,6 +36,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isValidBookingPhone } from '@/lib/utils/phoneValidation';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
+import { SERVICE_FEE_ENABLED } from '@/constants/pricing';
 import CalendarDatePicker from './CalendarDatePicker';
 
 interface ReservationModalProps {
@@ -193,7 +194,7 @@ export default function ReservationModal({
   const nights = checkInDate && checkOutDate
     ? Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000) : 0;
   const subtotal = nights * pricePerNight;
-  const serviceFee = Math.round(subtotal * (serviceFeePercentage / 100));
+  const serviceFee = SERVICE_FEE_ENABLED ? Math.round(subtotal * (serviceFeePercentage / 100)) : 0;
   const total = subtotal + cleaningFee + serviceFee;
   const cur = currency === 'TZS' ? 'Tshs' : currency;
   const fmt = (n: number) => (n ?? 0).toLocaleString();
