@@ -304,6 +304,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         : message.isMine;
     const resolvedMessage = { ...message, isMine: resolvedIsMine };
 
+    console.log('[ChatContext] addMessageFromSubscription resolving isMine:', {
+      messageId: message.id,
+      senderId: message.senderId,
+      myUserId: myUserIdRef.current,
+      serverIsMine: message.isMine,
+      resolvedIsMine,
+      usedFallback: !(message.senderId && myUserIdRef.current),
+    });
+
     // Avoid duplicates (e.g. if the same message arrives via both subscription and the
     // sendMessage mutation response)
     setMessages(prev => {
