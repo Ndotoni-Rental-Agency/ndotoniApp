@@ -434,12 +434,6 @@ export default function ShortTermPropertyDetailsScreen() {
                   </Text>
                 </View>
               )}
-              {(property.serviceFeePercentage ?? 0) > 0 && (
-                <View style={styles.priceRow}>
-                  <Text style={[styles.priceLabel, { color: subtle }]}>Service fee</Text>
-                  <Text style={[styles.priceValue, { color: text }]}>{property.serviceFeePercentage}%</Text>
-                </View>
-              )}
             </View>
             <Text style={[styles.priceNote, { color: subtle }]}>Total shown once you select your dates</Text>
           </Animated.View>
