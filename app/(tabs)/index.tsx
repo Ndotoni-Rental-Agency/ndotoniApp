@@ -190,7 +190,7 @@ function CompactCard({ p, idx, isNew, text, subtle, border, onPress, cardWidth }
           <Text style={[styles.compactTitle, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
           <Text style={[styles.compactPrice, { color: text }]}>
             {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
-            <Text style={{ color: subtle, fontWeight: '400' }}> /n</Text>
+            <Text style={{ color: subtle, fontWeight: '400' }}> /night</Text>
           </Text>
         </View>
       </AnimatedPressable>
