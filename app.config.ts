@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     name: "ndotoni Stays",
     slug: "ndotoniApp",
-    version: "1.1.6",
+    version: "1.1.7",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "ndotoniapp",
