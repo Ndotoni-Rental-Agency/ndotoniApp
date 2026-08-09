@@ -11,11 +11,14 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import Reanimated from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
+import { useFocusBorderStyle } from '@/hooks/useFocusBorderStyle';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 
 interface ForgotPasswordModalProps {
@@ -41,7 +44,8 @@ export default function ForgotPasswordModal({
 
   const { forgotPassword } = useAuth();
   const { showAlert } = useAlert();
-  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
+  const { shouldRender, fadeAnim, slideAnim } = useOverlayModal(visible, onClose);
+  const emailFocus = useFocusBorderStyle(borderColor, tintColor);
 
   const handleSubmit = async () => {
     if (!email) {
@@ -86,15 +90,15 @@ export default function ForgotPasswordModal({
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContent, { backgroundColor }]}>
+        <Animated.View style={[styles.modalContent, { backgroundColor, transform: [{ translateY: slideAnim }] }]}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
               Reset Password
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} style={styles.closeButton} pressedScale={0.85} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -107,24 +111,26 @@ export default function ForgotPasswordModal({
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Email</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { color: textColor, backgroundColor: inputBg, borderColor },
-                ]}
-                placeholder="Enter your email"
-                placeholderTextColor={placeholderColor}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <Reanimated.View style={[styles.input, { backgroundColor: inputBg }, emailFocus.style]}>
+                <TextInput
+                  style={{ color: textColor, fontSize: 16 }}
+                  placeholder="Enter your email"
+                  placeholderTextColor={placeholderColor}
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={emailFocus.onFocus}
+                  onBlur={emailFocus.onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </Reanimated.View>
             </View>
 
             {/* Submit Button */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.submitButton, { backgroundColor: tintColor }]}
+              pressedScale={0.97}
               onPress={handleSubmit}
               disabled={isSubmitting}
             >
@@ -133,9 +139,9 @@ export default function ForgotPasswordModal({
               ) : (
                 <Text style={styles.submitButtonText}>Send Reset Link</Text>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Animated.View>
   );

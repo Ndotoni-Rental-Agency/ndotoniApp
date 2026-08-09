@@ -10,10 +10,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
-  FlatList,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -22,6 +22,31 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  Extrapolation,
+  FadeInDown,
+  SlideInRight,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+
+const entranceEasing = Easing.out(Easing.cubic);
+
+// Roughly how many rows sit "above the fold" on first load — those cascade in
+// together once the categories finish. Everything past that is only ever
+// revealed by scrolling, so it fades/rises in immediately as it enters view
+// (Airbnb-style progressive reveal) instead of waiting on the load sequence.
+const FIRST_SCREEN_COUNT = 6;
+const staggerDelay = (i: number) => Math.min(i, 6) * 45;
+const cardEntranceDelay = (idx: number) =>
+  idx < FIRST_SCREEN_COUNT ? CATEGORIES_ANIM_END + 150 + staggerDelay(idx) : 0;
 
 // Visual category cards
 const CATEGORIES = [
@@ -32,6 +57,146 @@ const CATEGORIES = [
   { id: 'photos', label: 'Photoshoot', icon: 'camera', param: 'PHOTOSHOOT', img: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?q=80&w=500&auto=format&fit=crop' },
   { id: 'business', label: 'Business', icon: 'briefcase', param: 'MEETING', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=500&auto=format&fit=crop' },
 ];
+
+// Categories slide in one at a time; everything below (the "More stays to
+// explore" title and the first screenful of cards) waits until that cascade
+// finishes, then follows on smoothly instead of animating at the same time.
+const CATEGORY_STAGGER = 150;
+const CATEGORY_DURATION = 1000;
+const CATEGORIES_ANIM_END = (CATEGORIES.length - 1) * CATEGORY_STAGGER + CATEGORY_DURATION;
+
+function Dot({ color, delay }: { color: string; delay: number }) {
+  const scale = useSharedValue(0.6);
+  useEffect(() => {
+    scale.value = withDelay(
+      delay,
+      withRepeat(withSequence(withTiming(1, { duration: 320 }), withTiming(0.6, { duration: 320 })), -1, true)
+    );
+  }, [delay, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return <Animated.View style={[styles.dot, { backgroundColor: color }, style]} />;
+}
+
+function ThreeDotsLoader({ color }: { color: string }) {
+  return (
+    <View style={styles.dotsRow}>
+      <Dot color={color} delay={0} />
+      <Dot color={color} delay={140} />
+      <Dot color={color} delay={280} />
+    </View>
+  );
+}
+
+// Cards revealed by scrolling fake a brief "still loading" beat (three dots,
+// resolving at a slightly different moment per card) before cross-fading
+// into the real content — purely cosmetic, the data is already in memory.
+function useFakeReveal(isNew: boolean, skip: boolean, idx: number) {
+  const [loading, setLoading] = useState(isNew && !skip);
+  useEffect(() => {
+    if (!loading) return;
+    const delay = 320 + Math.min(idx, 10) * 35;
+    const t = setTimeout(() => setLoading(false), delay);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return loading;
+}
+
+interface CardProps {
+  p: any;
+  idx: number;
+  isNew: boolean;
+  text: string;
+  subtle: string;
+  border: string;
+  onPress: () => void;
+}
+
+function WideCard({ p, idx, isNew, text, subtle, border, onPress, W }: CardProps & { W: number }) {
+  const isFirstScreen = idx < FIRST_SCREEN_COUNT;
+  const loading = useFakeReveal(isNew, isFirstScreen, idx);
+  const imgHeight = Math.min(W * 0.55, 380);
+
+  if (loading) {
+    return (
+      <View style={[styles.wideCard, styles.skeleton, { height: imgHeight + 78, backgroundColor: border }]}>
+        <ThreeDotsLoader color={subtle} />
+      </View>
+    );
+  }
+
+  return (
+    <Animated.View entering={isNew ? FadeInDown.delay(isFirstScreen ? cardEntranceDelay(idx) : 0).duration(360).easing(entranceEasing) : undefined}>
+      <AnimatedPressable style={styles.wideCard} pressedScale={0.97} onPress={onPress}>
+        <View style={[styles.wideImgWrap, { height: imgHeight }]}>
+          <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
+          <FavoriteButton propertyId={p.propertyId} size={20} style={styles.heart} />
+          {p.instantBookEnabled && (
+            <View style={styles.instantBadge}>
+              <Ionicons name="flash" size={11} color="#fff" />
+              <Text style={styles.instantBadgeText}>Instant</Text>
+            </View>
+          )}
+          {p.averageRating > 0 && (
+            <View style={styles.wideRatingBadge}>
+              <Ionicons name="star" size={11} color="#fff" />
+              <Text style={styles.wideRatingText}>{p.averageRating.toFixed(1)}</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.cardMeta}>
+          <Text style={[styles.loc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
+          <Text style={[styles.title, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
+          <Text style={[styles.price, { color: text }]}>
+            {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
+            <Text style={{ color: subtle, fontWeight: '400' }}> night</Text>
+          </Text>
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
+
+function CompactCard({ p, idx, isNew, text, subtle, border, onPress, cardWidth }: CardProps & { cardWidth: number }) {
+  const isFirstScreen = idx < FIRST_SCREEN_COUNT;
+  const loading = useFakeReveal(isNew, isFirstScreen, idx);
+  const imgHeight = cardWidth * 1.1;
+
+  if (loading) {
+    return (
+      <View style={styles.compactCard}>
+        <View style={[styles.skeleton, { height: imgHeight + 60, backgroundColor: border }]}>
+          <ThreeDotsLoader color={subtle} />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <Animated.View style={styles.compactCard} entering={isNew ? FadeInDown.delay(isFirstScreen ? cardEntranceDelay(idx) : 0).duration(360).easing(entranceEasing) : undefined}>
+      <AnimatedPressable pressedScale={0.97} onPress={onPress}>
+        <View style={[styles.compactImgWrap, { height: imgHeight }]}>
+          <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
+          <FavoriteButton propertyId={p.propertyId} size={16} style={styles.heartSmall} />
+          {p.instantBookEnabled && (
+            <View style={styles.instantBadgeSmall}>
+              <Ionicons name="flash" size={9} color="#fff" />
+              <Text style={styles.instantBadgeSmallText}>Instant</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.compactMeta}>
+          <Text style={[styles.compactLoc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
+          <Text style={[styles.compactTitle, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
+          <Text style={[styles.compactPrice, { color: text }]}>
+            {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
+            <Text style={{ color: subtle, fontWeight: '400' }}> /n</Text>
+          </Text>
+        </View>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -47,6 +212,16 @@ export default function HomeScreen() {
     checkOutDate: threeDays.toISOString().split('T')[0],
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // FlatList unmounts/remounts offscreen rows as they scroll past the virtualization
+  // window, which would re-fire `entering` every time a card scrolls back into view.
+  // Track which ids have already played their entrance so it only ever happens once.
+  const seenIds = useRef(new Set<string>()).current;
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
 
   const { appData, isLoading, error, refetch } = useCategorizedProperties('SHORT_TERM');
   const { hiddenIds } = useHiddenProperties();
@@ -81,57 +256,69 @@ export default function HomeScreen() {
   const featured: any = feed[0];
   const rest = feed.slice(1);
 
-  const renderWideCard = useCallback((p: any) => (
-    <TouchableOpacity style={styles.wideCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
-      <View style={[styles.wideImgWrap, { height: Math.min(W * 0.55, 380) }]}>
-        <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
-        <FavoriteButton propertyId={p.propertyId} size={20} style={styles.heart} />
-        {p.instantBookEnabled && (
-          <View style={styles.instantBadge}>
-            <Ionicons name="flash" size={11} color="#fff" />
-            <Text style={styles.instantBadgeText}>Instant</Text>
-          </View>
-        )}
-        {p.averageRating > 0 && (
-          <View style={styles.wideRatingBadge}>
-            <Ionicons name="star" size={11} color="#fff" />
-            <Text style={styles.wideRatingText}>{p.averageRating.toFixed(1)}</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.cardMeta}>
-        <Text style={[styles.loc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
-        <Text style={[styles.title, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
-        <Text style={[styles.price, { color: text }]}>
-          {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
-          <Text style={{ color: subtle, fontWeight: '400' }}> night</Text>
-        </Text>
-      </View>
-    </TouchableOpacity>
-  ), [W, text, subtle, router]);
+  // On Android especially, the hero's entrance was firing as soon as the
+  // component mounted — well before its (network) image had actually
+  // finished loading — so categories would cascade in above a still-blank
+  // hero, which then popped its image in a moment later looking like a
+  // second animation. Gate the hero's own entrance, and everything after
+  // it, on the image actually being ready instead of on mount.
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  useEffect(() => {
+    if (!featured?.thumbnail) {
+      setHeroImageLoaded(true);
+      return;
+    }
+    setHeroImageLoaded(false);
+    // Safety net in case the image errors silently or never fires onLoad —
+    // don't leave the rest of the screen waiting forever.
+    const t = setTimeout(() => setHeroImageLoaded(true), 2500);
+    return () => clearTimeout(t);
+  }, [featured?.propertyId, featured?.thumbnail]);
 
-  const renderCompactCard = useCallback((p: any) => (
-    <TouchableOpacity style={styles.compactCard} activeOpacity={0.92} onPress={() => router.push(`/short-property/${p.propertyId}`)}>
-      <View style={[styles.compactImgWrap, { height: COMPACT_CARD_WIDTH * 1.1 }]}>
-        <Image source={{ uri: p.thumbnail }} style={styles.fill} contentFit="cover" transition={200} />
-        <FavoriteButton propertyId={p.propertyId} size={16} style={styles.heartSmall} />
-        {p.instantBookEnabled && (
-          <View style={styles.instantBadgeSmall}>
-            <Ionicons name="flash" size={9} color="#fff" />
-            <Text style={styles.instantBadgeSmallText}>Instant</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.compactMeta}>
-        <Text style={[styles.compactLoc, { color: text }]} numberOfLines={1}>{p.district || p.region}</Text>
-        <Text style={[styles.compactTitle, { color: subtle }]} numberOfLines={1}>{p.title}</Text>
-        <Text style={[styles.compactPrice, { color: text }]}>
-          {p.currency === 'TZS' ? 'Tshs' : p.currency} {(p.nightlyRate || 0).toLocaleString()}
-          <Text style={{ color: subtle, fontWeight: '400' }}> /n</Text>
-        </Text>
-      </View>
-    </TouchableOpacity>
-  ), [COMPACT_CARD_WIDTH, text, subtle, router]);
+  const heroProgress = useSharedValue(0);
+  useEffect(() => {
+    if (heroImageLoaded) {
+      heroProgress.value = withTiming(1, { duration: 380, easing: entranceEasing });
+    }
+  }, [heroImageLoaded, heroProgress]);
+  const heroEntranceStyle = useAnimatedStyle(() => ({
+    opacity: heroProgress.value,
+    transform: [{ translateY: interpolate(heroProgress.value, [0, 1], [24, 0], Extrapolation.CLAMP) }],
+  }));
+
+  const renderWideCard = useCallback((p: any, idx: number = 0) => {
+    const isNew = !seenIds.has(p.propertyId);
+    if (isNew) seenIds.add(p.propertyId);
+    return (
+      <WideCard
+        p={p}
+        idx={idx}
+        isNew={isNew}
+        text={text}
+        subtle={subtle}
+        border={border}
+        W={W}
+        onPress={() => router.push(`/short-property/${p.propertyId}`)}
+      />
+    );
+  }, [W, text, subtle, border, router, seenIds]);
+
+  const renderCompactCard = useCallback((p: any, idx: number = 0) => {
+    const isNew = !seenIds.has(p.propertyId);
+    if (isNew) seenIds.add(p.propertyId);
+    return (
+      <CompactCard
+        p={p}
+        idx={idx}
+        isNew={isNew}
+        text={text}
+        subtle={subtle}
+        border={border}
+        cardWidth={COMPACT_CARD_WIDTH}
+        onPress={() => router.push(`/short-property/${p.propertyId}`)}
+      />
+    );
+  }, [COMPACT_CARD_WIDTH, text, subtle, border, router, seenIds]);
 
   // Build a varied layout: rows of `numColumns` compact cards, with a
   // full-width tall card breaking up the grid every numColumns+1 items —
@@ -143,7 +330,7 @@ export default function HomeScreen() {
 
     if (patternPos === numColumns) {
       // Full-width tall card
-      return renderWideCard(item);
+      return renderWideCard(item, index);
     }
     // Only the first position in a row renders — it pulls in the rest of
     // the row itself, the other positions are skipped here.
@@ -157,7 +344,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.pairRow}>
         {rowItems.map((p) => (
-          <React.Fragment key={p.propertyId}>{renderCompactCard(p)}</React.Fragment>
+          <React.Fragment key={p.propertyId}>{renderCompactCard(p, index)}</React.Fragment>
         ))}
         {Array.from({ length: numColumns - rowItems.length }).map((_, i) => (
           <View key={`pad-${i}`} style={styles.pairHalf} />
@@ -166,63 +353,93 @@ export default function HomeScreen() {
     );
   }, [rest, numColumns, renderWideCard, renderCompactCard]);
 
+  const headerBorderStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 40], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  const heroHeight = Math.min(W * 0.85, 520);
+  const heroImageStyle = useAnimatedStyle(() => {
+    const scale = interpolate(scrollY.value, [-120, 0], [1.25, 1], Extrapolation.CLAMP);
+    const translateY = interpolate(scrollY.value, [0, heroHeight], [0, heroHeight * 0.25], Extrapolation.CLAMP);
+    return { transform: [{ scale }, { translateY }] };
+  });
+
   // Header component with categories
   const ListHeader = () => (
     <>
       {/* Featured Hero Card */}
       {featured && (
-        <TouchableOpacity
-          style={styles.hero}
-          activeOpacity={0.9}
-          onPress={() => router.push(`/short-property/${featured.propertyId}`)}
-        >
-          <Image source={{ uri: featured.thumbnail || undefined }} style={[styles.fill, { height: Math.min(W * 0.85, 520) }]} contentFit="cover" transition={300} />
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroGradient} />
-          <FavoriteButton propertyId={featured.propertyId} size={22} style={styles.heroHeart} />
-          <View style={styles.heroInfo}>
-            <Text style={styles.heroLoc}>{featured.district || featured.region}</Text>
-            <Text style={styles.heroTitle} numberOfLines={2}>{featured.title}</Text>
-            <Text style={styles.heroPrice}>
-              {featured.currency === 'TZS' ? 'Tshs' : featured.currency} {(featured.nightlyRate || 0).toLocaleString()}
-              <Text style={styles.heroPriceUnit}> /night</Text>
-            </Text>
-          </View>
-          {featured.averageRating > 0 && (
-            <View style={styles.heroRating}>
-              <Ionicons name="star" size={12} color="#fff" />
-              <Text style={styles.heroRatingText}>{featured.averageRating.toFixed(1)}</Text>
+        <Animated.View style={heroEntranceStyle}>
+          <AnimatedPressable
+            style={styles.hero}
+            pressedScale={0.98}
+            onPress={() => router.push(`/short-property/${featured.propertyId}`)}
+          >
+            <Animated.View style={[{ width: '100%', height: heroHeight }, heroImageStyle]}>
+              <Image
+                source={{ uri: featured.thumbnail || undefined }}
+                style={styles.fill}
+                contentFit="cover"
+                transition={300}
+                onLoad={() => setHeroImageLoaded(true)}
+                onError={() => setHeroImageLoaded(true)}
+              />
+            </Animated.View>
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroGradient} />
+            <FavoriteButton propertyId={featured.propertyId} size={22} style={styles.heroHeart} />
+            <View style={styles.heroInfo}>
+              <Text style={styles.heroLoc}>{featured.district || featured.region}</Text>
+              <Text style={styles.heroTitle} numberOfLines={2}>{featured.title}</Text>
+              <Text style={styles.heroPrice}>
+                {featured.currency === 'TZS' ? 'Tshs' : featured.currency} {(featured.nightlyRate || 0).toLocaleString()}
+                <Text style={styles.heroPriceUnit}> /night</Text>
+              </Text>
             </View>
-          )}
-        </TouchableOpacity>
+            {featured.averageRating > 0 && (
+              <View style={styles.heroRating}>
+                <Ionicons name="star" size={12} color="#fff" />
+                <Text style={styles.heroRatingText}>{featured.averageRating.toFixed(1)}</Text>
+              </View>
+            )}
+          </AnimatedPressable>
+        </Animated.View>
       )}
 
-      {/* Categories Section */}
-      <View style={styles.catSection}>
-        <Text style={[styles.catTitle, { color: text }]}>Explore by occasion</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catScroll}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[styles.catCard, isTablet && styles.catCardTablet]}
-              activeOpacity={0.85}
-              onPress={() => router.push({ pathname: '/search', params: { category: cat.param } })}
-            >
-              <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
-              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />
-              <View style={[styles.catIconBadge, { backgroundColor: tint }]}>
-                <Ionicons name={cat.icon as any} size={14} color="#fff" />
-              </View>
-              <View style={styles.catOverlay}>
-                <Text style={styles.catLabel}>{cat.label}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      {/* Categories + feed title only start their entrance once the hero image
+          is actually ready, so nothing cascades in ahead of it. */}
+      {heroImageLoaded && (
+        <>
+          <View style={styles.catSection}>
+            <Text style={[styles.catTitle, { color: text }]}>Explore by occasion</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catScroll}>
+              {CATEGORIES.map((cat, idx) => (
+                <Animated.View key={cat.id} entering={SlideInRight.delay(idx * CATEGORY_STAGGER).duration(CATEGORY_DURATION).easing(entranceEasing)}>
+                  <AnimatedPressable
+                    style={[styles.catCard, isTablet && styles.catCardTablet]}
+                    pressedScale={0.95}
+                    onPress={() => router.push({ pathname: '/search', params: { category: cat.param } })}
+                  >
+                    <Image source={{ uri: cat.img }} style={styles.catImg} contentFit="cover" transition={200} />
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={styles.catGrad} />
+                    <View style={[styles.catIconBadge, { backgroundColor: tint }]}>
+                      <Ionicons name={cat.icon as any} size={14} color="#fff" />
+                    </View>
+                    <View style={styles.catOverlay}>
+                      <Text style={styles.catLabel}>{cat.label}</Text>
+                    </View>
+                  </AnimatedPressable>
+                </Animated.View>
+              ))}
+            </ScrollView>
+          </View>
 
-      {/* Section title for feed */}
-      {rest.length > 0 && (
-        <Text style={[styles.feedTitle, { color: text }]}>More stays to explore</Text>
+          {/* Section title for feed */}
+          {rest.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(CATEGORIES_ANIM_END + 60).duration(380).easing(entranceEasing)}>
+              <Text style={[styles.feedTitle, { color: text }]}>More stays to explore</Text>
+            </Animated.View>
+          )}
+        </>
       )}
     </>
   );
@@ -230,12 +447,13 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={['top']}>
       {/* Sticky search bar */}
-      <View style={[styles.headerBar, { backgroundColor: bg, borderBottomColor: border }]}>
+      <View style={[styles.headerBar, { backgroundColor: bg }]}>
         <SearchBar
           onPress={() => setShowSearchModal(true)}
           checkInDate={searchParams.checkInDate}
           checkOutDate={searchParams.checkOutDate}
         />
+        <Animated.View pointerEvents="none" style={[styles.headerBarBorder, { backgroundColor: border }, headerBorderStyle]} />
       </View>
 
       <SearchModal
@@ -260,13 +478,23 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={rest}
+        <Animated.FlatList
+          data={heroImageLoaded ? rest : []}
           keyExtractor={(p: any) => p.propertyId}
           renderItem={renderFeedItem}
           ListHeaderComponent={ListHeader}
           contentContainerStyle={styles.feedContainer}
           showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          // All properties are already fetched in memory, but FlatList's defaults
+          // (initialNumToRender: 10, windowSize: 21 "screens") mean most of a short
+          // list like this mounts immediately anyway — every image starts loading
+          // at once instead of a few, with the rest appearing as you scroll. These
+          // tighter values make the rows actually render progressively.
+          initialNumToRender={4}
+          maxToRenderPerBatch={3}
+          windowSize={5}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={tint} />}
           ListEmptyComponent={
             !featured ? (
@@ -285,7 +513,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerBar: { borderBottomWidth: 1 },
+  headerBar: { position: 'relative' },
+  headerBarBorder: { position: 'absolute', left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 100 },
   errTitle: { fontSize: 16, fontWeight: '600', marginTop: 10 },
   errSub: { fontSize: 13, marginTop: 4, textAlign: 'center' },
@@ -324,6 +553,11 @@ const styles = StyleSheet.create({
 
   // Feed
   feedTitle: { fontSize: 19, fontWeight: '700', paddingHorizontal: 20, marginTop: 28, marginBottom: 14, letterSpacing: -0.3 },
+
+  // Fake "still loading" skeleton for cards revealed by scrolling
+  skeleton: { borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  dotsRow: { flexDirection: 'row', gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 3.5 },
 
   // Wide full-width card
   wideCard: { marginHorizontal: 16, marginBottom: 24 },

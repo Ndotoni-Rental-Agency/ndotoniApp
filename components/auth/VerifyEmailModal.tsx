@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,7 +44,7 @@ export default function VerifyEmailModal({
 
   const { resendVerificationCode } = useAuth();
   const { showAlert } = useAlert();
-  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
+  const { shouldRender, fadeAnim, slideAnim } = useOverlayModal(visible, onClose);
 
   const handleResend = async () => {
     setIsResending(true);
@@ -67,15 +68,15 @@ export default function VerifyEmailModal({
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContent, { backgroundColor }]}>
+        <Animated.View style={[styles.modalContent, { backgroundColor, transform: [{ translateY: slideAnim }] }]}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
               Check your email
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} style={styles.closeButton} pressedScale={0.85} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
@@ -85,14 +86,15 @@ export default function VerifyEmailModal({
             </Text>
           </View>
 
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.submitButton, { backgroundColor: tintColor }]}
+            pressedScale={0.97}
             onPress={() => {
               onVerified();
             }}
           >
             <Text style={styles.submitButtonText}>Got it</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
           <View style={styles.resendContainer}>
             <Text style={[styles.resendText, { color: placeholderColor }]}>
@@ -104,7 +106,7 @@ export default function VerifyEmailModal({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Animated.View>
   );

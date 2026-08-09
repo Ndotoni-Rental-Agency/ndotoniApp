@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
@@ -22,12 +23,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, { Easing, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const entranceEasing = Easing.out(Easing.cubic);
 
 export default function SearchScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const { numColumns, cardWidth: CARD_WIDTH } = useResponsiveGrid({ horizontalPadding: 40 });
+  const HORIZONTAL_PADDING = 40;
+  const { width, isTablet, numColumns: tabletColumns, cardWidth: tabletCardWidth } = useResponsiveGrid({ horizontalPadding: HORIZONTAL_PADDING });
+  // Search results carry more detail per card than the home feed grid, so a
+  // 2-up tile reads as cramped on a phone — go single-column there and keep
+  // the tablet's wider grid.
+  const numColumns = isTablet ? tabletColumns : 1;
+  const CARD_WIDTH = isTablet ? tabletCardWidth : width - HORIZONTAL_PADDING;
   const { hiddenIds } = useHiddenProperties();
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -229,15 +239,17 @@ export default function SearchScreen() {
     ? `${formatDateShort(checkInDate)} – ${formatDateShort(checkOutDate)}`
     : 'Any dates';
 
-  const IMG_H = CARD_WIDTH;
+  // Tablet keeps the roughly-square grid-tile aspect; the phone's single wide
+  // column reads better with a shorter, more panoramic hero image instead.
+  const IMG_H = isTablet ? CARD_WIDTH * 0.7 : CARD_WIDTH * 0.62;
 
   const renderCard = ({ item: property }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.card, { width: CARD_WIDTH }]}
-      activeOpacity={0.95}
+    <AnimatedPressable
+      style={[styles.card, { width: CARD_WIDTH, backgroundColor: cardBg }]}
+      pressedScale={0.98}
       onPress={() => router.push(`/short-property/${property.propertyId}`)}
     >
-      <View style={[styles.cardImg, { height: IMG_H * 0.7 }]}>  
+      <View style={[styles.cardImg, { height: IMG_H }]}>
         <Image
           source={{ uri: property.thumbnail }}
           style={{ width: '100%', height: '100%' }}
@@ -269,11 +281,13 @@ export default function SearchScreen() {
             </View>
           )}
         </View>
-        <Text style={[styles.cardName, { color: subtleColor }]} numberOfLines={1}>
+        <Text style={[styles.cardName, { color: subtleColor }]} numberOfLines={isTablet ? 1 : 2}>
           {property.title}
         </Text>
         <Text style={[styles.cardMeta, { color: subtleColor }]} numberOfLines={1}>
-          {property.propertyType}{property.maxGuests ? ` · ${property.maxGuests} guests` : ''}
+          {property.propertyType}
+          {property.bedrooms ? ` · ${property.bedrooms} bed${property.bedrooms !== 1 ? 's' : ''}` : ''}
+          {property.maxGuests ? ` · ${property.maxGuests} guests` : ''}
         </Text>
         <Text style={[styles.cardPrice, { color: textColor }]}>
           {property.currency === 'TZS' ? 'Tshs' : property.currency}{' '}
@@ -281,15 +295,15 @@ export default function SearchScreen() {
           <Text style={[styles.cardNight, { color: subtleColor }]}> night</Text>
         </Text>
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       {/* Compact header */}
-      <View style={[styles.header, { borderBottomColor: borderColor }]}>
+      <Animated.View entering={FadeInDown.duration(360).easing(entranceEasing)} style={[styles.header, { borderBottomColor: borderColor }]}>
         {/* Search summary pill (tappable to go back) */}
-        <TouchableOpacity style={[styles.searchPill, { backgroundColor: cardBg, borderColor }]} onPress={() => router.back()}>
+        <AnimatedPressable style={[styles.searchPill, { backgroundColor: cardBg, borderColor }]} pressedScale={0.98} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={18} color={textColor} />
           <View style={styles.searchPillText}>
             <Text style={[styles.searchPillTitle, { color: textColor }]} numberOfLines={1}>
@@ -299,55 +313,59 @@ export default function SearchScreen() {
               {subtitle} · {filteredProperties.length} stay{filteredProperties.length !== 1 ? 's' : ''}
             </Text>
           </View>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Filter chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipBar}>
           {/* Location chip */}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.chip, { borderColor }]}
+            pressedScale={0.94}
             onPress={() => setShowLocationPicker(true)}
           >
             <Ionicons name="location-outline" size={14} color={textColor} />
             <Text style={[styles.chipText, { color: textColor }]}>
               {selectedRegion ? toTitleCase(selectedRegion) : 'Region'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
           {/* Filters chip */}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.chip, { borderColor }, activeFilterCount > 0 && { borderColor: tintColor }]}
+            pressedScale={0.94}
             onPress={() => setShowFilterModal(true)}
           >
             <Ionicons name="options-outline" size={14} color={activeFilterCount > 0 ? tintColor : textColor} />
             <Text style={[styles.chipText, { color: activeFilterCount > 0 ? tintColor : textColor }]}>
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
           {/* Instant Book quick filter */}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.chip, { borderColor }, instantOnly && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
+            pressedScale={0.94}
             onPress={() => setInstantOnly(v => !v)}
           >
             <Ionicons name="flash" size={14} color={instantOnly ? tintColor : textColor} />
             <Text style={[styles.chipText, { color: instantOnly ? tintColor : textColor }]}>
               Instant Book
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
           {/* Top rated quick filter */}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.chip, { borderColor }, topRatedOnly && { borderColor: tintColor, backgroundColor: `${tintColor}12` }]}
+            pressedScale={0.94}
             onPress={() => setTopRatedOnly(v => !v)}
           >
             <Ionicons name="star" size={14} color={topRatedOnly ? tintColor : textColor} />
             <Text style={[styles.chipText, { color: topRatedOnly ? tintColor : textColor }]}>
               Top rated
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </ScrollView>
-      </View>
+      </Animated.View>
 
       {/* Results */}
       {isLoading ? (
@@ -375,6 +393,12 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
+          // Fetched pages (20 at a time) would otherwise mostly mount at once under
+          // FlatList's generous defaults — render a handful first and let the rest
+          // render progressively as the user scrolls, same as the homepage feed.
+          initialNumToRender={4}
+          maxToRenderPerBatch={3}
+          windowSize={5}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); fetchProperties(); }} tintColor={tintColor} />}
           ListFooterComponent={
             isLoadingMore ? (
@@ -462,8 +486,11 @@ const styles = StyleSheet.create({
   // List
   list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
   row: { justifyContent: 'space-between' },
-  card: { marginBottom: 28 },
-  cardImg: { borderRadius: 20, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  card: {
+    marginBottom: 22, borderRadius: 20, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+  },
+  cardImg: { backgroundColor: '#f0f0f0' },
   cardFav: {
     position: 'absolute', top: 12, right: 12,
     width: 34, height: 34, borderRadius: 17,
@@ -476,7 +503,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#00ce54', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
   },
   cardInstantText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  cardBody: { paddingTop: 10 },
+  cardBody: { paddingTop: 12, paddingHorizontal: 14, paddingBottom: 16 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardLoc: { fontSize: 15, fontWeight: '700', flex: 1, letterSpacing: -0.2 },
   cardRating: { flexDirection: 'row', alignItems: 'center', gap: 3 },

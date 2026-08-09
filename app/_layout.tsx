@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import '@/polyfills';
 
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthPromptProvider } from '@/contexts/AuthPromptContext';
 import { AlertProvider } from '@/contexts/AlertContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -55,9 +56,11 @@ export default function RootLayout() {
           <ChatProvider>
             <PushNotificationProvider>
               <AlertProvider>
-                <ErrorBoundary>
-                  <RootLayoutContent />
-                </ErrorBoundary>
+                <AuthPromptProvider>
+                  <ErrorBoundary>
+                    <RootLayoutContent />
+                  </ErrorBoundary>
+                </AuthPromptProvider>
               </AlertProvider>
             </PushNotificationProvider>
           </ChatProvider>

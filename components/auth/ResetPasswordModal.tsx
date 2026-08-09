@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
 
@@ -35,7 +36,7 @@ export default function ResetPasswordModal({
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
 
-  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
+  const { shouldRender, fadeAnim, slideAnim } = useOverlayModal(visible, onClose);
 
   if (!shouldRender) return null;
 
@@ -47,15 +48,15 @@ export default function ResetPasswordModal({
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContent, { backgroundColor }]}>
+        <Animated.View style={[styles.modalContent, { backgroundColor, transform: [{ translateY: slideAnim }] }]}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>
               Check your email
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} style={styles.closeButton} pressedScale={0.85} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <View style={[styles.infoBox, { backgroundColor: `${tintColor}20`, borderColor: `${tintColor}40` }]}>
@@ -65,13 +66,14 @@ export default function ResetPasswordModal({
             </Text>
           </View>
 
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.submitButton, { backgroundColor: tintColor }]}
+            pressedScale={0.97}
             onPress={onReset}
           >
             <Text style={styles.submitButtonText}>Got it</Text>
-          </TouchableOpacity>
-        </View>
+          </AnimatedPressable>
+        </Animated.View>
       </View>
     </Animated.View>
   );

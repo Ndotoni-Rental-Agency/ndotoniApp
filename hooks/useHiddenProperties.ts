@@ -10,7 +10,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 // =============================================================================
 // CONFIG
@@ -38,6 +38,22 @@ const listeners = new Set<() => void>();
 function notifyAll() {
   version++;
   listeners.forEach(fn => fn());
+}
+
+// useSyncExternalStore plumbing — see useFavorites.ts for why this matters:
+// with the React Compiler enabled (app.config.ts), a hand-rolled
+// useReducer+listeners subscription looks pure to its static analysis and
+// can get memoized across renders, so a hide/unhide would only show up
+// after a full remount. useSyncExternalStore is the compiler-safe way to
+// subscribe to state that lives outside React.
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  loadFromStorage();
+  return () => { listeners.delete(callback); };
+}
+
+function getVersion() {
+  return version;
 }
 
 function rebuildSet() {
@@ -93,25 +109,19 @@ export function syncHiddenPropertiesFromServer(serverIds: string[] | null | unde
   for (const id of serverIds) {
     if (!globalIds.has(id)) {
       globalEntries.push({ propertyId: id, hiddenAt: Date.now() });
-      globalIds.add(id);
       changed = true;
     }
   }
   if (changed) {
+    rebuildSet();
     persist();
     notifyAll();
   }
 }
 
 export function useHiddenProperties() {
-  // Force re-render when global state changes
-  const [, forceUpdate] = useReducer(x => x + 1, 0);
-
-  useEffect(() => {
-    loadFromStorage();
-    listeners.add(forceUpdate);
-    return () => { listeners.delete(forceUpdate); };
-  }, []);
+  // Re-renders this component whenever notifyAll() bumps `version`.
+  const storeVersion = useSyncExternalStore(subscribe, getVersion, getVersion);
 
   /** Merge server-side hidden IDs (from getMe) into local state */
   const syncFromServer = useCallback((serverIds: string[] | null | undefined) => {
@@ -120,11 +130,11 @@ export function useHiddenProperties() {
     for (const id of serverIds) {
       if (!globalIds.has(id)) {
         globalEntries.push({ propertyId: id, hiddenAt: Date.now() });
-        globalIds.add(id);
         changed = true;
       }
     }
     if (changed) {
+      rebuildSet();
       persist();
       notifyAll();
     }
@@ -134,7 +144,7 @@ export function useHiddenProperties() {
     if (globalIds.has(propertyId)) return; // already hidden
 
     globalEntries.push({ propertyId, hiddenAt: Date.now() });
-    globalIds.add(propertyId);
+    rebuildSet();
     persist();
     notifyAll();
   }, []);
@@ -143,18 +153,21 @@ export function useHiddenProperties() {
     if (!globalIds.has(propertyId)) return;
 
     globalEntries = globalEntries.filter(e => e.propertyId !== propertyId);
-    globalIds.delete(propertyId);
+    rebuildSet();
     persist();
     notifyAll();
   }, []);
 
+  // See useFavorites.ts for why this depends on storeVersion — with the
+  // React Compiler enabled, a `[]`-deps callback here can get memoized by
+  // identity in a consumer and never notice globalIds changed.
   const isHidden = useCallback((propertyId: string) => {
     return globalIds.has(propertyId);
-  }, []);
+  }, [storeVersion]);
 
   const clearAll = useCallback(async () => {
     globalEntries = [];
-    globalIds.clear();
+    rebuildSet();
     await AsyncStorage.removeItem(STORAGE_KEY);
     notifyAll();
   }, []);

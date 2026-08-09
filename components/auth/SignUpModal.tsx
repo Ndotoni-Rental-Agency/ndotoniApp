@@ -1,10 +1,12 @@
 import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
+import { useFocusBorderStyle } from '@/hooks/useFocusBorderStyle';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
@@ -19,6 +21,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Reanimated from 'react-native-reanimated';
 
 interface SignUpModalProps {
   visible: boolean;
@@ -46,7 +49,11 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
 
   const { signUp, signUpWithSocial, isAuthenticated } = useAuth();
   const { showAlert } = useAlert();
-  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
+  const { shouldRender, fadeAnim, slideAnim } = useOverlayModal(visible, onClose);
+  const firstNameFocus = useFocusBorderStyle(borderColor, tintColor);
+  const lastNameFocus = useFocusBorderStyle(borderColor, tintColor);
+  const emailFocus = useFocusBorderStyle(borderColor, tintColor);
+  const passwordFocus = useFocusBorderStyle(borderColor, tintColor);
 
   // Auto-close modal when auth state changes to authenticated
   useEffect(() => {
@@ -157,7 +164,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContent, { backgroundColor }]}>
+        <Animated.View style={[styles.modalContent, { backgroundColor, transform: [{ translateY: slideAnim }] }]}>
           {/* Social sign-in loading overlay */}
           {isSocialLoading && (
             <View style={[styles.loadingOverlay, { backgroundColor }]}>
@@ -172,29 +179,31 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Create Account</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} style={styles.closeButton} pressedScale={0.85} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Google Sign Up */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              pressedScale={0.97}
               onPress={handleGoogleSignUp}
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Google</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Apple Sign Up */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              pressedScale={0.97}
               onPress={handleAppleSignUp}
             >
               <Ionicons name="logo-apple" size={20} color={textColor} />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Divider */}
             <View style={styles.divider}>
@@ -207,75 +216,90 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
             <View style={styles.row}>
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <Text style={[styles.label, { color: textColor }]}>First Name</Text>
-                <TextInput
-                  style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                  placeholder="First name"
-                  placeholderTextColor={placeholderColor}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoCapitalize="words"
-                />
+                <Reanimated.View style={[styles.input, { backgroundColor: inputBg }, firstNameFocus.style]}>
+                  <TextInput
+                    style={{ color: textColor, fontSize: 16 }}
+                    placeholder="First name"
+                    placeholderTextColor={placeholderColor}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    onFocus={firstNameFocus.onFocus}
+                    onBlur={firstNameFocus.onBlur}
+                    autoCapitalize="words"
+                  />
+                </Reanimated.View>
               </View>
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <Text style={[styles.label, { color: textColor }]}>Last Name</Text>
-                <TextInput
-                  style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                  placeholder="Last name"
-                  placeholderTextColor={placeholderColor}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  autoCapitalize="words"
-                />
+                <Reanimated.View style={[styles.input, { backgroundColor: inputBg }, lastNameFocus.style]}>
+                  <TextInput
+                    style={{ color: textColor, fontSize: 16 }}
+                    placeholder="Last name"
+                    placeholderTextColor={placeholderColor}
+                    value={lastName}
+                    onChangeText={setLastName}
+                    onFocus={lastNameFocus.onFocus}
+                    onBlur={lastNameFocus.onBlur}
+                    autoCapitalize="words"
+                  />
+                </Reanimated.View>
               </View>
             </View>
 
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Email</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                placeholder="Enter your email"
-                placeholderTextColor={placeholderColor}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <Reanimated.View style={[styles.input, { backgroundColor: inputBg }, emailFocus.style]}>
+                <TextInput
+                  style={{ color: textColor, fontSize: 16 }}
+                  placeholder="Enter your email"
+                  placeholderTextColor={placeholderColor}
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={emailFocus.onFocus}
+                  onBlur={emailFocus.onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </Reanimated.View>
             </View>
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Password</Text>
-              <View style={[styles.passwordContainer, { backgroundColor: inputBg, borderColor }]}>
+              <Reanimated.View style={[styles.passwordContainer, { backgroundColor: inputBg }, passwordFocus.style]}>
                 <TextInput
                   style={[styles.passwordInput, { color: textColor }]}
                   placeholder="At least 8 characters"
                   placeholderTextColor={placeholderColor}
                   value={password}
                   onChangeText={setPassword}
+                  onFocus={passwordFocus.onFocus}
+                  onBlur={passwordFocus.onBlur}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                <TouchableOpacity
+                <AnimatedPressable
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
+                  pressedScale={0.85}
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off' : 'eye'}
                     size={22}
                     color={placeholderColor}
                   />
-                </TouchableOpacity>
-              </View>
+                </AnimatedPressable>
+              </Reanimated.View>
             </View>
 
             {/* Terms Agreement Checkbox */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.termsRow}
+              pressedScale={0.98}
               onPress={() => setAgreedToTerms(!agreedToTerms)}
-              activeOpacity={0.7}
             >
               <View style={[
                 styles.checkbox,
@@ -292,11 +316,12 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
                 {' '}and{' '}
                 <Text style={[styles.termsLink, { color: tintColor }]} onPress={() => Linking.openURL('https://www.ndotoni.com/privacy')}>Privacy Policy</Text>
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Sign Up Button */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.submitButton, { backgroundColor: tintColor }]}
+              pressedScale={0.97}
               onPress={handleSignUp}
               disabled={isSubmitting}
             >
@@ -305,7 +330,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
               ) : (
                 <Text style={styles.submitButtonText}>Create Account</Text>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Switch to Sign In */}
             <View style={styles.switchMode}>
@@ -317,7 +342,7 @@ export default function SignUpModal({ visible, onClose, onSwitchToSignIn, onNeed
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Animated.View>
   );

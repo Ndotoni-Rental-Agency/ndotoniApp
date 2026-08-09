@@ -3,11 +3,21 @@
  * Only THIS component re-renders when favorites change — the parent card/list doesn't.
  */
 
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import { Secondary } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthPrompt } from '@/contexts/AuthPromptContext';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, ViewStyle } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 
 interface FavoriteButtonProps {
   propertyId: string;
@@ -19,27 +29,57 @@ interface FavoriteButtonProps {
 
 export default function FavoriteButton({ propertyId, size = 18, variant = 'dark-bg', style }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
+  const { isAuthenticated } = useAuth();
+  const { requireAuth } = useAuthPrompt();
   const favorited = isFavorited(propertyId);
+  const scale = useSharedValue(1);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    scale.value = withSequence(
+      withSpring(1.3, { damping: 8, stiffness: 400 }),
+      withSpring(1, { damping: 10, stiffness: 300 })
+    );
+  }, [favorited, scale]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[
         styles.btn,
         variant === 'light-bg' ? styles.lightBg : styles.darkBg,
         style,
       ]}
-      onPress={() => toggleFavorite(propertyId)}
+      pressedScale={0.85}
+      onPress={() => {
+        if (!isAuthenticated) {
+          requireAuth();
+          return;
+        }
+        toggleFavorite(propertyId);
+        if (process.env.EXPO_OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={favorited ? 'Remove from favorites' : 'Add to favorites'}
     >
-      <Ionicons
-        name={favorited ? 'heart' : 'heart-outline'}
-        size={size}
-        color={favorited ? Secondary[600] : variant === 'dark-bg' ? '#fff' : '#222'}
-      />
-    </TouchableOpacity>
+      <Animated.View style={iconStyle}>
+        <Ionicons
+          name={favorited ? 'heart' : 'heart-outline'}
+          size={size}
+          color={favorited ? Secondary[600] : variant === 'dark-bg' ? '#fff' : '#222'}
+        />
+      </Animated.View>
+    </AnimatedPressable>
   );
 }
 

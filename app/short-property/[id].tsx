@@ -28,11 +28,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
   ActivityIndicator,
-  Animated,
   Dimensions,
   Modal,
   Share,
@@ -42,15 +42,30 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  Extrapolation,
+  FadeInDown,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 const { height: H } = Dimensions.get('window');
+const entranceEasing = Easing.out(Easing.cubic);
 
 export default function ShortTermPropertyDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const propertyId = params.id as string;
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
   const { showAlert } = useAlert();
 
   const [showReservation, setShowReservation] = useState(false);
@@ -87,10 +102,15 @@ export default function ShortTermPropertyDetailsScreen() {
   const GALLERY_H = H * 0.42;
 
   // Header opacity animation
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, GALLERY_H - 100, GALLERY_H - 60],
-    outputRange: [0, 0, 1],
-    extrapolate: 'clamp',
+  const headerAnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, GALLERY_H - 100, GALLERY_H - 60], [0, 0, 1], Extrapolation.CLAMP),
+  }));
+
+  // Gallery parallax / rubber-band zoom
+  const galleryImageStyle = useAnimatedStyle(() => {
+    const scale = interpolate(scrollY.value, [-120, 0], [1.2, 1], Extrapolation.CLAMP);
+    const translateY = interpolate(scrollY.value, [0, GALLERY_H], [0, GALLERY_H * 0.2], Extrapolation.CLAMP);
+    return { transform: [{ scale }, { translateY }] };
   });
 
   const handleShare = async () => {
@@ -201,15 +221,15 @@ export default function ShortTermPropertyDetailsScreen() {
       <StatusBar style="light" />
 
       {/* ─── ANIMATED HEADER (shows on scroll) ─── */}
-      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, paddingTop: insets.top, backgroundColor: card, borderBottomColor: border }]}>
-        <TouchableOpacity style={styles.stickyBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
+      <Animated.View style={[styles.stickyHeader, headerAnimStyle, { paddingTop: insets.top, backgroundColor: card, borderBottomColor: border }]}>
+        <AnimatedPressable style={styles.stickyBtn} pressedScale={0.88} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={20} color={text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={[styles.stickyTitle, { color: text }]} numberOfLines={1}>{property.title}</Text>
         <View style={styles.stickyRight}>
-          <TouchableOpacity style={styles.stickyBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
+          <AnimatedPressable style={styles.stickyBtn} pressedScale={0.88} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
             <Ionicons name="share-outline" size={18} color={text} />
-          </TouchableOpacity>
+          </AnimatedPressable>
           <FavoriteButton propertyId={propertyId} size={18} variant="light-bg" style={styles.stickyBtn} />
         </View>
       </Animated.View>
@@ -218,17 +238,19 @@ export default function ShortTermPropertyDetailsScreen() {
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+        onScroll={scrollHandler}
       >
         {/* ─── IMAGE GALLERY ─── */}
-        <View style={{ height: GALLERY_H }}>
-          {images.length > 0 ? (
-            <GalleryCarousel images={images} height={GALLERY_H} onTap={openGallery} />
-          ) : (
-            <View style={{ flex: 1, backgroundColor: border, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="image-outline" size={48} color={subtle} />
-            </View>
-          )}
+        <View style={{ height: GALLERY_H, overflow: 'hidden' }}>
+          <Animated.View style={[{ flex: 1 }, galleryImageStyle]}>
+            {images.length > 0 ? (
+              <GalleryCarousel images={images} height={GALLERY_H} onTap={openGallery} />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: border, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="image-outline" size={48} color={subtle} />
+              </View>
+            )}
+          </Animated.View>
 
           {/* Gradient overlay at bottom for smooth transition */}
           <LinearGradient
@@ -238,26 +260,26 @@ export default function ShortTermPropertyDetailsScreen() {
 
           {/* Nav buttons on image */}
           <View style={[styles.navOverlay, { paddingTop: insets.top + 8 }]}>
-            <TouchableOpacity style={styles.navBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
+            <AnimatedPressable style={styles.navBtn} pressedScale={0.88} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
               <Ionicons name="chevron-back" size={22} color="#fff" />
-            </TouchableOpacity>
+            </AnimatedPressable>
             <View style={styles.navRight}>
-              <TouchableOpacity style={styles.navBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
+              <AnimatedPressable style={styles.navBtn} pressedScale={0.88} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share">
                 <Ionicons name="share-outline" size={20} color="#fff" />
-              </TouchableOpacity>
+              </AnimatedPressable>
               <FavoriteButton propertyId={propertyId} size={20} style={styles.navBtn} />
-              <TouchableOpacity style={styles.navBtn} onPress={handleOpenReport} accessibilityRole="button" accessibilityLabel="Report listing">
+              <AnimatedPressable style={styles.navBtn} pressedScale={0.88} onPress={handleOpenReport} accessibilityRole="button" accessibilityLabel="Report listing">
                 <Ionicons name="flag-outline" size={18} color="#fff" />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </View>
 
           {/* Show all photos button */}
           {images.length > 1 && (
-            <TouchableOpacity style={styles.showPhotosBtn} onPress={() => openGallery(0)}>
+            <AnimatedPressable style={styles.showPhotosBtn} pressedScale={0.94} onPress={() => openGallery(0)}>
               <Ionicons name="grid-outline" size={14} color="#fff" />
               <Text style={styles.showPhotosBtnText}>Show all photos</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           )}
         </View>
 
@@ -265,7 +287,7 @@ export default function ShortTermPropertyDetailsScreen() {
         <View style={[styles.content, { backgroundColor: bg }]}>
 
           {/* ── Title Section ── */}
-          <View style={styles.titleSection}>
+          <Animated.View entering={FadeInDown.delay(0).duration(320).easing(entranceEasing)} style={styles.titleSection}>
             <View style={styles.typeRow}>
               <View style={[styles.typeBadge, { backgroundColor: `${tint}10` }]}>
                 <Text style={[styles.typeText, { color: tint }]}>{property.propertyType}</Text>
@@ -302,14 +324,14 @@ export default function ShortTermPropertyDetailsScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </Animated.View>
 
           <View style={[styles.separator, { backgroundColor: border }]} />
 
           {/* ── Host quick row ── */}
           {property.host && (
             <>
-              <View style={styles.hostSection}>
+              <Animated.View entering={FadeInDown.delay(60).duration(320).easing(entranceEasing)} style={styles.hostSection}>
                 <View style={styles.hostRow}>
                   <View style={[styles.hostAvatar, { backgroundColor: `${tint}12` }]}>
                     {property.host.profileImage ? (
@@ -330,8 +352,9 @@ export default function ShortTermPropertyDetailsScreen() {
                         : 'Usually responds within a few hours'}
                     </Text>
                   </View>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={[styles.contactBtn, { backgroundColor: `${tint}15`, borderColor: tint }]}
+                    pressedScale={0.9}
                     onPress={handleContactHost}
                     disabled={chatLoading}
                   >
@@ -340,9 +363,9 @@ export default function ShortTermPropertyDetailsScreen() {
                     ) : (
                       <Ionicons name="chatbubble-ellipses" size={20} color={tint} />
                     )}
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
-              </View>
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
@@ -350,11 +373,11 @@ export default function ShortTermPropertyDetailsScreen() {
           {/* ── Highlights ── */}
           {highlights.length > 0 && (
             <>
-              <View style={styles.highlightsSection}>
+              <Animated.View entering={FadeInDown.delay(120).duration(320).easing(entranceEasing)} style={styles.highlightsSection}>
                 {highlights.slice(0, 3).map((h, i) => (
                   <HighlightCard key={i} icon={h.icon} title={h.title} subtitle={h.subtitle} tint={tint} text={text} />
                 ))}
-              </View>
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
@@ -362,7 +385,9 @@ export default function ShortTermPropertyDetailsScreen() {
           {/* ── Description ── */}
           {property.description ? (
             <>
-              <PropertyDescription description={property.description} textColor={text} tintColor={tint} />
+              <Animated.View entering={FadeInDown.delay(180).duration(320).easing(entranceEasing)}>
+                <PropertyDescription description={property.description} textColor={text} tintColor={tint} />
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           ) : null}
@@ -370,25 +395,29 @@ export default function ShortTermPropertyDetailsScreen() {
           {/* ── Amenities ── */}
           {(property.amenities?.length ?? 0) > 0 && (
             <>
-              <PropertyAmenities
-                amenities={property.amenities!}
-                textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border}
-              />
+              <Animated.View entering={FadeInDown.delay(240).duration(320).easing(entranceEasing)}>
+                <PropertyAmenities
+                  amenities={property.amenities!}
+                  textColor={text} tintColor={tint} backgroundColor={bg} borderColor={border}
+                />
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
           {/* ── Details (check-in/out, guests, etc.) ── */}
-          <ShortTermPropertyDetails
-            maxGuests={property.maxGuests} maxAdults={property.maxAdults} maxChildren={property.maxChildren}
-            maxInfants={property.maxInfants} minimumStay={property.minimumStay} maximumStay={property.maximumStay}
-            checkInTime={property.checkInTime} checkOutTime={property.checkOutTime}
-            textColor={text} tintColor={tint} secondaryText={subtle}
-          />
+          <Animated.View entering={FadeInDown.delay(300).duration(320).easing(entranceEasing)}>
+            <ShortTermPropertyDetails
+              maxGuests={property.maxGuests} maxAdults={property.maxAdults} maxChildren={property.maxChildren}
+              maxInfants={property.maxInfants} minimumStay={property.minimumStay} maximumStay={property.maximumStay}
+              checkInTime={property.checkInTime} checkOutTime={property.checkOutTime}
+              textColor={text} tintColor={tint} secondaryText={subtle}
+            />
+          </Animated.View>
           <View style={[styles.separator, { backgroundColor: border }]} />
 
           {/* ── Pricing ── */}
-          <View style={styles.pricingSection}>
+          <Animated.View entering={FadeInDown.delay(360).duration(320).easing(entranceEasing)} style={styles.pricingSection}>
             <Text style={[styles.sectionTitle, { color: text }]}>Price breakdown</Text>
             <View style={styles.priceList}>
               <View style={styles.priceRow}>
@@ -413,48 +442,56 @@ export default function ShortTermPropertyDetailsScreen() {
               )}
             </View>
             <Text style={[styles.priceNote, { color: subtle }]}>Total shown once you select your dates</Text>
-          </View>
+          </Animated.View>
           <View style={[styles.separator, { backgroundColor: border }]} />
 
           {/* ── Reviews ── */}
           {(property.averageRating ?? 0) > 0 && (
             <>
-              <PropertyReviews
-                propertyId={propertyId}
-                averageRating={property.averageRating}
-                totalReviews={property.ratingSummary?.totalReviews}
-                ratingSummary={property.ratingSummary}
-              />
+              <Animated.View entering={FadeInDown.delay(420).duration(320).easing(entranceEasing)}>
+                <PropertyReviews
+                  propertyId={propertyId}
+                  averageRating={property.averageRating}
+                  totalReviews={property.ratingSummary?.totalReviews}
+                  ratingSummary={property.ratingSummary}
+                />
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
           {/* ── Rules ── */}
-          <PropertyRules
-            houseRules={property.houseRules} allowsPets={property.allowsPets} allowsSmoking={property.allowsSmoking}
-            allowsChildren={property.allowsChildren} allowsInfants={property.allowsInfants}
-            cancellationPolicy={property.cancellationPolicy} textColor={text} tintColor={tint} secondaryText={subtle}
-          />
+          <Animated.View entering={FadeInDown.delay(480).duration(320).easing(entranceEasing)}>
+            <PropertyRules
+              houseRules={property.houseRules} allowsPets={property.allowsPets} allowsSmoking={property.allowsSmoking}
+              allowsChildren={property.allowsChildren} allowsInfants={property.allowsInfants}
+              cancellationPolicy={property.cancellationPolicy} textColor={text} tintColor={tint} secondaryText={subtle}
+            />
+          </Animated.View>
           <View style={[styles.separator, { backgroundColor: border }]} />
 
           {/* ── Map ── */}
           {coordinates && (
             <>
-              <PropertyLocation
-                latitude={coordinates.latitude} longitude={coordinates.longitude} title={property.title}
-                textColor={text} tintColor={tint} secondaryText={subtle} backgroundColor={bg} borderColor={border}
-              />
+              <Animated.View entering={FadeInDown.delay(540).duration(320).easing(entranceEasing)}>
+                <PropertyLocation
+                  latitude={coordinates.latitude} longitude={coordinates.longitude} title={property.title}
+                  textColor={text} tintColor={tint} secondaryText={subtle} backgroundColor={bg} borderColor={border}
+                />
+              </Animated.View>
               <View style={[styles.separator, { backgroundColor: border }]} />
             </>
           )}
 
           {/* ── Host full profile ── */}
           {property.host && (
-            <PropertyHost
-              firstName={property.host.firstName} lastName={property.host.lastName}
-              profileImage={property.host.profileImage} textColor={text} tintColor={tint}
-              backgroundColor={bg} borderColor={border}
-            />
+            <Animated.View entering={FadeInDown.delay(600).duration(320).easing(entranceEasing)}>
+              <PropertyHost
+                firstName={property.host.firstName} lastName={property.host.lastName}
+                profileImage={property.host.profileImage} textColor={text} tintColor={tint}
+                backgroundColor={bg} borderColor={border}
+              />
+            </Animated.View>
           )}
 
           {/* Bottom spacer for fixed bar */}
@@ -471,10 +508,10 @@ export default function ShortTermPropertyDetailsScreen() {
           </Text>
           <Text style={[styles.barUnit, { color: subtle }]}>per night</Text>
         </View>
-        <TouchableOpacity
+        <AnimatedPressable
           style={[styles.reserveBtn, { backgroundColor: tint }]}
+          pressedScale={0.95}
           onPress={() => setShowReservation(true)}
-          activeOpacity={0.85}
         >
           {property.instantBookEnabled && (
             <Ionicons name="flash" size={16} color="#fff" style={{ marginRight: 6 }} />
@@ -482,7 +519,7 @@ export default function ShortTermPropertyDetailsScreen() {
           <Text style={styles.reserveText}>
             {property.instantBookEnabled ? 'Reserve' : 'Request to Book'}
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* ─── FULLSCREEN GALLERY ─── */}

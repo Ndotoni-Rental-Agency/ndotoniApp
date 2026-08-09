@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
@@ -99,9 +100,21 @@ export default function TabLayout() {
 }
 
 function TabIcon({ name, color, focused, activeColor }: { name: keyof typeof Ionicons.glyphMap; color: string; focused: boolean; activeColor: string }) {
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(focused ? 1 : 0, { duration: 200 });
+  }, [focused, progress]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.6 + progress.value * 0.4 }],
+  }));
+
   return (
-    <View style={[styles.iconWrap, focused && { backgroundColor: `${activeColor}12` }]}>
-      <Ionicons name={name} size={22} color={color} />
+    <View style={styles.iconWrap}>
+      <Animated.View style={[styles.pill, { backgroundColor: `${activeColor}12` }, pillStyle]} />
+      <Ionicons name={name} size={22} color={color} style={styles.icon} />
     </View>
   );
 }
@@ -114,4 +127,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pill: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  icon: {},
 });

@@ -11,14 +11,22 @@ import { Animated, BackHandler } from 'react-native';
 export function useOverlayModal(visible: boolean, onClose: () => void) {
   const [shouldRender, setShouldRender] = useState(visible);
   const fadeAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const slideAnim = useRef(new Animated.Value(visible ? 0 : 24)).current;
 
   useEffect(() => {
     if (visible) {
       setShouldRender(true);
       fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      slideAnim.setValue(24);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]).start();
     } else if (shouldRender) {
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 24, duration: 150, useNativeDriver: true }),
+      ]).start(() => {
         setShouldRender(false);
       });
     }
@@ -34,5 +42,5 @@ export function useOverlayModal(visible: boolean, onClose: () => void) {
     return () => sub.remove();
   }, [visible, onClose]);
 
-  return { shouldRender, fadeAnim };
+  return { shouldRender, fadeAnim, slideAnim };
 }

@@ -1,10 +1,12 @@
 import { useAlert } from '@/contexts/AlertContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOverlayModal } from '@/hooks/useOverlayModal';
+import { useFocusBorderStyle } from '@/hooks/useFocusBorderStyle';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getSafeErrorMessage } from '@/lib/utils/errorUtils';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import AnimatedPressable from '@/components/ui/AnimatedPressable';
 import BrandLoader from '@/components/ui/BrandLoader';
 import {
     ActivityIndicator,
@@ -18,6 +20,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Reanimated from 'react-native-reanimated';
 
 interface SignInModalProps {
   visible: boolean;
@@ -43,7 +46,9 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
 
   const { signIn, signInWithSocial, isAuthenticated } = useAuth();
   const { showAlert } = useAlert();
-  const { shouldRender, fadeAnim } = useOverlayModal(visible, onClose);
+  const { shouldRender, fadeAnim, slideAnim } = useOverlayModal(visible, onClose);
+  const emailFocus = useFocusBorderStyle(borderColor, tintColor);
+  const passwordFocus = useFocusBorderStyle(borderColor, tintColor);
 
   // Auto-close modal when auth state changes to authenticated (covers both platforms)
   useEffect(() => {
@@ -175,7 +180,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContent, { backgroundColor }]}>
+        <Animated.View style={[styles.modalContent, { backgroundColor, transform: [{ translateY: slideAnim }] }]}>
           {/* Social sign-in loading overlay */}
           {isSocialLoading && (
             <View style={[styles.loadingOverlay, { backgroundColor }]}>
@@ -190,39 +195,42 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Sign In</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} style={styles.closeButton} pressedScale={0.85} accessibilityRole="button" accessibilityLabel="Close">
               <Ionicons name="close" size={28} color={textColor} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Google Sign In */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              pressedScale={0.97}
               onPress={handleGoogleSignIn}
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Google</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Apple Sign In */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              pressedScale={0.97}
               onPress={handleAppleSignIn}
             >
               <Ionicons name="logo-apple" size={20} color={textColor} />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Apple</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Facebook Sign In - disabled until Consumer app is created */}
             {process.env.EXPO_PUBLIC_ENABLE_FACEBOOK_SIGNIN === 'true' && (
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.socialButton, { backgroundColor: inputBg, borderColor }]}
+              pressedScale={0.97}
               onPress={handleFacebookSignIn}
             >
               <Ionicons name="logo-facebook" size={20} color="#1877F2" />
               <Text style={[styles.socialButtonText, { color: textColor }]}>Continue with Facebook</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
             )}
 
             {/* Divider */}
@@ -235,43 +243,50 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Email</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, backgroundColor: inputBg, borderColor }]}
-                placeholder="Enter your email"
-                placeholderTextColor={placeholderColor}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <Reanimated.View style={[styles.input, { backgroundColor: inputBg }, emailFocus.style]}>
+                <TextInput
+                  style={{ color: textColor, fontSize: 16 }}
+                  placeholder="Enter your email"
+                  placeholderTextColor={placeholderColor}
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={emailFocus.onFocus}
+                  onBlur={emailFocus.onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </Reanimated.View>
             </View>
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: textColor }]}>Password</Text>
-              <View style={[styles.passwordContainer, { backgroundColor: inputBg, borderColor }]}>
+              <Reanimated.View style={[styles.passwordContainer, { backgroundColor: inputBg }, passwordFocus.style]}>
                 <TextInput
                   style={[styles.passwordInput, { color: textColor }]}
                   placeholder="Enter your password"
                   placeholderTextColor={placeholderColor}
                   value={password}
                   onChangeText={setPassword}
+                  onFocus={passwordFocus.onFocus}
+                  onBlur={passwordFocus.onBlur}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                <TouchableOpacity
+                <AnimatedPressable
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeIcon}
+                  pressedScale={0.85}
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off' : 'eye'}
                     size={22}
                     color={placeholderColor}
                   />
-                </TouchableOpacity>
-              </View>
+                </AnimatedPressable>
+              </Reanimated.View>
             </View>
 
             {/* Forgot Password */}
@@ -282,8 +297,9 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
             </TouchableOpacity>
 
             {/* Sign In Button */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.submitButton, { backgroundColor: tintColor }]}
+              pressedScale={0.97}
               onPress={handleSignIn}
               disabled={isSubmitting}
             >
@@ -292,7 +308,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
               ) : (
                 <Text style={styles.submitButtonText}>Sign In</Text>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Switch to Sign Up */}
             <View style={styles.switchMode}>
@@ -304,7 +320,7 @@ export default function SignInModal({ visible, onClose, onSwitchToSignUp, onForg
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Animated.View>
   );
